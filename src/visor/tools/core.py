@@ -42,12 +42,39 @@ def register_tools(mcp: FastMCP):
         return json.dumps(res)
         
     @mcp.tool()
-    def get_drift_report() -> str:
+    def get_drift_report(context_files: List[str], loaded_at: str) -> str:
         """Returns stale context warnings based on recent Git changes to prevent hallucinations on outdated logic."""
-        # Placeholder for Epic 2 Git Watcher
-        report = DriftReport(
-             drift_detected=False,
-             stale_files=[],
-             severity="INFO"
-        )
+        try:
+            from dateutil.parser import parse as parse_date
+            context_time = parse_date(loaded_at)
+        except Exception:
+            return DriftReport(drift_detected=False, stale_files=[], severity="INFO").model_dump_json()
+
+        cursor = db_client.conn.cursor()
+        placeholders = ','.join(['?'] * len(context_files))
+        query = f"SELECT file_path, changed_at FROM file_changelog WHERE file_path IN ({placeholders})"
+        cursor.execute(query, context_files)
+        
+        stale_files = []
+        for row in cursor.fetchall():
+            file_path, changed_at_str = row
+            try:
+                 changed_at = parse_date(changed_at_str)
+                 if changed_at > context_time:
+                     stale_files.append({"path": file_path, "changed_at": changed_at_str})
+            except Exception:
+                 pass
+                 
+        if stale_files:
+            report = DriftReport(
+                drift_detected=True,
+                stale_files=stale_files,
+                severity="CRITICAL"
+            )
+        else:
+            report = DriftReport(
+                 drift_detected=False,
+                 stale_files=[],
+                 severity="INFO"
+            )
         return report.model_dump_json()
