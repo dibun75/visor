@@ -9,9 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:visor.startHUD"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -25,7 +23,7 @@
       "properties": {
         "visor.localProxyPort": {
           "type": "number",
-          "default": 5173,
+          "default": 4173,
           "description": "Local Vite Dev Server Port"
         },
         "visor.remoteProxyPort": {
