@@ -1,0 +1,128 @@
+import sqlite3
+import sqlite_vec
+import struct
+from typing import List, Dict, Any, Optional
+
+EMBEDDING_DIM = 384 # Configurable to specific embedding size (e.g. all-MiniLM-L6-v2)
+
+def serialize_vec(vector: List[float]) -> bytes:
+    """Serializes a float vector for sqlite-vec storage."""
+    return struct.pack(f"{len(vector)}f", *vector)
+
+class VectorDBClient:
+    _instance = None
+
+    def __new__(cls, db_path="visor_memory.db", *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(VectorDBClient, cls).__new__(cls, *args, **kwargs)
+            cls._instance._init_db(db_path)
+        return cls._instance
+
+    def _init_db(self, db_path: str):
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.conn.enable_load_extension(True)
+        sqlite_vec.load(self.conn)
+        self.conn.enable_load_extension(False)
+        self._migrate()
+
+    def _migrate(self):
+        cursor = self.conn.cursor()
+        
+        # Base tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS code_nodes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_path TEXT NOT NULL,
+                node_type TEXT NOT NULL,
+                name TEXT NOT NULL,
+                docstring TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS agent_memory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Virtual vec0 vector tables
+        cursor.execute(f'''
+            CREATE VIRTUAL TABLE IF NOT EXISTS vec_code_nodes USING vec0(
+                embedding float[{EMBEDDING_DIM}]
+            )
+        ''')
+        
+        cursor.execute(f'''
+            CREATE VIRTUAL TABLE IF NOT EXISTS vec_agent_memory USING vec0(
+                embedding float[{EMBEDDING_DIM}]
+            )
+        ''')
+        self.conn.commit()
+
+    def upsert_node(self, file_path: str, node_type: str, name: str, docstring: str, vector: List[float]) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id FROM code_nodes WHERE file_path=? AND name=? AND node_type=?", (file_path, name, node_type))
+        row = cursor.fetchone()
+        
+        if row:
+            node_id = row[0]
+            cursor.execute("UPDATE code_nodes SET docstring=? WHERE id=?", (docstring, node_id))
+            cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
+        else:
+            cursor.execute(
+                "INSERT INTO code_nodes (file_path, node_type, name, docstring) VALUES (?, ?, ?, ?)",
+                (file_path, node_type, name, docstring)
+            )
+            node_id = cursor.lastrowid
+            
+        cursor.execute(
+            "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+            (node_id, serialize_vec(vector))
+        )
+        self.conn.commit()
+        return node_id
+
+    def search_similar(self, vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        query = """
+            SELECT n.id, n.file_path, n.node_type, n.name, n.docstring, distance
+            FROM vec_code_nodes v
+            JOIN code_nodes n ON v.rowid = n.id
+            WHERE embedding MATCH ? AND k = ?
+        """
+        cursor.execute(query, (serialize_vec(vector), limit))
+        return [
+            {"id": r[0], "file_path": r[1], "node_type": r[2], "name": r[3], "docstring": r[4], "distance": r[5]}
+            for r in cursor.fetchall()
+        ]
+
+    def store_memory(self, role: str, content: str, vector: List[float]) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("INSERT INTO agent_memory (role, content) VALUES (?, ?)", (role, content))
+        mem_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO vec_agent_memory(rowid, embedding) VALUES (?, ?)",
+            (mem_id, serialize_vec(vector))
+        )
+        self.conn.commit()
+        return mem_id
+
+    def recall_memory(self, vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        query = """
+            SELECT m.id, m.role, m.content, m.timestamp, distance
+            FROM vec_agent_memory v
+            JOIN agent_memory m ON v.rowid = m.id
+            WHERE embedding MATCH ? AND k = ?
+        """
+        cursor.execute(query, (serialize_vec(vector), limit))
+        return [
+            {"id": r[0], "role": r[1], "content": r[2], "timestamp": r[3], "distance": r[4]}
+            for r in cursor.fetchall()
+        ]
+
+# Expose a default instance
+db_client = VectorDBClient()
