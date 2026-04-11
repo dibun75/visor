@@ -33,20 +33,6 @@ V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python ba
 
 ---
 
-## 🐳 Docker & Remote SSH Setup
-
-If you are running your development environment on a remote Linux VM via SSH, V.I.S.O.R. supports full Docker containerization with dynamic port allocation.
-
-* **Reverse Tunneling**: Ensure your Antigravity Interface extension is configured properly. You must enable `enableLocalForwarding` and map your `localProxyPort` to allow the WebGPU HUD to stream over the reverse tunnel.
-* **Ultra-Fast Build**: Build and spin up the container using our ultra-fast `uv` multi-stage setup:
-  ```bash
-  docker compose up -d --build
-  ```
-  Docker Compose is configured to dynamically assign an ephemeral port to prevent conflicts with other services on your VM. The extension will automatically detect this port and connect the HUD.
-* **Vibe Coding Watch Mode**: The `docker-compose.yml` includes `docker compose watch` with `action: sync`. Any changes you make to the UI will instantly sync to the container without requiring a full rebuild.
-
----
-
 ## 📊 Understanding the HUD
 
 Once V.I.S.O.R. is running, your sidebar will display the system status:

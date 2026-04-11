@@ -78,3 +78,21 @@ def register_tools(mcp: FastMCP):
                  severity="INFO"
             )
         return report.model_dump_json()
+
+    @mcp.tool()
+    def get_telemetry() -> str:
+        """Returns the current state of telemetry data. graph_nodes, context_burn, drift_alert."""
+        cursor = db_client.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM code_nodes")
+        nodes = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT IFNULL(SUM(length(content)), 0) FROM agent_memory")
+        burn = cursor.fetchone()[0]
+        
+        # Simple global drift proxy: Any modifications inside the last 60 seconds
+        cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE changed_at > datetime('now', '-60 seconds')")
+        drift = cursor.fetchone()[0] > 0
+        
+        data = {"graph_nodes": nodes, "context_burn": burn, "drift_alert": drift}
+        return json.dumps(data)
+

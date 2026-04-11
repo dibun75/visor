@@ -20,6 +20,8 @@ def health_check() -> str:
 import os
 from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
 
+# Removed TelemetryHandler and background HTTP server
+
 def main():
     """CLI entrypoint to start the MCP daemon using stdio"""
     workspace = os.environ.get("WORKSPACE_ROOT", ".")
