@@ -6,8 +6,11 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+from visor.tools.core import register_tools
 # Initialize FastMCP Server
 mcp = FastMCP("VISOR")
+
+register_tools(mcp)
 
 @mcp.tool()
 def health_check() -> str:
