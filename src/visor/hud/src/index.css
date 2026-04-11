@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600&display=swap');
+
+:root {
+  --bg-dark: #090a0f;
+  --bg-panel: rgba(20, 22, 30, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  
+  --primary: #00f2fe;
+  --primary-glow: rgba(0, 242, 254, 0.4);
+  --secondary: #4facfe;
+  
+  --text-main: #f0f2f5;
+  --text-muted: #8b92a5;
+  
+  --accent-warn: #ffb703;
+  --accent-critical: #ff0a54;
+  --accent-success: #00f5d4;
+
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  color-scheme: dark;
+  color: var(--text-main);
+  background-color: var(--bg-dark);
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 0%, #151828 0%, var(--bg-dark) 80%);
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+/* Glassmorphism Panel Utility */
+.glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Base Typographic Utility */
+h1, h2, h3, h4, h5 {
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+  font-weight: 600;
+}
+
+h1 {
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 10, 84, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 10, 84, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 10, 84, 0); }
+}
+
+.critical-flash {
+  animation: pulseGlow 2s infinite;
+  border-color: var(--accent-critical) !important;
+}
