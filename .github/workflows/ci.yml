@@ -1,0 +1,44 @@
+name: V.I.S.O.R. CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
+    - name: Validate Backend Build
+      run: uv build
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Validate Frontend Build
+      working-directory: ./src/visor/hud
+      run: |
+        npm install
+        npm run build
+        
+    - name: Install Playwright Browsers
+      working-directory: ./src/visor/hud
+      run: npx playwright install --with-deps chromium
+      
+    - name: Run HUD E2E Tests
+      working-directory: ./src/visor/hud
+      run: npx playwright test
