@@ -1,0 +1,34 @@
+{
+  "name": "visor-hud",
+  "displayName": "V.I.S.O.R. HUD",
+  "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:visor.startHUD"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "visor.startHUD",
+        "title": "Start V.I.S.O.R. HUD"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "typescript": "^5.1.3"
+  }
+}
