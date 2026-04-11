@@ -33,13 +33,39 @@ V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python ba
 
 ---
 
-## 📊 Understanding the HUD
+## 📊 Understanding the HUD & Telemetry
 
-Once V.I.S.O.R. is running, your sidebar will display the system status:
+V.I.S.O.R operates entirely via the **Model Context Protocol (MCP)** boundary. It uses precision tooling rather than passively intercepting your raw chat prompts. 
 
-* **System Nominal**: Indicates the MCP server is actively communicating with your IDE's agent manager.
-* **Agent Context Burn**: A real-time token tracker showing how much of your LLM's context window is filled. Keep this out of the red to prevent session failures.
-* **Graph Database Scale**: The total number of AST nodes (functions, classes, imports) currently indexed in your local SQLite vector store.
+* **Agent Context Burn**: A real-time token tracker showing the volume of context permanently stored by your agent. This number only increments horizontally when your AI explicitly invokes the `store_memory` MCP tool to commit knowledge to the database.
+* **Graph Database Scale**: The total number of AST nodes (functions, classes, imports) currently indexed in your local SQLite vector store. This local metric only increments when you write new logic in tracked files, triggering the AST indexing pipeline.
+* **Context Drift Alert**: Flashes red if the agent's internal contextual understanding is outdated. V.I.S.O.R watches the file system; if you physically modify a source file, the warning trips active for exactly 60 seconds to warn the LLM before it hallucinates via stale code references.
+
+---
+
+## 🔌 Wiring it to Your AI Agent (Antigravity)
+
+V.I.S.O.R's extension provides the frontend metrics HUD, but your IDE's innate AI engine still needs to be pointed to V.I.S.O.R's daemon to gain the capability to actually call its tools!
+
+For Google Antigravity, MCP connections are declared centrally inside your home directory.
+
+1. Open `~/.gemini/antigravity/mcp_config.json`.
+2. Append V.I.S.O.R to the active `mcpServers` dictionary:
+```json
+    "visor": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "<PATH_TO_VISOR_WORKSPACE>",
+        "run",
+        "-q",
+        "<PATH_TO_VISOR_WORKSPACE>/src/visor/server.py"
+      ],
+      "env": {}
+    }
+```
+3. Restart or reload your AI Agent session.
+4. Try prompting your agent: *"Please use the `store_memory` tool to save 'Hello World'"*. You will immediately notice the Agent Context Burn jump up as the AI fulfills the MCP contract!
 
 ---
 
