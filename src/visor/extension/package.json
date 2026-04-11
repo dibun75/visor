@@ -19,7 +19,27 @@
         "command": "visor.startHUD",
         "title": "Start V.I.S.O.R. HUD"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "V.I.S.O.R. Config",
+      "properties": {
+        "visor.localProxyPort": {
+          "type": "number",
+          "default": 5173,
+          "description": "Local Vite Dev Server Port"
+        },
+        "visor.remoteProxyPort": {
+          "type": "number",
+          "default": 8080,
+          "description": "Remote SSH Docker Proxy Port"
+        },
+        "visor.enableLocalForwarding": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic reverse-tunnel over SSH for Docker HUD"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

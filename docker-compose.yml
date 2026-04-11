@@ -6,3 +6,26 @@ services:
       - .:/workspace
     environment:
       - WORKSPACE_ROOT=/workspace
+    ports:
+      - "8000"
+    develop:
+      watch:
+        - action: sync
+          path: ./src/visor
+          target: /app/src/visor
+
+  visor-hud:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./src/visor/hud:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./src/visor/hud
+          target: /app
+          ignore:
+            - node_modules/
