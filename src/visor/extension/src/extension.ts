@@ -110,6 +110,21 @@ function setupMessageListener(webview: vscode.Webview) {
             } catch(err: any) {
                 console.error("Graph data fetch failed", err);
             }
+        } else if (message.command === 'fetchSkills' && mcpClient) {
+            try {
+                const result = await mcpClient.callTool({ name: 'list_custom_skills', arguments: {} });
+                if (result.content && (result.content as any[]).length > 0) {
+                    webview.postMessage({ command: 'skillsData', data: JSON.parse((result.content as any)[0].text as string) });
+                }
+            } catch(err) { console.error("fetchSkills failed", err); }
+        } else if (message.command === 'addCustomSkill' && mcpClient) {
+            try {
+                await mcpClient.callTool({ name: 'add_custom_skill', arguments: message.payload });
+            } catch(err) { console.error("addCustomSkill failed", err); }
+        } else if (message.command === 'deleteSkill' && mcpClient) {
+            try {
+                await mcpClient.callTool({ name: 'delete_custom_skill', arguments: message.payload });
+            } catch(err) { console.error("deleteSkill failed", err); }
         } else if (message.command === 'openFullGraph') {
             vscode.commands.executeCommand('visor.startHUD');
         }

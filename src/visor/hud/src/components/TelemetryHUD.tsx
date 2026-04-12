@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Database, ShieldAlert, Cpu, Maximize } from 'lucide-react';
+import { Activity, Database, ShieldAlert, Cpu, Maximize, Settings2, Plus, Trash2, X } from 'lucide-react';
 
 interface TelemetryHUDProps {
     viewMode: 'sidebar' | 'panel';
@@ -18,6 +18,12 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
         nodes: 0,
         drift: false
     });
+    
+    const [showSkillModal, setShowSkillModal] = useState(false);
+    const [skills, setSkills] = useState<any[]>([]);
+    const [newSkillName, setNewSkillName] = useState("");
+    const [newSkillDesc, setNewSkillDesc] = useState("");
+    const [newSkillContent, setNewSkillContent] = useState("");
 
     const isSidebar = viewMode === 'sidebar';
     const vscode = getVsCode();
@@ -31,6 +37,8 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                     nodes: message.data.graph_nodes || 0,
                     drift: message.data.drift_alert || false
                 });
+            } else if (message.command === 'skillsData') {
+                setSkills(message.data || []);
             }
         };
         
@@ -56,6 +64,22 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             vscode.postMessage({ command: 'openFullGraph' });
         }
     };
+
+    const fetchSkills = () => vscode?.postMessage({ command: 'fetchSkills' });
+    const addSkill = () => {
+        if (!newSkillName || !newSkillContent) return;
+        vscode?.postMessage({ command: 'addCustomSkill', payload: { name: newSkillName, description: newSkillDesc, content: newSkillContent } });
+        setNewSkillName(""); setNewSkillDesc(""); setNewSkillContent("");
+        setTimeout(fetchSkills, 500);
+    };
+    const deleteSkill = (id: number) => {
+        vscode?.postMessage({ command: 'deleteSkill', payload: { skill_id: id } });
+        setTimeout(fetchSkills, 500);
+    };
+
+    useEffect(() => {
+        if (showSkillModal) fetchSkills();
+    }, [showSkillModal]);
 
     return (
         <div style={{ 
@@ -140,9 +164,61 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                         <Maximize size={20} color="var(--primary)" />
                         EXPAND 3D GRAPH
                     </button>
+                    <button 
+                        onClick={() => setShowSkillModal(true)}
+                        style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: 'var(--text-muted)',
+                            padding: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '12px',
+                            fontWeight: 'bold',
+                            letterSpacing: '1px',
+                            marginTop: '8px',
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.color = 'var(--text-main)')}
+                        onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                    >
+                        <Settings2 size={18} />
+                        MANAGE AI SKILLS
+                    </button>
                     <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px', marginTop: '16px' }}>
                         POWERED BY MCP
                     </p>
+                </div>
+            )}
+
+            {showSkillModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <h2 style={{ color: 'white', margin: 0 }}>Custom AI Skills</h2>
+                        <button onClick={() => setShowSkillModal(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X /></button>
+                    </div>
+                    
+                    <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {skills.map(s => (
+                            <div key={s.id} className="glass-panel" style={{ padding: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>{s.name}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.description}</div>
+                                </div>
+                                <button onClick={() => deleteSkill(s.id)} style={{ background: 'none', border: 'none', color: 'var(--accent-critical)', cursor: 'pointer' }}><Trash2 size={16}/></button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '16px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input placeholder="Skill Name (e.g. impact_analysis)" value={newSkillName} onChange={(e) => setNewSkillName(e.target.value)} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', padding: '8px', borderRadius: '4px' }} />
+                        <input placeholder="Short Description" value={newSkillDesc} onChange={(e) => setNewSkillDesc(e.target.value)} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', padding: '8px', borderRadius: '4px' }} />
+                        <textarea placeholder="Markdown Instructions (The Prompt)" value={newSkillContent} onChange={(e) => setNewSkillContent(e.target.value)} rows={4} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #333', color: 'white', padding: '8px', borderRadius: '4px' }} />
+                        <button onClick={addSkill} style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}><Plus size={16}/> ADD SKILL</button>
+                    </div>
                 </div>
             )}
         </div>

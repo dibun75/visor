@@ -42,6 +42,16 @@ class VectorDBClient:
         ''')
         
         cursor.execute('''
+            CREATE TABLE IF NOT EXISTS custom_skills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS agent_memory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 role TEXT NOT NULL,
@@ -141,6 +151,23 @@ class VectorDBClient:
             {"id": r[0], "role": r[1], "content": r[2], "timestamp": r[3], "distance": r[4]}
             for r in cursor.fetchall()
         ]
+
+    def get_custom_skills(self) -> List[Dict[str, str]]:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id, name, description, content FROM custom_skills ORDER BY name ASC")
+        return [{"id": str(r[0]), "name": r[1], "description": r[2], "content": r[3]} for r in cursor.fetchall()]
+
+    def add_custom_skill(self, name: str, description: str, content: str) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("INSERT INTO custom_skills (name, description, content) VALUES (?, ?, ?)", (name, description, content))
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def delete_custom_skill(self, skill_id: int) -> bool:
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM custom_skills WHERE id=?", (skill_id,))
+        self.conn.commit()
+        return cursor.rowcount > 0
 
 # Expose a default instance
 db_client = VectorDBClient()
