@@ -6,3 +6,6 @@ visor_memory.db*
 tmp/
 *.vsix
 *.mjs
+
+__pycache__/
+*.pyc
