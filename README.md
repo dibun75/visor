@@ -38,7 +38,7 @@ V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a ne
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
 
-1. Download the latest `visor-hud-0.4.0.vsix` release.
+1. Download the latest `visor-hud-0.4.1.vsix` release.
 2. Open your IDE (Antigravity or VS Code) and navigate to the Extensions panel.
 3. Click the `...` menu at the top right and select **Install from VSIX...**.
 4. Select the downloaded `.vsix` file.
@@ -59,7 +59,7 @@ V.I.S.O.R operates entirely via the **Model Context Protocol (MCP)** boundary. I
 
 ## 🛠️ V.I.S.O.R. Skills
 
-With version `0.4.0`, V.I.S.O.R. introduces Native Architectural Graph Tools and an internal AI Custom Skills Engine. By fetching dynamic contextual relations directly through our integrated local NetworkX engine, we eliminate the need for the LLM to recursively "grep" around the filesystem blindly. This dramatically isolates prompt orientation waste.
+With version `0.4.1`, V.I.S.O.R. introduces Native Architectural Graph Tools and an internal AI Custom Skills Engine. By fetching dynamic contextual relations directly through our integrated local NetworkX engine, we eliminate the need for the LLM to recursively "grep" around the filesystem blindly. This dramatically isolates prompt orientation waste.
 
 ### The 5 Core Agentic Skills:
 1. **Impact Analysis (`impact_analysis`)**: An MCP tool that calculates the downstream blast radius dependencies of a given node using BFS (capped at depth 5). E.g. check what files will break if `utils.py` is removed.
