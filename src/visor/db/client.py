@@ -30,6 +30,11 @@ class VectorDBClient:
     def _migrate(self):
         cursor = self.conn.cursor()
         
+        # We drop the existing tables to ensure a clean schema migration (except custom_skills and agent_memory)
+        cursor.execute("DROP TABLE IF EXISTS code_nodes")
+        cursor.execute("DROP TABLE IF EXISTS vec_code_nodes")
+        cursor.execute("DROP TABLE IF EXISTS edges")
+
         # Base tables
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS code_nodes (
@@ -37,7 +42,19 @@ class VectorDBClient:
                 file_path TEXT NOT NULL,
                 node_type TEXT NOT NULL,
                 name TEXT NOT NULL,
-                docstring TEXT
+                docstring TEXT,
+                start_line INTEGER,
+                end_line INTEGER,
+                file_hash TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS edges (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_node TEXT NOT NULL,
+                to_node TEXT NOT NULL,
+                relation_type TEXT NOT NULL
             )
         ''')
         
@@ -90,19 +107,23 @@ class VectorDBClient:
         self.conn.commit()
         return cursor.lastrowid
 
-    def upsert_node(self, file_path: str, node_type: str, name: str, docstring: str, vector: List[float]) -> int:
+    def upsert_node(self, file_path: str, node_type: str, name: str, docstring: str, vector: List[float], start_line: int = -1, end_line: int = -1, file_hash: str = "") -> int:
         cursor = self.conn.cursor()
+        # Ensure we always update the latest info
         cursor.execute("SELECT id FROM code_nodes WHERE file_path=? AND name=? AND node_type=?", (file_path, name, node_type))
         row = cursor.fetchone()
         
         if row:
             node_id = row[0]
-            cursor.execute("UPDATE code_nodes SET docstring=? WHERE id=?", (docstring, node_id))
+            cursor.execute(
+                "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?", 
+                (docstring, start_line, end_line, file_hash, node_id)
+            )
             cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
         else:
             cursor.execute(
-                "INSERT INTO code_nodes (file_path, node_type, name, docstring) VALUES (?, ?, ?, ?)",
-                (file_path, node_type, name, docstring)
+                "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (file_path, node_type, name, docstring, start_line, end_line, file_hash)
             )
             node_id = cursor.lastrowid
             
@@ -112,6 +133,13 @@ class VectorDBClient:
         )
         self.conn.commit()
         return node_id
+
+    def upsert_edge(self, from_node: str, to_node: str, relation_type: str):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id FROM edges WHERE from_node=? AND to_node=? AND relation_type=?", (from_node, to_node, relation_type))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)", (from_node, to_node, relation_type))
+            self.conn.commit()
 
     def search_similar(self, vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         cursor = self.conn.cursor()

@@ -99,8 +99,8 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
         }}>
             
             {/* Top Bar HUD */}
-            <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', justifyContent: 'space-between', alignItems: isSidebar ? 'stretch' : 'flex-start', gap: '16px' }}>
-                <div className="glass-panel" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', justifyContent: 'space-between', alignItems: isSidebar ? 'stretch' : 'flex-start', gap: '16px', pointerEvents: 'none' }}>
+                <div className="glass-panel" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', pointerEvents: 'auto' }}>
                     <Activity color="var(--primary)" size={32} />
                     <div>
                         <h2 style={{ fontSize: '12px', margin: 0, color: 'var(--text-muted)', letterSpacing: '2px' }}>V.I.S.O.R. MCP</h2>
@@ -109,7 +109,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                 </div>
 
                 {telemetry.drift && (
-                    <div className="glass-panel critical-flash" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: 'rgba(255, 10, 84, 0.1)' }}>
+                    <div className="glass-panel critical-flash" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: 'rgba(255, 10, 84, 0.1)', pointerEvents: 'auto' }}>
                         <ShieldAlert color="var(--accent-critical)" size={32} />
                         <div>
                             <h2 style={{ fontSize: '12px', margin: 0, color: 'var(--accent-critical)', letterSpacing: '2px' }}>CRITICAL ALERT</h2>
@@ -120,8 +120,8 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             </div>
 
             {/* Bottom Bar Telemetry */}
-            <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', gap: '16px', width: '100%', maxWidth: isSidebar ? 'none' : '800px', margin: isSidebar ? '0' : '0 auto' }}>
-                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', gap: '16px', width: '100%', maxWidth: isSidebar ? 'none' : '800px', margin: isSidebar ? '0' : '0 auto', pointerEvents: 'none' }}>
+                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
                     <Cpu color="var(--primary)" size={32} />
                     <div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>AGENT CONTEXT BURN</div>
@@ -129,7 +129,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                     </div>
                 </div>
                 
-                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
                     <Database color="var(--secondary)" size={32} />
                     <div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>GRAPH DATABASE SCALE</div>
@@ -140,7 +140,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
 
             {/* Sidebar-only Actions */}
             {isSidebar && (
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', pointerEvents: 'auto' }}>
                     <button 
                         onClick={openFullGraph}
                         style={{
@@ -171,7 +171,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             )}
             
             {/* Manage Skills Button (Shown everywhere) */}
-            <div style={{ display: 'flex', justifyContent: isSidebar ? 'center' : 'flex-end', marginTop: isSidebar ? '8px' : 'auto', position: isSidebar ? 'static' : 'absolute', bottom: isSidebar ? 'auto' : '24px', right: isSidebar ? 'auto' : '24px', zIndex: 10 }}>
+            <div style={{ display: 'flex', justifyContent: isSidebar ? 'center' : 'flex-end', marginTop: isSidebar ? '8px' : 'auto', position: isSidebar ? 'static' : 'absolute', bottom: isSidebar ? 'auto' : '24px', right: isSidebar ? 'auto' : '24px', zIndex: 10, pointerEvents: 'auto' }}>
                     <button 
                         onClick={() => setShowSkillModal(true)}
                         style={{
@@ -198,7 +198,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             </div>
 
             {showSkillModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px', pointerEvents: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                         <h2 style={{ color: 'white', margin: 0 }}>Custom AI Skills</h2>
                         <button onClick={() => setShowSkillModal(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X /></button>

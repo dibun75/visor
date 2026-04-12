@@ -7,6 +7,7 @@ import functools
 import networkx as nx
 
 from visor.db.client import db_client, EMBEDDING_DIM
+from visor.db.embeddings import embedder
 
 class DriftReport(BaseModel):
     drift_detected: bool
@@ -32,7 +33,7 @@ def track_telemetry(func):
     return wrapper
 
 def _build_nx_graph() -> nx.DiGraph:
-    """Builds a directed graph of the codebase simulating dependencies based on directory clustering."""
+    """Builds a directed graph of the codebase pulling from the actual edges table."""
     G = nx.DiGraph()
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
@@ -44,19 +45,13 @@ def _build_nx_graph() -> nx.DiGraph:
     for f in files:
         G.add_node(f)
         
-    # Simulate edges based on directory clusters (until AST parser is finished)
-    cluster_map = {}
-    for f in files:
-        parts = f.replace("./", "").split("/")
-        cluster = "/".join(parts[:3]) if len(parts) >= 3 else "/".join(parts[:2]) if len(parts) >= 2 else parts[0]
-        cluster_map.setdefault(cluster, []).append(f)
-        
-    for cluster, f_list in cluster_map.items():
-        for i in range(len(f_list)):
-            for j in range(i + 1, min(i + 5, len(f_list))): # Limit intra-cluster edges
-                # Add bidirectional simulated dependency
-                G.add_edge(f_list[i], f_list[j], type="EXTRACTED")
-                G.add_edge(f_list[j], f_list[i], type="INFERRED")
+    # Read edges from database
+    cursor.execute("SELECT from_node, to_node, relation_type FROM edges")
+    db_edges = cursor.fetchall()
+    
+    for from_n, to_n, rel_type in db_edges:
+        if G.has_node(from_n) and G.has_node(to_n):
+            G.add_edge(from_n, to_n, type=rel_type)
                 
     return G
 
@@ -72,9 +67,7 @@ def register_tools(mcp: FastMCP):
     @track_telemetry
     def store_memory(role: str, content: str) -> str:
         """Persists an agent conversation turn with an embedding in the local DB."""
-        # For now, generate a random embedding vector. In the future this uses a real sentence-transformer model.
-        # Epic 1 placeholder vector.
-        vec = np.random.rand(EMBEDDING_DIM).tolist()
+        vec = embedder.encode(content)
         mem_id = db_client.store_memory(role, content, vec)
         return f"Successfully stored memory with ID: {mem_id}"
         
@@ -162,8 +155,7 @@ def register_tools(mcp: FastMCP):
     @track_telemetry
     def search_codebase(query: str) -> str:
         """Semantic vector search across CodeNodes. Returns list of nodes."""
-        # Generates a random query vector placeholder
-        vec = np.random.rand(EMBEDDING_DIM).tolist()
+        vec = embedder.encode(query)
         res = db_client.search_similar(vec, limit=5)
         return json.dumps(res)
         

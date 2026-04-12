@@ -17,6 +17,7 @@ from watchdog.events import FileModifiedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from visor.db.client import db_client
+from visor.db.embeddings import embedder
 from visor.parser.treesitter import ast_parser, _EXT_MAP
 
 logger = logging.getLogger(__name__)
@@ -58,28 +59,52 @@ def index_file(file_path: str, skip_changelog: bool = False):
                         Used during the initial full workspace scan
                         so boot-time indexing doesn't trigger false drift alerts.
     """
-    import numpy as np
-    from visor.db.client import EMBEDDING_DIM
-
     result = ast_parser.parse_file(file_path)
     if result.error:
         logger.warning(f"Parse error for {file_path}: {result.error}")
         return
 
+    # Quick cache check: look up existing file_hash
+    cursor = db_client.conn.cursor()
+    cursor.execute("SELECT file_hash FROM code_nodes WHERE file_path=? LIMIT 1", (file_path,))
+    row = cursor.fetchone()
+    if row and row[0] == result.file_hash:
+        # File untouched, completely skip semantic re-indexing
+        if not skip_changelog:
+            _log_file_change(db_client.conn, file_path)
+        logger.info(f"Skipped indexing {file_path} (cache hit)")
+        return
+
+    # To enforce a single transaction for this file, we can optionally use explicit BEGIN/COMMIT inside client
+    # Since sqlite3 in Python auto-commits depending on setup, we'll iterate with standard calls.
+    # Note: A pure BEGIN TRANSACTION wrapping might conflict with Python sqlite3 auto-machinery 
+    # but the logic bounds performance costs immediately.
+    
     for node in result.nodes:
-        # Placeholder embedding — replaced with real sentence-transformer in Epic 3+
-        vec = list(map(float, __import__('numpy').random.rand(EMBEDDING_DIM)))
+        # Generate the real MiniLM semantic embedding
+        vec = embedder.encode(node.docstring if node.docstring else node.name)
+        
         db_client.upsert_node(
             file_path=node.file_path,
             node_type=node.node_type,
             name=node.name,
             docstring=node.docstring,
             vector=vec,
+            start_line=node.start_line,
+            end_line=node.end_line,
+            file_hash=result.file_hash,
+        )
+
+    for edge in result.edges:
+        db_client.upsert_edge(
+            from_node=edge["from"],
+            to_node=edge["to"],
+            relation_type=edge["type"]
         )
 
     if not skip_changelog:
         _log_file_change(db_client.conn, file_path)
-    logger.info(f"Indexed {len(result.nodes)} nodes from {file_path}")
+    logger.info(f"Indexed {len(result.nodes)} nodes & {len(result.edges)} edges from {file_path}")
 
 # ---------------------------------------------------------------------------
 # Full workspace scan (run once on daemon start)

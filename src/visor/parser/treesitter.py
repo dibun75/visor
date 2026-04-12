@@ -8,6 +8,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+import hashlib
 
 import tree_sitter
 import tree_sitter_python
@@ -74,7 +75,9 @@ class ASTNode:
 @dataclass
 class ParseResult:
     file_path: str
+    file_hash: str = ""
     nodes: List[ASTNode] = field(default_factory=list)
+    edges: List[dict] = field(default_factory=list)
     error: Optional[str] = None
 
 # ---------------------------------------------------------------------------
@@ -98,6 +101,7 @@ class ASTParser:
 
         try:
             source = path.read_bytes()
+            file_hash = hashlib.sha256(source).hexdigest()
         except (OSError, IOError) as e:
             return ParseResult(file_path=file_path, error=str(e))
 
@@ -140,7 +144,18 @@ class ASTParser:
             except Exception:
                 pass  # Silently skip malformed queries for non-primary langs
 
-        return ParseResult(file_path=str(file_path), nodes=nodes)
+        # TODO: Add dynamic robust edge extraction logic here (e.g. calls)
+        # For now, we will map any parsed imported modules as an edge from this file.
+        edges = []
+        for node in nodes:
+            if node.node_type == "import":
+                edges.append({
+                    "from": str(file_path),
+                    "to": node.name,
+                    "type": "IMPORTS"
+                })
+
+        return ParseResult(file_path=str(file_path), file_hash=file_hash, nodes=nodes, edges=edges)
 
     def _extract_docstring(self, node, source: bytes, lang: tree_sitter.Language) -> str:
         """Extract the first string literal child of a function/class as its docstring (Python style)."""
