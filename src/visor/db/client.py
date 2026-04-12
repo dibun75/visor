@@ -12,8 +12,26 @@ def serialize_vec(vector: List[float]) -> bytes:
 class VectorDBClient:
     _instance = None
 
-    def __new__(cls, db_path="visor_memory.db", *args, **kwargs):
+    def __new__(cls, db_path=None, *args, **kwargs):
         if not cls._instance:
+            if db_path is None or db_path == "visor_memory.db":
+                import os
+                import hashlib
+                
+                env_path = os.environ.get("VISOR_DB_PATH")
+                if env_path:
+                    if os.path.isdir(env_path):
+                        resolved_path = os.path.join(env_path, "visor_memory.db")
+                    else:
+                        resolved_path = env_path
+                else:
+                    workspace = os.getcwd()
+                    hashed = hashlib.sha256(workspace.encode("utf-8")).hexdigest()[:12]
+                    resolved_path = os.path.expanduser(f"~/.cache/visor/{hashed}/visor_memory.db")
+                
+                os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
+                db_path = resolved_path
+                
             cls._instance = super(VectorDBClient, cls).__new__(cls, *args, **kwargs)
             cls._instance._init_db(db_path)
         return cls._instance

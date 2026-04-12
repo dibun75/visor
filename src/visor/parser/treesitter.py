@@ -132,6 +132,8 @@ class ASTParser:
                     # "name" capture holds the identifier, "node" is the full definition
                     name_nodes = captures.get("name", [])
                     if not name_nodes:
+                        name_nodes = captures.get("module", [])
+                    if not name_nodes:
                         continue
                     name_node = name_nodes[0] if isinstance(name_nodes, list) else name_nodes
 

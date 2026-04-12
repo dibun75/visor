@@ -155,7 +155,12 @@ def register_tools(mcp: FastMCP):
         # Build a file_path → node id lookup for fast resolution
         path_to_id = {n["file_path"]: n["id"] for n in nodes}
 
-        cursor.execute("SELECT from_node, to_node, relation_type FROM edges LIMIT 500")
+        cursor.execute("""
+            SELECT e.from_node, cn.file_path, e.relation_type 
+            FROM edges e
+            JOIN code_nodes cn ON e.to_node = cn.name COLLATE NOCASE
+            LIMIT 500
+        """)
         db_edges = cursor.fetchall()
 
         edges = []

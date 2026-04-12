@@ -9,7 +9,7 @@ let currentPanel: vscode.WebviewPanel | undefined = undefined;
 let mcpClient: Client | undefined = undefined;
 let activeTransport: StdioClientTransport | undefined = undefined;
 
-async function ensureMCPConnected(workspaceFolder: string) {
+async function ensureMCPConnected(workspaceFolder: string, context: vscode.ExtensionContext) {
     if (mcpClient) return mcpClient;
 
     let uvPath = 'uv';
@@ -26,7 +26,12 @@ async function ensureMCPConnected(workspaceFolder: string) {
     activeTransport = new StdioClientTransport({
         command: uvPath,
         args: ['--directory', workspaceFolder, 'run', '-q', serverPath],
-        env: { ...process.env, WORKSPACE_ROOT: workspaceFolder, PYTHONPATH: workspaceFolder }
+        env: { 
+            ...process.env, 
+            WORKSPACE_ROOT: workspaceFolder, 
+            PYTHONPATH: workspaceFolder,
+            VISOR_DB_PATH: context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath
+        }
     });
 
     activeTransport.onerror = (err) => console.error("Transport error:", err);
@@ -132,7 +137,7 @@ function setupMessageListener(webview: vscode.Webview) {
 }
 
 class VisorSidebarProvider implements vscode.WebviewViewProvider {
-    constructor(private readonly _extensionUri: vscode.Uri, private readonly _workspaceFolder: string) {}
+    constructor(private readonly _extensionUri: vscode.Uri, private readonly _workspaceFolder: string, private readonly _context: vscode.ExtensionContext) {}
 
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -147,7 +152,7 @@ class VisorSidebarProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = getWebviewContent(webviewView.webview, this._workspaceFolder, 'sidebar');
 
         setupMessageListener(webviewView.webview);
-        await ensureMCPConnected(this._workspaceFolder);
+        await ensureMCPConnected(this._workspaceFolder, this._context);
     }
 }
 
@@ -167,7 +172,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 
     // Register Sidebar Provider
-    const sidebarProvider = new VisorSidebarProvider(context.extensionUri, workspaceFolder);
+    const sidebarProvider = new VisorSidebarProvider(context.extensionUri, workspaceFolder, context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider('visor-sidebar', sidebarProvider)
     );
@@ -178,7 +183,7 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        await ensureMCPConnected(workspaceFolder);
+        await ensureMCPConnected(workspaceFolder, context);
 
         currentPanel = vscode.window.createWebviewPanel(
             'visorHUD',
