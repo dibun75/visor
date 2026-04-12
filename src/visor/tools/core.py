@@ -395,6 +395,15 @@ def register_tools(mcp: FastMCP):
             ``build_context("how is authentication handled")``
         """
         result = _build_context(query, skill_name=skill)
+        # Orchestration hints — suggest follow-up tools based on intent
+        intent = result.get("debug", {}).get("intent", "DEFAULT")
+        hints = {
+            "BUG_FIX":  ["get_dependency_chain", "get_drift_report", "impact_analysis"],
+            "REFACTOR": ["impact_analysis", "dead_code_detection", "trace_route"],
+            "EXPLAIN":  ["get_architecture_map", "trace_route", "get_symbol_context"],
+            "DEFAULT":  ["search_codebase", "get_dependency_chain"],
+        }
+        result["recommended_next"] = hints.get(intent, hints["DEFAULT"])
         return json.dumps(result)
 
     @mcp.prompt()
