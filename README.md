@@ -38,7 +38,7 @@ V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a ne
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
 
-1. Download the latest `visor-hud-0.1.0.vsix` release.
+1. Download the latest `visor-hud-0.3.8.vsix` release.
 2. Open your IDE (Antigravity or VS Code) and navigate to the Extensions panel.
 3. Click the `...` menu at the top right and select **Install from VSIX...**.
 4. Select the downloaded `.vsix` file.
@@ -53,6 +53,7 @@ V.I.S.O.R operates entirely via the **Model Context Protocol (MCP)** boundary. I
 * **Agent Context Burn**: A real-time token tracker showing the volume of context permanently stored by your agent. This number only increments horizontally when your AI explicitly invokes the `store_memory` MCP tool to commit knowledge to the database.
 * **Graph Database Scale**: The total number of AST nodes (functions, classes, imports) currently indexed in your local SQLite vector store. This local metric only increments when you write new logic in tracked files, triggering the AST indexing pipeline.
 * **Context Drift Alert**: Flashes red if the agent's internal contextual understanding is outdated. V.I.S.O.R watches the file system; if you physically modify a source file, the warning trips active for exactly 60 seconds to warn the LLM before it hallucinates via stale code references.
+* **System Status Indicator**: A non-obtrusive data sync monitor in the 3D Graph layout. It pulses "SYNCING..." while querying the SQLite database for codebase topology, and locks to a solid green "SYSTEM LIVE" when your AST rendering is visually up to date.
 
 ---
 

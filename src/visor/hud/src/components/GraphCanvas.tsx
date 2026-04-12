@@ -372,6 +372,58 @@ const LoadingCloud: React.FC = () => {
 };
 
 // ────────────────────────────────────────────────────
+// Status Indicator overlay
+// ────────────────────────────────────────────────────
+
+const StatusIndicator: React.FC<{ status: 'SYNCING' | 'LIVE' | 'ERROR' }> = ({ status }) => {
+  const color = status === 'LIVE' ? '#06d6a0' : status === 'SYNCING' ? '#00f2fe' : '#ff0a54';
+  const text = status === 'LIVE' ? 'SYSTEM LIVE' : status === 'SYNCING' ? 'SYNCING...' : 'DISCONNECTED';
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 24,
+      right: 24,
+      zIndex: 10,
+      background: 'rgba(10, 12, 20, 0.65)',
+      backdropFilter: 'blur(12px)',
+      border: `1px solid ${color}33`,
+      borderRadius: '20px',
+      padding: '6px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      fontFamily: "'Inter', sans-serif",
+      fontSize: '11px',
+      fontWeight: 600,
+      color: color,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      transition: 'all 0.3s ease',
+      pointerEvents: 'none',
+      userSelect: 'none'
+    }}>
+      <div style={{
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        background: color,
+        boxShadow: `0 0 8px ${color}`,
+        animation: status === 'SYNCING' ? 'visor-pulse 0.8s infinite alternate' : 'none'
+      }} />
+      <span style={{ letterSpacing: '0.5px' }}>
+        {text}
+      </span>
+      <style>{`
+        @keyframes visor-pulse {
+          0% { opacity: 0.3; transform: scale(0.9); }
+          100% { opacity: 1; transform: scale(1.2); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ────────────────────────────────────────────────────
 // Main GraphCanvas component
 // ────────────────────────────────────────────────────
 
@@ -384,6 +436,7 @@ const getVsCode = () => {
 
 export const GraphCanvas: React.FC = () => {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'SYNCING' | 'LIVE' | 'ERROR'>('SYNCING');
   const vscode = getVsCode();
 
   useEffect(() => {
@@ -391,8 +444,10 @@ export const GraphCanvas: React.FC = () => {
       if (event.data.command === 'graphData') {
         try {
           setGraphData(event.data.data);
+          setSyncStatus('LIVE');
         } catch (err: any) {
           console.error('[Err] graphData failed:', err.message);
+          setSyncStatus('ERROR');
         }
       }
     };
@@ -402,7 +457,10 @@ export const GraphCanvas: React.FC = () => {
     // Fetch graph data immediately and then every 10 seconds
     const fetchGraph = () => {
       if (vscode) {
+        setSyncStatus('SYNCING');
         vscode.postMessage({ command: 'fetchGraphData' });
+      } else {
+        setSyncStatus('ERROR');
       }
     };
 
@@ -417,6 +475,9 @@ export const GraphCanvas: React.FC = () => {
 
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+      {/* HUD System Indicator */}
+      <StatusIndicator status={syncStatus} />
+      
       <Canvas camera={{ position: [0, 0, 28], fov: 60 }}>
         <color attach="background" args={['#090a0f']} />
         <ambientLight intensity={0.4} />
