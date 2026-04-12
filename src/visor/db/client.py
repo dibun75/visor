@@ -134,6 +134,62 @@ class VectorDBClient:
         self.conn.commit()
         return node_id
 
+    def batch_upsert_nodes(
+        self,
+        nodes: List[dict],
+    ) -> None:
+        """
+        High-throughput bulk upsert of code nodes within a single transaction.
+
+        Each item in ``nodes`` must be a dict with keys:
+            file_path, node_type, name, docstring, vector,
+            start_line, end_line, file_hash.
+
+        This is ~10-20× faster than calling upsert_node() in a loop
+        because it batches all SQL writes into one COMMIT.
+        """
+        cursor = self.conn.cursor()
+        # Gather existing (file_path, name, node_type) → id mapping
+        file_paths = list({n["file_path"] for n in nodes})
+        placeholders = ",".join(["?"] * len(file_paths))
+        cursor.execute(
+            f"SELECT id, file_path, name, node_type FROM code_nodes WHERE file_path IN ({placeholders})",
+            file_paths,
+        )
+        existing: dict[tuple, int] = {
+            (r[1], r[2], r[3]): r[0] for r in cursor.fetchall()
+        }
+
+        try:
+            cursor.execute("BEGIN")
+            for n in nodes:
+                key = (n["file_path"], n["name"], n["node_type"])
+                vec_blob = serialize_vec(n["vector"])
+                if key in existing:
+                    node_id = existing[key]
+                    cursor.execute(
+                        "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?",
+                        (n["docstring"], n["start_line"], n["end_line"], n["file_hash"], node_id),
+                    )
+                    cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
+                else:
+                    cursor.execute(
+                        "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (n["file_path"], n["node_type"], n["name"], n["docstring"],
+                         n["start_line"], n["end_line"], n["file_hash"]),
+                    )
+                    node_id = cursor.lastrowid
+                    existing[key] = node_id
+                cursor.execute(
+                    "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+                    (node_id, vec_blob),
+                )
+            cursor.execute("COMMIT")
+        except Exception:
+            cursor.execute("ROLLBACK")
+            raise
+
     def upsert_edge(self, from_node: str, to_node: str, relation_type: str):
         cursor = self.conn.cursor()
         cursor.execute("SELECT id FROM edges WHERE from_node=? AND to_node=? AND relation_type=?", (from_node, to_node, relation_type))

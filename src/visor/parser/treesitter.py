@@ -60,6 +60,18 @@ _QUERIES = {
 }
 
 # ---------------------------------------------------------------------------
+# Call-site queries for CALLS edge extraction (per language)
+# These are separate from _QUERIES to avoid polluting nodes with call sites.
+# ---------------------------------------------------------------------------
+
+_CALL_QUERIES = {
+    _LANG_PYTHON: "(call function: [(identifier) @callee (attribute attribute: (identifier) @callee)]) @call",
+    _LANG_TYPESCRIPT: "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
+    _LANG_TSX:        "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
+    _LANG_JS:         "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
+}
+
+# ---------------------------------------------------------------------------
 # Data models
 # ---------------------------------------------------------------------------
 
@@ -144,16 +156,37 @@ class ASTParser:
             except Exception:
                 pass  # Silently skip malformed queries for non-primary langs
 
-        # TODO: Add dynamic robust edge extraction logic here (e.g. calls)
-        # For now, we will map any parsed imported modules as an edge from this file.
+        # --- IMPORTS edges (file → module) ---
         edges = []
+        seen_edges: set[tuple] = set()
+
         for node in nodes:
             if node.node_type == "import":
-                edges.append({
-                    "from": str(file_path),
-                    "to": node.name,
-                    "type": "IMPORTS"
-                })
+                key = (str(file_path), node.name, "IMPORTS")
+                if key not in seen_edges:
+                    seen_edges.add(key)
+                    edges.append({"from": str(file_path), "to": node.name, "type": "IMPORTS"})
+
+        # --- CALLS edges (file → called symbol name) ---
+        call_query_str = _CALL_QUERIES.get(lang)
+        if call_query_str:
+            try:
+                cq = tree_sitter.Query(lang, call_query_str)
+                cc = tree_sitter.QueryCursor(cq)
+                for match in cc.matches(tree.root_node):
+                    captures = match[1]
+                    callee_nodes = captures.get("callee", [])
+                    if not callee_nodes:
+                        continue
+                    cn = callee_nodes[0] if isinstance(callee_nodes, list) else callee_nodes
+                    callee_name = cn.text.decode("utf-8", errors="replace") if cn.text else ""
+                    if callee_name and len(callee_name) > 1:
+                        key = (str(file_path), callee_name, "CALLS")
+                        if key not in seen_edges:
+                            seen_edges.add(key)
+                            edges.append({"from": str(file_path), "to": callee_name, "type": "CALLS"})
+            except Exception:
+                pass  # Malformed query or unsupported language variant
 
         return ParseResult(file_path=str(file_path), file_hash=file_hash, nodes=nodes, edges=edges)
 
