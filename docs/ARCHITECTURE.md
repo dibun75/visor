@@ -144,14 +144,15 @@ Episodic memory of agent conversations.
 | `timestamp` | DATETIME | UTC timestamp |
 
 ### `custom_skills`
-User-defined AI instruction packs (managed via HUD UI).
+User-defined AI instruction packs with optional execution strategies.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | INTEGER PK | Auto-increment row ID |
-| `name` | TEXT | Skill identifier (e.g. `backend-expert`) |
+| `name` | TEXT | Skill identifier (e.g. `bug-fixer`) |
 | `description` | TEXT | One-line summary |
 | `content` | TEXT | Full Markdown prompt instructions |
+| `strategy` | TEXT | JSON execution strategy (intent overrides, scoring bias) |
 | `timestamp` | DATETIME | Created at |
 
 ### `file_changelog`
@@ -172,16 +173,17 @@ Tracks bytes transmitted per MCP tool call for context burn metrics.
 
 ```
 visor/
-├── server.py               # FastMCP entrypoint; starts watcher + registers tools
+├── server.py               # FastMCP entrypoint + skill seeding + watcher bootstrap
+├── cli.py                  # CLI interface: visor context/fix/explain/trace/drift
 ├── db/
-│   ├── client.py           # VectorDBClient: schema, CRUD, vector search
+│   ├── client.py           # VectorDBClient: schema, CRUD, vector search, recency map
 │   └── embeddings.py       # SemanticEmbedder: lazy-loaded all-MiniLM-L6-v2 singleton
 ├── parser/
 │   ├── treesitter.py       # ASTParser: extracts nodes + edges + file hash per file
 │   └── watcher.py          # Watchdog: debounced file watcher + index_workspace boot scan
 └── tools/
-    ├── core.py             # All MCP tool registrations
-    └── context_engine.py   # Context Intelligence Engine: scoring + compression
+    ├── core.py             # All MCP tool registrations (16 tools)
+    └── context_engine.py   # Context Intelligence Engine: skill-aware scoring + reasoning + metrics
 ```
 
 ---
@@ -208,17 +210,33 @@ self.model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
 Located in `src/visor/tools/context_engine.py`.
 
-The `build_context(query)` function applies a weighted multi-signal formula to rank every candidate node returned by semantic search:
+The `build_context(query, skill_name?)` function applies a weighted 5-signal formula to rank every candidate node returned by semantic search:
 
 ```
 score =
-  1.0 × exact_name_match     (query token found in symbol name)
-  0.7 × same_file_as_anchor  (same file as top semantic hit)
-  0.5 × embedding_similarity (1 - normalised_distance / 2)
-  0.3 × dependency_proximity (1 / (1 + hop_count))
+  W_exact   × exact_name_match     (query token found in symbol name)
+  W_same    × same_file_as_anchor  (same file as top semantic hit)
+  W_embed   × embedding_similarity (1 - normalised_distance / 2)
+  W_dep     × dependency_proximity (1 / (1 + hop_count))
+  W_recency × file_recency         (time-decayed modification freshness)
 ```
 
-After scoring, a **token budget** of 8,000 tokens is enforced. Nodes are added to the payload greedily by score until the budget is exhausted. The `truncated` flag in the response indicates if any nodes were dropped.
+### Intent Profiles
+
+Weights are dynamically adjusted based on intent classification:
+
+| Intent | exact | same | embed | dep | recency |
+|--------|-------|------|-------|-----|--------|
+| DEFAULT | 1.0 | 0.7 | 0.5 | 0.3 | 0.2 |
+| BUG_FIX | 1.0 | 1.5 | 0.4 | 1.2 | 1.0 |
+| REFACTOR | 1.5 | 0.5 | 0.3 | 1.5 | 0.1 |
+| EXPLAIN | 0.8 | 0.2 | 1.5 | 0.5 | 0.0 |
+
+### Skill Strategy Overrides
+
+When a skill is active, its `strategy.scoring_bias` dict merges with the intent profile, allowing per-skill fine-tuning of weights.
+
+After scoring, a **token budget** of 8,000 tokens is enforced. Code snippets are extracted from source files using AST line boundaries (not generic docstrings). Nodes are added greedily by score until the budget is exhausted.
 
 ---
 
@@ -290,11 +308,34 @@ _QUERIES[_LANG_RUST] = {
 }
 ```
 
-### Add a Custom Skill via the HUD
+### Add a Custom Skill
 
+**Via the HUD UI:**
 1. Open the V.I.S.O.R. sidebar in your IDE.
 2. Click **MANAGE AI SKILLS**.
 3. Fill in Name, Description, and Markdown instructions.
 4. Click **+ ADD SKILL**.
 
-The AI can now invoke it with: `get_visor_skill("your-skill-name")`.
+**Via MCP tool (with execution strategy):**
+```python
+add_custom_skill(
+    name="my-skill",
+    description="Custom debugging strategy",
+    content="Focus on error handling and edge cases.",
+    strategy='{"intent_override": "BUG_FIX", "scoring_bias": {"recency": 2.0}}'
+)
+```
+
+The AI can invoke it with: `build_context("my query", skill="my-skill")`.
+
+### CLI Commands
+
+V.I.S.O.R. includes a terminal interface:
+
+```bash
+uv run visor context "how is auth handled"    # General query
+uv run visor fix "login crash"                 # Bug-fixer skill
+uv run visor explain "database client"         # Architecture-explainer skill
+uv run visor trace src/a.py src/b.py           # Trace path
+uv run visor drift                             # Recent file changes
+```

@@ -1,7 +1,7 @@
 [project]
 name = "visor"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.8.0"
+description = "Skill-Orchestrated Context Intelligence Engine for AI coding agents"
 readme = "README.md"
 authors = [
     { name = "Arunav Mandal", email = "dibun75@gmail.com" }

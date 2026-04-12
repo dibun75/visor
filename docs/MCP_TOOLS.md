@@ -10,7 +10,7 @@ This document is the authoritative API reference for all tools exposed by the V.
 
 | Tool | Category | Description |
 |------|----------|-------------|
-| [`build_context`](#build_context) | 🧠 Intelligence | Ranked, compressed context from a natural language query |
+| [`build_context`](#build_context) | 🧠 Intelligence | Ranked, compressed context with skill-aware scoring, reasoning, and metrics |
 | [`search_codebase`](#search_codebase) | 🔍 Search | Semantic vector search across all indexed nodes |
 | [`get_symbol_context`](#get_symbol_context) | 🔍 Search | Find all definitions of a symbol with line ranges |
 | [`get_file_context`](#get_file_context) | 🔍 Search | Full AST symbol listing for a specific file |
@@ -23,9 +23,22 @@ This document is the authoritative API reference for all tools exposed by the V.
 | [`get_telemetry`](#get_telemetry) | 📊 HUD | Live telemetry: node count, context burn, drift alert |
 | [`store_memory`](#store_memory) | 🧩 Memory | Persist a conversation turn with semantic embedding |
 | [`get_visor_skill`](#get_visor_skill) | 🧩 Skills | Fetch a custom skill instruction pack by name |
-| [`list_custom_skills`](#list_custom_skills) | 🧩 Skills | List all available custom skills |
-| [`add_custom_skill`](#add_custom_skill) | 🧩 Skills | Create a new custom skill |
+| [`list_custom_skills`](#list_custom_skills) | 🧩 Skills | List all available custom skills with strategies |
+| [`add_custom_skill`](#add_custom_skill) | 🧩 Skills | Create a new custom skill with optional strategy |
 | [`delete_custom_skill`](#delete_custom_skill) | 🧩 Skills | Remove a custom skill by ID |
+
+---
+
+## Recommended Workflows
+
+For common tasks, use these tool sequences:
+
+| Task | Recommended Flow |
+|------|-----------------|
+| **Bug investigation** | `build_context(query, skill="bug-fixer")` → `get_dependency_chain` → `get_drift_report` |
+| **Architecture review** | `build_context(query, skill="architecture-explainer")` → `get_architecture_map` → `trace_route` |
+| **Safe refactoring** | `build_context(query, skill="refactor-assistant")` → `impact_analysis` → `dead_code_detection` |
+| **Performance tuning** | `build_context(query, skill="performance-optimizer")` → `get_dependency_chain` |
 
 ---
 
@@ -33,43 +46,77 @@ This document is the authoritative API reference for all tools exposed by the V.
 
 ### `build_context`
 
-The **Context Intelligence Engine**. Builds a ranked, token-budget-aware context payload from a natural language query.
+The **Context Intelligence Engine**. Builds a ranked, token-budget-aware context payload from a natural language query. This is V.I.S.O.R.'s signature tool.
 
-**When to use**: Any time an AI agent needs to understand relevant code for a task. This is the primary tool and should be tried before more specific lookups.
+**When to use**: Any time an AI agent needs to understand relevant code for a task. This should be tried first before more specific lookups.
 
 **Parameters**:
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `query` | string | ✅ | Natural language description of the task or question |
+| `skill` | string | ❌ | Skill name to apply strategy overrides (e.g. `"bug-fixer"`) |
 
 **Returns**: JSON object
 
 ```json
 {
-  "query": "how is authentication handled",
-  "nodes": [
+  "context": [
     {
       "id": 42,
       "file_path": "src/auth/jwt.py",
       "name": "verify_token",
       "node_type": "function",
-      "docstring": "Validates a JWT and returns the decoded payload.",
       "start_line": 15,
       "end_line": 34,
-      "distance": 0.23,
-      "relevance_score": 1.85
+      "code_snippet": "def verify_token(token: str) -> dict:\n    ...",
+      "relevance_score": 2.85
     }
   ],
-  "total_tokens": 412,
+  "debug": {
+    "intent": "BUG_FIX",
+    "skill": "bug-fixer",
+    "scores": {
+      "42": {
+        "final": 2.85,
+        "exact_match": 1.0,
+        "proximity": 1.5,
+        "embedding": 0.375,
+        "dependency": 1.2,
+        "recency": 1.5
+      }
+    },
+    "reasoning": {
+      "42": [
+        "Matched query token in symbol name",
+        "Co-located in same file as top semantic hit",
+        "Reachable via dependency chain",
+        "Recently modified file (boosted)"
+      ]
+    }
+  },
+  "metrics": {
+    "estimated_tokens_without": 11400,
+    "estimated_tokens_with": 2180,
+    "reduction_percent": 80.9
+  },
+  "prompt_ready": "// src/auth/jwt.py:15-34 (verify_token)\ndef verify_token(token: str) -> dict:\n    ...",
+  "query": "authentication crash",
+  "total_tokens": 2180,
   "truncated": false
 }
 ```
 
 **Scoring formula**:
 ```
-score = 1.0×exact_match + 0.7×same_file + 0.5×embedding_sim + 0.3×dependency_proximity
+score = W_exact × exact_match
+      + W_same  × same_file
+      + W_embed × embedding_sim
+      + W_dep   × dependency_proximity
+      + W_rec   × recency
 ```
+
+Where weights are determined by the active intent profile (DEFAULT / BUG_FIX / REFACTOR / EXPLAIN), and optionally overridden by a skill's `scoring_bias`.
 
 ---
 
@@ -121,7 +168,7 @@ Finds all indexed definitions of a symbol (class, function, import) and returns 
 
 ### `get_file_context`
 
-Returns a full AST symbol listing for a specific source file. Useful for getting a bird's-eye view of a file's structure before reading its raw content.
+Returns a full AST symbol listing for a specific source file.
 
 **Parameters**:
 
@@ -129,18 +176,7 @@ Returns a full AST symbol listing for a specific source file. Useful for getting
 |------|------|----------|-------------|
 | `path` | string | ✅ | Relative file path (as indexed by V.I.S.O.R.) |
 
-**Returns**: JSON object
-
-```json
-{
-  "file_path": "src/visor/tools/core.py",
-  "symbol_count": 18,
-  "symbols": [
-    {"name": "DriftReport", "type": "class", "start_line": 12, "end_line": 15, "docstring": ""},
-    {"name": "track_telemetry", "type": "function", "start_line": 17, "end_line": 33, "docstring": "Decorator to track token proxy volume..."}
-  ]
-}
-```
+**Returns**: JSON object with `file_path`, `symbol_count`, and `symbols` array.
 
 ---
 
@@ -156,25 +192,13 @@ Traverses the import edges graph from a symbol's source file and returns the ful
 |------|------|----------|-------------|
 | `symbol` | string | ✅ | Symbol name to use as the graph traversal root |
 
-**Returns**: JSON object
-
-```json
-{
-  "symbol": "index_file",
-  "source_file": "src/visor/parser/watcher.py",
-  "dependency_chain": [
-    "src/visor/db/client.py",
-    "src/visor/db/embeddings.py",
-    "src/visor/parser/treesitter.py"
-  ]
-}
-```
+**Returns**: JSON object with `symbol`, `source_file`, and `dependency_chain` array.
 
 ---
 
 ### `impact_analysis`
 
-Calculates the downstream blast radius of a file change using BFS traversal of the dependency graph (max depth 5). Answers: *"If I change this file, what else might break?"*
+Calculates the downstream blast radius of a file change using BFS traversal (max depth 5). Answers: *"If I change this file, what else might break?"*
 
 **Parameters**:
 
@@ -182,23 +206,13 @@ Calculates the downstream blast radius of a file change using BFS traversal of t
 |------|------|----------|-------------|
 | `file_path` | string | ✅ | Relative path of the file being changed |
 
-**Returns**: JSON object
-
-```json
-{
-  "target": "src/visor/db/client.py",
-  "blast_radius": [
-    "src/visor/tools/core.py",
-    "src/visor/parser/watcher.py"
-  ]
-}
-```
+**Returns**: JSON object with `target` and `blast_radius` array.
 
 ---
 
 ### `trace_route`
 
-Finds the shortest architectural path between two files in the dependency graph. Useful for tracing a request from an API layer to a database layer.
+Finds the shortest architectural path between two files in the dependency graph.
 
 **Parameters**:
 
@@ -207,36 +221,17 @@ Finds the shortest architectural path between two files in the dependency graph.
 | `source` | string | ✅ | Starting file path |
 | `target` | string | ✅ | Destination file path |
 
-**Returns**: JSON object
-
-```json
-{
-  "path": [
-    "src/visor/server.py",
-    "src/visor/tools/core.py",
-    "src/visor/db/client.py"
-  ]
-}
-```
+**Returns**: JSON object with `path` array.
 
 ---
 
 ### `dead_code_detection`
 
-Finds files with zero incoming dependency edges (in-degree 0). These are potential entry points or orphaned modules.
+Finds files with zero incoming dependency edges (in-degree 0).
 
 **Parameters**: None
 
-**Returns**: JSON object
-
-```json
-{
-  "isolated_nodes": [
-    "src/visor/server.py",
-    "scripts/migrate.py"
-  ]
-}
-```
+**Returns**: JSON object with `isolated_nodes` array.
 
 ---
 
@@ -244,7 +239,7 @@ Finds files with zero incoming dependency edges (in-degree 0). These are potenti
 
 ### `get_drift_report`
 
-Detects context drift — situations where the AI's loaded snapshot of the codebase is no longer accurate because files have changed.
+Detects context drift — situations where the AI's loaded snapshot is stale.
 
 **Two detection modes**:
 - **Hash-based** (preferred): Pass `file_hashes`. V.I.S.O.R. compares SHA-256 hashes.
@@ -254,26 +249,11 @@ Detects context drift — situations where the AI's loaded snapshot of the codeb
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `context_files` | string[] | ✅ | List of file paths the agent has in context |
-| `loaded_at` | string | ✅ | ISO-8601 UTC timestamp of when context was loaded |
-| `file_hashes` | object | ❌ | Dict of `{file_path: sha256_hex}` for hash-based detection |
+| `context_files` | string[] | ✅ | File paths the agent has in context |
+| `loaded_at` | string | ✅ | ISO-8601 timestamp of when context was loaded |
+| `file_hashes` | object | ❌ | Dict of `{file_path: sha256_hex}` |
 
-**Returns**: JSON (DriftReport schema)
-
-```json
-{
-  "drift_detected": true,
-  "severity": "CRITICAL",
-  "stale_files": [
-    {
-      "path": "src/visor/db/client.py",
-      "reason": "hash_mismatch",
-      "stored_hash": "a1b2c3d4...",
-      "agent_hash": "deadbeef..."
-    }
-  ]
-}
-```
+**Returns**: JSON (DriftReport schema) with `drift_detected`, `severity`, and `stale_files`.
 
 ---
 
@@ -281,21 +261,21 @@ Detects context drift — situations where the AI's loaded snapshot of the codeb
 
 ### `get_architecture_map`
 
-Returns the full codebase file topology as a graph JSON payload for the 3D WebGPU HUD visualiser.
+Returns the full codebase file topology as a graph JSON for the 3D WebGPU HUD.
 
 **Parameters**:
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `depth` | integer | ❌ | Depth parameter (reserved for future BFS depth control) |
+| `depth` | integer | ❌ | Reserved for future BFS depth control |
 
-**Returns**: JSON object with `nodes` and `edges` arrays for Three.js force graph.
+**Returns**: JSON object with `nodes` and `edges` arrays.
 
 ---
 
 ### `get_telemetry`
 
-Returns live telemetry snapshot for the HUD sidebar display.
+Returns live telemetry snapshot for the HUD sidebar.
 
 **Parameters**: None
 
@@ -309,60 +289,71 @@ Returns live telemetry snapshot for the HUD sidebar display.
 }
 ```
 
-- `graph_nodes`: Total AST nodes in the index
-- `context_burn`: Cumulative bytes transmitted via all MCP tool calls (proxy for token usage)
-- `drift_alert`: `true` if any file was modified in the last 60 seconds
-
 ---
 
 ## 🧩 Memory & Skills
 
 ### `store_memory`
 
-Persists a conversation turn (episodic memory) with a real semantic embedding for future recall.
+Persists a conversation turn with a semantic embedding for future recall.
 
 **Parameters**:
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `role` | string | ✅ | `"user"` or `"assistant"` |
-| `content` | string | ✅ | The content of the conversation turn |
-
----
-
-### `get_visor_skill`
-
-*(MCP Prompt — not a tool)* Fetches a custom skill instruction pack by name.
-
-**Parameters**:
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `skill_name` | string | ✅ | The exact name of the skill to retrieve |
-
-**Usage**: `get_visor_skill("backend-expert")`
-
----
-
-### `list_custom_skills`
-
-Returns all custom skills stored in the local database.
-
-**Parameters**: None
+| `content` | string | ✅ | Conversation content |
 
 ---
 
 ### `add_custom_skill`
 
-Creates a new custom skill. Can also be done via the HUD UI.
+Creates a new custom skill with an optional execution strategy.
 
 **Parameters**:
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `name` | string | ✅ | Unique skill identifier (e.g. `backend-expert`) |
+| `name` | string | ✅ | Unique skill name (e.g. `backend-expert`) |
 | `description` | string | ✅ | One-line summary |
-| `content` | string | ✅ | Full Markdown prompt instructions |
+| `content` | string | ✅ | Markdown prompt instructions |
+| `strategy` | string | ❌ | JSON strategy for execution overrides |
+
+**Strategy format**:
+
+```json
+{
+  "intent_override": "BUG_FIX",
+  "scoring_bias": {
+    "dependency": 1.2,
+    "recency": 1.5
+  },
+  "tool_priority": [
+    "build_context",
+    "get_dependency_chain"
+  ]
+}
+```
+
+---
+
+### `list_custom_skills`
+
+Returns all custom skills with their strategies.
+
+**Parameters**: None
+
+---
+
+### `get_visor_skill`
+
+*(MCP Prompt)* Fetches a skill instruction pack by name for injection into AI prompts.
+
+**Parameters**:
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `skill_name` | string | ✅ | Name of the skill to retrieve |
 
 ---
 
