@@ -30,8 +30,81 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     def get_architecture_map(depth: int = 1) -> str:
         """Returns the full or partial CodeNode graph topology as a JSON string."""
-        # Return empty shell until Tree-sitter is integrated
-        return json.dumps({"nodes": [], "edges": []})
+        db_client.conn.commit()
+        cursor = db_client.conn.cursor()
+
+        # Get file-level aggregation, filtering out noise directories
+        cursor.execute("""
+            SELECT file_path,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN node_type='class' THEN 1 ELSE 0 END) as classes,
+                   SUM(CASE WHEN node_type='function' THEN 1 ELSE 0 END) as funcs
+            FROM code_nodes
+            WHERE file_path NOT LIKE '%node_modules%'
+              AND file_path NOT LIKE '%.venv%'
+              AND file_path NOT LIKE '%__pycache__%'
+              AND file_path NOT LIKE '%dist/%'
+              AND file_path NOT LIKE '%.git/%'
+              AND file_path NOT LIKE '%.agent/%'
+              AND file_path NOT LIKE '%.temp_%'
+              AND file_path NOT LIKE '%test_ts%'
+            GROUP BY file_path
+            ORDER BY total DESC
+            LIMIT 70
+        """)
+        file_rows = cursor.fetchall()
+
+        nodes = []
+        for i, (fpath, total, classes, funcs) in enumerate(file_rows):
+            # Get top 3 entities for this file
+            cursor.execute("""
+                SELECT name, node_type FROM code_nodes
+                WHERE file_path = ? AND name NOT LIKE 'func_%' AND name != '__init__'
+                ORDER BY CASE WHEN node_type='class' THEN 0 ELSE 1 END, name
+                LIMIT 3
+            """, (fpath,))
+            top_entities = [{"name": r[0], "type": r[1]} for r in cursor.fetchall()]
+
+            # Check if recently modified (drift pulse)
+            cursor.execute("""
+                SELECT COUNT(*) FROM file_changelog
+                WHERE file_path = ? AND datetime(changed_at) > datetime('now', '-60 seconds')
+            """, (fpath,))
+            recently_modified = cursor.fetchone()[0] > 0
+
+            # Extract directory cluster for coloring
+            parts = fpath.replace("./", "").split("/")
+            cluster = "/".join(parts[:3]) if len(parts) >= 3 else "/".join(parts[:2]) if len(parts) >= 2 else parts[0]
+
+            nodes.append({
+                "id": i,
+                "file_path": fpath,
+                "name": parts[-1] if parts else fpath,
+                "node_count": total,
+                "classes": classes,
+                "functions": funcs,
+                "top_entities": top_entities,
+                "cluster": cluster,
+                "recently_modified": recently_modified,
+            })
+
+        # Compute co-directory edges (files in same cluster)
+        edges = []
+        cluster_map: Dict[str, list] = {}
+        for node in nodes:
+            cluster_map.setdefault(node["cluster"], []).append(node["id"])
+
+        for cluster, ids in cluster_map.items():
+            # Connect files within the same cluster (BFS depth=1)
+            for j in range(len(ids)):
+                for k in range(j + 1, min(j + 3, len(ids))):
+                    edges.append({
+                        "source": ids[j],
+                        "target": ids[k],
+                        "type": "EXTRACTED",
+                    })
+
+        return json.dumps({"nodes": nodes, "edges": edges})
         
     @mcp.tool()
     def search_codebase(query: str) -> str:
@@ -82,6 +155,9 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     def get_telemetry() -> str:
         """Returns the current state of telemetry data. graph_nodes, context_burn, drift_alert."""
+        # Flush the read snapshot so we can see writes from the watchdog process
+        db_client.conn.commit()
+        
         cursor = db_client.conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM code_nodes")
         nodes = cursor.fetchone()[0]
@@ -90,7 +166,7 @@ def register_tools(mcp: FastMCP):
         burn = cursor.fetchone()[0]
         
         # Simple global drift proxy: Any modifications inside the last 60 seconds
-        cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE changed_at > datetime('now', '-60 seconds')")
+        cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-60 seconds')")
         drift = cursor.fetchone()[0] > 0
         
         data = {"graph_nodes": nodes, "context_burn": burn, "drift_alert": drift}

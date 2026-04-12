@@ -90,6 +90,26 @@ function setupMessageListener(webview: vscode.Webview) {
             } catch(err) {
                 console.error("Tool call failed", err);
             }
+        } else if (message.command === 'fetchGraphData' && mcpClient) {
+            try {
+                const result = await mcpClient.callTool({
+                    name: 'get_architecture_map',
+                    arguments: { depth: 1 }
+                });
+                
+                if (result.content && (result.content as any[]).length > 0) {
+                    const jsonStr = (result.content as any)[0].text;
+                    const data = JSON.parse(jsonStr as string);
+                    webview.postMessage({
+                        command: 'graphData',
+                        data: data
+                    });
+                } else {
+                    console.error("V.I.S.O.R.: Empty result content from get_architecture_map");
+                }
+            } catch(err: any) {
+                console.error("Graph data fetch failed", err);
+            }
         } else if (message.command === 'openFullGraph') {
             vscode.commands.executeCommand('visor.startHUD');
         }

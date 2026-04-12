@@ -49,8 +49,15 @@ def _log_file_change(conn: sqlite3.Connection, file_path: str):
 # Index a single file → CodeNodes in DB
 # ---------------------------------------------------------------------------
 
-def index_file(file_path: str):
-    """Parse a file and upsert all its AST nodes into the vector DB."""
+def index_file(file_path: str, skip_changelog: bool = False):
+    """Parse a file and upsert all its AST nodes into the vector DB.
+    
+    Args:
+        file_path: Path to the source file to index.
+        skip_changelog: If True, do NOT log to file_changelog.
+                        Used during the initial full workspace scan
+                        so boot-time indexing doesn't trigger false drift alerts.
+    """
     import numpy as np
     from visor.db.client import EMBEDDING_DIM
 
@@ -70,7 +77,8 @@ def index_file(file_path: str):
             vector=vec,
         )
 
-    _log_file_change(db_client.conn, file_path)
+    if not skip_changelog:
+        _log_file_change(db_client.conn, file_path)
     logger.info(f"Indexed {len(result.nodes)} nodes from {file_path}")
 
 # ---------------------------------------------------------------------------
@@ -78,8 +86,20 @@ def index_file(file_path: str):
 # ---------------------------------------------------------------------------
 
 def index_workspace(root: str):
-    """Walk the workspace tree and index every supported source file."""
+    """Walk the workspace tree and index every supported source file.
+    
+    This is the boot-time full scan. It does NOT log to file_changelog
+    so the drift alert won't fire on every daemon restart.
+    Old changelog entries (> 5 min) are pruned to keep the table lean.
+    """
     _ensure_changelog(db_client.conn)
+    
+    # Prune stale changelog entries older than 5 minutes
+    db_client.conn.execute(
+        "DELETE FROM file_changelog WHERE datetime(changed_at) < datetime('now', '-300 seconds')"
+    )
+    db_client.conn.commit()
+    
     root_path = Path(root)
     files = [
         str(p) for p in root_path.rglob("*")
@@ -90,7 +110,7 @@ def index_workspace(root: str):
     ]
     logger.info(f"Full workspace scan: {len(files)} files found in {root}")
     for f in files:
-        index_file(f)
+        index_file(f, skip_changelog=True)
     logger.info("Full workspace scan complete.")
 
 # ---------------------------------------------------------------------------
