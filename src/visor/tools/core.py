@@ -151,20 +151,26 @@ def register_tools(mcp: FastMCP):
                 "recently_modified": recently_modified,
             })
 
-        # Compute co-directory edges (files in same cluster)
-        edges = []
-        cluster_map: Dict[str, list] = {}
-        for node in nodes:
-            cluster_map.setdefault(node["cluster"], []).append(node["id"])
+        # ── Real edges from DB ──────────────────────────────────────────
+        # Build a file_path → node id lookup for fast resolution
+        path_to_id = {n["file_path"]: n["id"] for n in nodes}
 
-        for cluster, ids in cluster_map.items():
-            # Connect files within the same cluster (BFS depth=1)
-            for j in range(len(ids)):
-                for k in range(j + 1, min(j + 3, len(ids))):
+        cursor.execute("SELECT from_node, to_node, relation_type FROM edges LIMIT 500")
+        db_edges = cursor.fetchall()
+
+        edges = []
+        seen_edge_pairs: set = set()
+        for from_path, to_path, rel_type in db_edges:
+            src_id = path_to_id.get(from_path)
+            tgt_id = path_to_id.get(to_path)
+            if src_id is not None and tgt_id is not None and src_id != tgt_id:
+                pair = (src_id, tgt_id)
+                if pair not in seen_edge_pairs:
+                    seen_edge_pairs.add(pair)
                     edges.append({
-                        "source": ids[j],
-                        "target": ids[k],
-                        "type": "EXTRACTED",
+                        "source": src_id,
+                        "target": tgt_id,
+                        "type": rel_type,  # "IMPORTS" | "CALLS"
                     })
 
         return json.dumps({"nodes": nodes, "edges": edges})

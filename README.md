@@ -1,6 +1,6 @@
 # V.I.S.O.R. (Visual Intelligence System for Orchestrated Reasoning)
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/dibun75/visor) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue)](https://github.com/dibun75/visor) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
 
 V.I.S.O.R. is a local-first, privacy-focused Model Context Protocol (MCP) server and 3D Developer HUD for AI-native IDEs like Google Antigravity and VS Code. It acts as a "second brain" for your AI coding agents, providing them with persistent memory and **precise, semantically-ranked codebase context** while drastically reducing your API token costs.
 
@@ -42,7 +42,7 @@ V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a ne
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
 
-1. Download the latest `visor-hud-0.6.0.vsix` release.
+1. Download the latest `visor-hud-0.7.0.vsix` release.
 2. Open your IDE (Antigravity or VS Code) and navigate to the Extensions panel.
 3. Click the `...` menu at the top right and select **Install from VSIX...**.
 4. Select the downloaded `.vsix` file.
@@ -172,5 +172,5 @@ cd src/visor/hud && npm install && npm run build
 
 # Build the extension
 cd src/visor/extension && npm install && npm run compile
-npx @vscode/vsce package -o visor-hud-0.6.0.vsix
+npx @vscode/vsce package -o visor-hud-0.7.0.vsix
 ```

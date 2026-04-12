@@ -100,34 +100,54 @@ function computePositions(nodes: GraphNode[], clusterIndex: Map<string, number>)
 }
 
 // ────────────────────────────────────────────────────
-// Connection lines between nodes
+// Color-coded connection lines (IMPORTS vs CALLS)
 // ────────────────────────────────────────────────────
 
-const ConnectionLines: React.FC<{
+/** Visual config per relation type */
+const EDGE_STYLE: Record<string, { color: string; opacity: number }> = {
+  IMPORTS: { color: '#00f2fe', opacity: 0.5 },  // cyan  — structural dependency
+  CALLS:   { color: '#f77f00', opacity: 0.35 }, // amber — runtime call
+  DEFAULT: { color: '#ffffff', opacity: 0.2 },  // white fallback
+};
+
+const EdgeLines: React.FC<{
   edges: GraphEdge[];
   positions: Map<number, THREE.Vector3>;
 }> = ({ edges, positions }) => {
-  const lineGeometry = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
+  /** Build one BufferGeometry per edge type for independent styling */
+  const byType = useMemo(() => {
+    const groups: Record<string, THREE.Vector3[]> = {};
     edges.forEach(e => {
       const s = positions.get(e.source);
       const t = positions.get(e.target);
-      if (s && t) {
-        pts.push(s, t);
-      }
+      if (!s || !t) return;
+      const key = e.type in EDGE_STYLE ? e.type : 'DEFAULT';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s, t);
     });
-    if (pts.length === 0) return null;
-    return new THREE.BufferGeometry().setFromPoints(pts);
+    return Object.entries(groups).map(([type, pts]) => ({
+      type,
+      geometry: new THREE.BufferGeometry().setFromPoints(pts),
+      style: EDGE_STYLE[type] ?? EDGE_STYLE.DEFAULT,
+    }));
   }, [edges, positions]);
 
-  if (!lineGeometry) return null;
-
   return (
-    <lineSegments geometry={lineGeometry}>
-      <lineBasicMaterial color="#ffffff" opacity={0.4} transparent depthWrite={false} />
-    </lineSegments>
+    <>
+      {byType.map(({ type, geometry, style }) => (
+        <lineSegments key={type} geometry={geometry}>
+          <lineBasicMaterial
+            color={style.color}
+            opacity={style.opacity}
+            transparent
+            depthWrite={false}
+          />
+        </lineSegments>
+      ))}
+    </>
   );
 };
+
 
 // ────────────────────────────────────────────────────
 // Drift pulse ring (animated glow on recently modified files)
@@ -312,7 +332,7 @@ const NodeCloud: React.FC<{ graphData: GraphData }> = ({ graphData }) => {
 
   return (
     <group ref={groupRef}>
-      <ConnectionLines edges={graphData.edges} positions={positions} />
+      <EdgeLines edges={graphData.edges} positions={positions} />
       {graphData.nodes.map((node) => {
         const pos = positions.get(node.id);
         if (!pos) return null;
@@ -424,6 +444,44 @@ const StatusIndicator: React.FC<{ status: 'SYNCING' | 'LIVE' | 'ERROR' }> = ({ s
 };
 
 // ────────────────────────────────────────────────────
+// Edge Legend overlay
+// ────────────────────────────────────────────────────
+
+const EdgeLegend: React.FC = () => {
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 24,
+      left: 24,
+      zIndex: 10,
+      background: 'rgba(10, 12, 20, 0.65)',
+      backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+      padding: '8px 12px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      fontFamily: "'Inter', sans-serif",
+      fontSize: '11px',
+      color: '#e0e6ed',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      pointerEvents: 'none',
+      userSelect: 'none'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '12px', height: '2px', background: EDGE_STYLE.IMPORTS.color, opacity: EDGE_STYLE.IMPORTS.opacity + 0.3 }} />
+        <span>Structural Import</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '12px', height: '2px', background: EDGE_STYLE.CALLS.color, opacity: EDGE_STYLE.CALLS.opacity + 0.4 }} />
+        <span>Function Call</span>
+      </div>
+    </div>
+  );
+};
+
+// ────────────────────────────────────────────────────
 // Main GraphCanvas component
 // ────────────────────────────────────────────────────
 
@@ -477,6 +535,7 @@ export const GraphCanvas: React.FC = () => {
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
       {/* HUD System Indicator */}
       <StatusIndicator status={syncStatus} />
+      <EdgeLegend />
       
       <Canvas camera={{ position: [0, 0, 28], fov: 60 }}>
         <color attach="background" args={['#090a0f']} />
@@ -494,4 +553,3 @@ export const GraphCanvas: React.FC = () => {
     </div>
   );
 };
-
