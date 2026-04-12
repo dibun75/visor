@@ -66,6 +66,13 @@ def _format_output(data: dict, human: bool = True) -> str:
             lines.append("")
     else:
         lines.append("  No relevant context found.")
+        lines.append("  → V.I.S.O.R. needs to index your workspace first.")
+        lines.append("  → Run the MCP server or use the IDE extension to trigger indexing.")
+
+    # Recommended next tools
+    rec = data.get("recommended_next", [])
+    if rec:
+        lines.append(f"  Recommended next: {', '.join(rec)}")
 
     lines.append(f"{'='*60}\n")
     return "\n".join(lines)
@@ -153,6 +160,7 @@ def main():
         prog="visor",
         description="V.I.S.O.R. — Context Intelligence Engine CLI",
     )
+    parser.add_argument("--version", "-v", action="version", version="V.I.S.O.R. 0.8.0")
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
     # visor context

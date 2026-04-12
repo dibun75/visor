@@ -1,0 +1,114 @@
+{
+  "context": [
+    {
+      "id": 42,
+      "file_path": "src/auth/jwt.py",
+      "name": "verify_token",
+      "node_type": "function",
+      "start_line": 15,
+      "end_line": 34,
+      "code_snippet": "def verify_token(token: str) -> dict:\n    \"\"\"Validates JWT and returns decoded payload.\"\"\"\n    if token is None:\n        raise AuthenticationError(\"Token cannot be null\")\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[\"HS256\"])\n        return payload\n    except jwt.ExpiredSignatureError:\n        raise AuthenticationError(\"Token expired\")",
+      "relevance_score": 2.85
+    },
+    {
+      "id": 78,
+      "file_path": "src/auth/middleware.py",
+      "name": "auth_guard",
+      "node_type": "function",
+      "start_line": 8,
+      "end_line": 22,
+      "code_snippet": "def auth_guard(request: Request) -> User:\n    token = request.headers.get(\"Authorization\")\n    if not token:\n        raise HTTPException(401, \"Missing token\")\n    payload = verify_token(token)\n    user = get_user_by_id(payload[\"user_id\"])\n    if user is None:\n        raise HTTPException(401, \"User not found\")\n    return user",
+      "relevance_score": 2.12
+    },
+    {
+      "id": 156,
+      "file_path": "src/models/user.py",
+      "name": "User",
+      "node_type": "class",
+      "start_line": 5,
+      "end_line": 18,
+      "code_snippet": "class User:\n    id: int\n    email: str\n    name: str\n    is_active: bool = True",
+      "relevance_score": 1.45
+    },
+    {
+      "id": 203,
+      "file_path": "src/db/session.py",
+      "name": "get_session",
+      "node_type": "function",
+      "start_line": 12,
+      "end_line": 19,
+      "code_snippet": "def get_session() -> Session:\n    engine = create_engine(DATABASE_URL)\n    return Session(engine)",
+      "relevance_score": 0.87
+    }
+  ],
+  "debug": {
+    "intent": "BUG_FIX",
+    "skill": "bug-fixer",
+    "scores": {
+      "42": {
+        "final": 2.85,
+        "exact_match": 1.0,
+        "proximity": 1.5,
+        "embedding": 0.375,
+        "dependency": 1.2,
+        "recency": 1.5
+      },
+      "78": {
+        "final": 2.12,
+        "exact_match": 0.0,
+        "proximity": 1.5,
+        "embedding": 0.42,
+        "dependency": 1.2,
+        "recency": 1.0
+      },
+      "156": {
+        "final": 1.45,
+        "exact_match": 1.0,
+        "proximity": 0.0,
+        "embedding": 0.42,
+        "dependency": 0.0,
+        "recency": 0.2
+      },
+      "203": {
+        "final": 0.87,
+        "exact_match": 0.0,
+        "proximity": 0.0,
+        "embedding": 0.27,
+        "dependency": 0.6,
+        "recency": 0.0
+      }
+    },
+    "reasoning": {
+      "42": [
+        "Matched query token in symbol name",
+        "Co-located in same file as top semantic hit",
+        "Recently modified file (boosted)",
+        "Reachable via dependency chain"
+      ],
+      "78": [
+        "Co-located in same file as top semantic hit",
+        "Semantic similarity (score: 0.42)",
+        "Reachable via dependency chain",
+        "Recently modified file (boosted)"
+      ],
+      "156": [
+        "Matched query token in symbol name",
+        "Semantic similarity (score: 0.42)"
+      ],
+      "203": [
+        "Semantic similarity (score: 0.27)",
+        "Reachable via dependency chain"
+      ]
+    }
+  },
+  "metrics": {
+    "estimated_tokens_without": 11400,
+    "estimated_tokens_with": 2180,
+    "reduction_percent": 80.9
+  },
+  "prompt_ready": "// src/auth/jwt.py:15-34 (verify_token)\ndef verify_token(token: str) -> dict:\n    \"\"\"Validates JWT and returns decoded payload.\"\"\"\n    if token is None:\n        raise AuthenticationError(\"Token cannot be null\")\n    try:\n        payload = jwt.decode(token, SECRET_KEY, algorithms=[\"HS256\"])\n        return payload\n    except jwt.ExpiredSignatureError:\n        raise AuthenticationError(\"Token expired\")\n\n// src/auth/middleware.py:8-22 (auth_guard)\ndef auth_guard(request: Request) -> User:\n    token = request.headers.get(\"Authorization\")\n    if not token:\n        raise HTTPException(401, \"Missing token\")\n    payload = verify_token(token)\n    user = get_user_by_id(payload[\"user_id\"])\n    if user is None:\n        raise HTTPException(401, \"User not found\")\n    return user",
+  "recommended_next": ["get_dependency_chain", "get_drift_report", "impact_analysis"],
+  "query": "login crash on null user",
+  "total_tokens": 2180,
+  "truncated": false
+}

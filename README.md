@@ -187,6 +187,10 @@ $ uv run visor fix "authentication crash"
 |----------|-------------|
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System design, data flow, DB schema |
 | [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete MCP tool API reference |
+| [`docs/FAQ.md`](./docs/FAQ.md) | Frequently asked questions |
+| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [`examples/use_cases.md`](./examples/use_cases.md) | 7 real-world usage scenarios |
+| [`demo/`](./demo/) | Demo script, sample output, comparison, recording guide |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Release history |
 
 ---
