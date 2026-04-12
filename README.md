@@ -38,7 +38,7 @@ V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a ne
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
 
-1. Download the latest `visor-hud-0.3.8.vsix` release.
+1. Download the latest `visor-hud-0.4.0.vsix` release.
 2. Open your IDE (Antigravity or VS Code) and navigate to the Extensions panel.
 3. Click the `...` menu at the top right and select **Install from VSIX...**.
 4. Select the downloaded `.vsix` file.
@@ -54,6 +54,23 @@ V.I.S.O.R operates entirely via the **Model Context Protocol (MCP)** boundary. I
 * **Graph Database Scale**: The total number of AST nodes (functions, classes, imports) currently indexed in your local SQLite vector store. This local metric only increments when you write new logic in tracked files, triggering the AST indexing pipeline.
 * **Context Drift Alert**: Flashes red if the agent's internal contextual understanding is outdated. V.I.S.O.R watches the file system; if you physically modify a source file, the warning trips active for exactly 60 seconds to warn the LLM before it hallucinates via stale code references.
 * **System Status Indicator**: A non-obtrusive data sync monitor in the 3D Graph layout. It pulses "SYNCING..." while querying the SQLite database for codebase topology, and locks to a solid green "SYSTEM LIVE" when your AST rendering is visually up to date.
+
+---
+
+## 🛠️ V.I.S.O.R. Skills
+
+With version `0.4.0`, V.I.S.O.R. introduces Native Architectural Graph Tools and an internal AI Custom Skills Engine. By fetching dynamic contextual relations directly through our integrated local NetworkX engine, we eliminate the need for the LLM to recursively "grep" around the filesystem blindly. This dramatically isolates prompt orientation waste.
+
+### The 5 Core Agentic Skills:
+1. **Impact Analysis (`impact_analysis`)**: An MCP tool that calculates the downstream blast radius dependencies of a given node using BFS (capped at depth 5). E.g. check what files will break if `utils.py` is removed.
+2. **Trace Route (`trace_route`)**: Leverages NetworkX `shortest_path` algorithm to find the exact topological call stack connecting a `source.js` to a `database.js` component.
+3. **Dead Code Detection (`dead_code_detection`)**: Flags orphaned nodes in your project by instantly finding components with a directed graph in-degree of 0.
+4. **Dynamic Codebase Search (`search_codebase`)**: Queries the SQLite embedding space for mathematically similar architecture structures using vector search.
+5. **Manage Custom Skills (`add_custom_skill`, `list_custom_skills`, `@mcp.prompt get_visor_skill`)**: Write Markdown prompts in the webview UI, and they will persist directly into V.I.S.O.R's database. This eliminates the need for any complex 3rd party "Skill directory" mapping frameworks.
+
+**Example Chat Invocation:**
+> *"Use the `impact_analysis` tool on `auth.ts` to see what depends on it before we refactor."*
+> *"Please fetch the `backend-expert` instructions using the `get_visor_skill` prompt."*
 
 ---
 
