@@ -21,6 +21,19 @@ V.I.S.O.R. is a local-first, privacy-focused Model Context Protocol (MCP) server
 
 ---
 
+## 🧠 Core Philosophy & Architecture
+
+### How V.I.S.O.R. Saves Tokens
+V.I.S.O.R. eliminates **"orientation waste"**. Instead of the AI using standard grep tools and blindly reading dozens of irrelevant files to understand how components fit together, our MCP server queries the local Tree-sitter knowledge graph. It passes surgical dependency chains directly to the model, ensuring the AI only reads what is strictly necessary.
+
+### Why We Track 'Context Burn' instead of 'Tokens Saved'
+Claiming massive "75x token savings" by comparing a graph query against the size of the entire repository is a misleading vanity metric, because modern AI coding tools never actually load the full repo per prompt anyway. The real issue is that roughly 60% of tokens per prompt are wasted on reading the wrong files during the agent's search phase. To remain fully transparent, our HUD displays real-time **Agent Context Burn** rather than a fabricated "savings" metric, helping developers manage their actual session limits contextually.
+
+### Data Privacy and Secure OAuth Integration
+V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a network proxy. It communicates with the Antigravity IDE (and others) entirely locally over standard input/output (stdio). **It never intercepts outbound internet traffic and does not touch the user's Google OAuth tokens.** Your IDE simply requests optimized context from V.I.S.O.R. locally, and then the IDE securely bundles that context with your prompt to send to the cloud using its own authorized connection.
+
+---
+
 ## 🚀 Quick Start (IDE Extension)
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
