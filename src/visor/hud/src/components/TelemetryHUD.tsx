@@ -164,6 +164,14 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                         <Maximize size={20} color="var(--primary)" />
                         EXPAND 3D GRAPH
                     </button>
+                    <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px', marginTop: '16px', marginBottom: '0px' }}>
+                        POWERED BY MCP
+                    </p>
+                </div>
+            )}
+            
+            {/* Manage Skills Button (Shown everywhere) */}
+            <div style={{ display: 'flex', justifyContent: isSidebar ? 'center' : 'flex-end', marginTop: isSidebar ? '8px' : 'auto', position: isSidebar ? 'static' : 'absolute', bottom: isSidebar ? 'auto' : '24px', right: isSidebar ? 'auto' : '24px', zIndex: 10 }}>
                     <button 
                         onClick={() => setShowSkillModal(true)}
                         style={{
@@ -179,7 +187,6 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                             gap: '12px',
                             fontWeight: 'bold',
                             letterSpacing: '1px',
-                            marginTop: '8px',
                             transition: 'all 0.2s ease',
                         }}
                         onMouseOver={(e) => (e.currentTarget.style.color = 'var(--text-main)')}
@@ -188,11 +195,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                         <Settings2 size={18} />
                         MANAGE AI SKILLS
                     </button>
-                    <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px', marginTop: '16px' }}>
-                        POWERED BY MCP
-                    </p>
-                </div>
-            )}
+            </div>
 
             {showSkillModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
