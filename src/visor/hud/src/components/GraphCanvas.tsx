@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Text, Float } from '@react-three/drei';
+import { OrbitControls, Stars, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Mock data anticipating SQLite DB nodes
@@ -64,6 +64,7 @@ const NodeCloud = () => {
                 metalness={0.8}
               />
             </mesh>
+            {/*
             <Text
               position={[0, -0.6, 0]}
               fontSize={0.3}
@@ -75,6 +76,7 @@ const NodeCloud = () => {
             >
               {node.name}
             </Text>
+            */}
           </group>
         </Float>
       ))}
@@ -84,13 +86,12 @@ const NodeCloud = () => {
 
 export const GraphCanvas: React.FC = () => {
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
       <Canvas camera={{ position: [0, 0, 25], fov: 60 }}>
         <color attach="background" args={['#090a0f']} />
         <ambientLight intensity={0.4} />
         <pointLight position={[10, 10, 10]} intensity={1.5} color="#00f2fe" />
         <pointLight position={[-10, -10, -10]} intensity={1} color="#ff0a54" />
-        
         <Stars radius={50} depth={50} count={3000} factor={4} saturation={1} fade speed={1} />
         <NodeCloud />
         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} autoRotate autoRotateSpeed={0.5} />

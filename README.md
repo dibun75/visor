@@ -69,6 +69,13 @@ For Google Antigravity, MCP connections are declared centrally inside your home 
 
 ---
 
+## 🐛 Common Webview Pitfalls
+
+If you are developing the WebGPU HUD or contributing to V.I.S.O.R., please note the following quirks regarding VS Code Webview Main Panels:
+* **`acquireVsCodeApi()` Restriction**: VS Code imposes a strict security constraint where the `acquireVsCodeApi()` method can only be called **exactly once** per Webview lifecycle. Attempting to call it repeatedly (for example, directly inside a React component body that re-renders) will throw a fatal `An instance of the VS Code API has already been acquired` error. This error will silently crash the React tree without triggering standard browser debuggers. Always memoize or cache the VS Code API object globally on initial mount.
+
+---
+
 ## 🤝 Contributing
 
 V.I.S.O.R. is built by the community, for the community. We recommend sharing short video demos of specific HUD features on social media to help others see the value of token optimization. Check our issues page to submit feature requests or report bugs.

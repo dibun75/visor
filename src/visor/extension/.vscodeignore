@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+yarn.lock
+webpack.config.js
+webpack.config.prod.js
+vsc-extension-quickstart.md
+**/*.map
+**/*.ts

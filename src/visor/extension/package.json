@@ -2,7 +2,12 @@
   "name": "visor-hud",
   "displayName": "V.I.S.O.R. HUD",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
-  "version": "0.1.0",
+  "version": "0.3.5",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/visor"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -18,6 +23,24 @@
         "title": "Start V.I.S.O.R. HUD"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "visor-explorer",
+          "title": "V.I.S.O.R.",
+          "icon": "assets/visor-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "visor-explorer": [
+        {
+          "type": "webview",
+          "id": "visor-sidebar",
+          "name": "Telemetry"
+        }
+      ]
+    },
     "configuration": {
       "title": "V.I.S.O.R. Config",
       "properties": {
