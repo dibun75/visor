@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import json
 import numpy as np
+import functools
 
 from visor.db.client import db_client, EMBEDDING_DIM
 
@@ -11,14 +12,34 @@ class DriftReport(BaseModel):
     stale_files: List[Dict[str, Any]]
     severity: str
 
+def track_telemetry(func):
+    """Decorator to track token proxy volume transmitted to the IDE."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if isinstance(result, str):
+            bytes_transmitted = len(result)
+        else:
+            bytes_transmitted = len(str(result))
+            
+        try:
+            db_client.log_telemetry(func.__name__, bytes_transmitted)
+        except Exception:
+            pass
+            
+        return result
+    return wrapper
+
 def register_tools(mcp: FastMCP):
     
     @mcp.tool()
+    @track_telemetry
     def get_file_context(path: str) -> str:
         """Returns AST summary + related nodes for a given file. (Placeholder for Epic 2 AST parser)"""
         return f"Context for {path}. Graph not fully built yet."
         
     @mcp.tool()
+    @track_telemetry
     def store_memory(role: str, content: str) -> str:
         """Persists an agent conversation turn with an embedding in the local DB."""
         # For now, generate a random embedding vector. In the future this uses a real sentence-transformer model.
@@ -28,6 +49,7 @@ def register_tools(mcp: FastMCP):
         return f"Successfully stored memory with ID: {mem_id}"
         
     @mcp.tool()
+    @track_telemetry
     def get_architecture_map(depth: int = 1) -> str:
         """Returns the full or partial CodeNode graph topology as a JSON string."""
         db_client.conn.commit()
@@ -107,6 +129,7 @@ def register_tools(mcp: FastMCP):
         return json.dumps({"nodes": nodes, "edges": edges})
         
     @mcp.tool()
+    @track_telemetry
     def search_codebase(query: str) -> str:
         """Semantic vector search across CodeNodes. Returns list of nodes."""
         # Generates a random query vector placeholder
@@ -115,6 +138,7 @@ def register_tools(mcp: FastMCP):
         return json.dumps(res)
         
     @mcp.tool()
+    @track_telemetry
     def get_drift_report(context_files: List[str], loaded_at: str) -> str:
         """Returns stale context warnings based on recent Git changes to prevent hallucinations on outdated logic."""
         try:
@@ -163,7 +187,12 @@ def register_tools(mcp: FastMCP):
         nodes = cursor.fetchone()[0]
         
         cursor.execute("SELECT IFNULL(SUM(length(content)), 0) FROM agent_memory")
-        burn = cursor.fetchone()[0]
+        memory_burn = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT IFNULL(SUM(bytes_transmitted), 0) FROM telemetry_logs")
+        tool_burn = cursor.fetchone()[0]
+        
+        burn = memory_burn + tool_burn
         
         # Simple global drift proxy: Any modifications inside the last 60 seconds
         cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-60 seconds')")

@@ -62,7 +62,23 @@ class VectorDBClient:
                 embedding float[{EMBEDDING_DIM}]
             )
         ''')
+        
+        # Telemetry usage tracking
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS telemetry_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tool_name TEXT NOT NULL,
+                bytes_transmitted INTEGER NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         self.conn.commit()
+
+    def log_telemetry(self, tool_name: str, bytes_transmitted: int) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("INSERT INTO telemetry_logs (tool_name, bytes_transmitted) VALUES (?, ?)", (tool_name, bytes_transmitted))
+        self.conn.commit()
+        return cursor.lastrowid
 
     def upsert_node(self, file_path: str, node_type: str, name: str, docstring: str, vector: List[float]) -> int:
         cursor = self.conn.cursor()
