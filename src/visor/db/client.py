@@ -82,9 +82,16 @@ class VectorDBClient:
                 name TEXT NOT NULL,
                 description TEXT NOT NULL,
                 content TEXT NOT NULL,
+                strategy TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Safe migration: add strategy column if missing from older DBs
+        try:
+            cursor.execute("ALTER TABLE custom_skills ADD COLUMN strategy TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS agent_memory (
@@ -218,16 +225,52 @@ class VectorDBClient:
     def search_similar(self, vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         cursor = self.conn.cursor()
         query = """
-            SELECT n.id, n.file_path, n.node_type, n.name, n.docstring, distance
+            SELECT n.id, n.file_path, n.node_type, n.name, n.docstring, n.start_line, n.end_line, distance
             FROM vec_code_nodes v
             JOIN code_nodes n ON v.rowid = n.id
             WHERE embedding MATCH ? AND k = ?
         """
         cursor.execute(query, (serialize_vec(vector), limit))
         return [
-            {"id": r[0], "file_path": r[1], "node_type": r[2], "name": r[3], "docstring": r[4], "distance": r[5]}
+            {"id": r[0], "file_path": r[1], "node_type": r[2], "name": r[3], "docstring": r[4], "start_line": r[5], "end_line": r[6], "distance": r[7]}
             for r in cursor.fetchall()
         ]
+
+    def get_recency_map(self, file_paths: List[str], decay_seconds: int = 3600) -> Dict[str, float]:
+        """
+        Compute a decaying recency score [0.0, 1.0] for files based on the file_changelog.
+        Files modified exactly now get 1.0. Files modified older than decay_seconds get 0.0.
+        """
+        if not file_paths:
+            return {}
+        cursor = self.conn.cursor()
+        placeholders = ",".join("?" for _ in file_paths)
+        query = f"""
+            SELECT file_path, MAX(datetime(changed_at)) 
+            FROM file_changelog 
+            WHERE file_path IN ({placeholders})
+            GROUP BY file_path
+        """
+        try:
+            cursor.execute(query, tuple(file_paths))
+            results = cursor.fetchall()
+        except sqlite3.OperationalError:
+            # Table might not exist yet if watcher never fired
+            return {p: 0.0 for p in file_paths}
+
+        import datetime
+        now = datetime.datetime.utcnow()
+        recency_map = {}
+        for path, dt_str in results:
+            try:
+                dt = datetime.datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                diff = (now - dt).total_seconds()
+                score = max(0.0, 1.0 - (diff / decay_seconds))
+            except ValueError:
+                score = 0.0
+            recency_map[path] = score
+            
+        return {p: recency_map.get(p, 0.0) for p in file_paths}
 
     def store_memory(self, role: str, content: str, vector: List[float]) -> int:
         cursor = self.conn.cursor()
@@ -254,14 +297,30 @@ class VectorDBClient:
             for r in cursor.fetchall()
         ]
 
-    def get_custom_skills(self) -> List[Dict[str, str]]:
+    def get_custom_skills(self) -> List[Dict[str, Any]]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT id, name, description, content FROM custom_skills ORDER BY name ASC")
-        return [{"id": str(r[0]), "name": r[1], "description": r[2], "content": r[3]} for r in cursor.fetchall()]
+        cursor.execute("SELECT id, name, description, content, strategy FROM custom_skills ORDER BY name ASC")
+        return [{"id": str(r[0]), "name": r[1], "description": r[2], "content": r[3], "strategy": r[4]} for r in cursor.fetchall()]
 
-    def add_custom_skill(self, name: str, description: str, content: str) -> int:
+    def get_skill_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Load a single skill by name, parsing its strategy JSON if present."""
+        import json as _json
         cursor = self.conn.cursor()
-        cursor.execute("INSERT INTO custom_skills (name, description, content) VALUES (?, ?, ?)", (name, description, content))
+        cursor.execute("SELECT id, name, description, content, strategy FROM custom_skills WHERE name = ? COLLATE NOCASE LIMIT 1", (name,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        strategy = None
+        if row[4]:
+            try:
+                strategy = _json.loads(row[4])
+            except (ValueError, TypeError):
+                strategy = None
+        return {"id": str(row[0]), "name": row[1], "description": row[2], "content": row[3], "strategy": strategy}
+
+    def add_custom_skill(self, name: str, description: str, content: str, strategy: Optional[str] = None) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute("INSERT INTO custom_skills (name, description, content, strategy) VALUES (?, ?, ?, ?)", (name, description, content, strategy))
         self.conn.commit()
         return cursor.lastrowid
 

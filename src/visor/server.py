@@ -20,7 +20,70 @@ def health_check() -> str:
     return "V.I.S.O.R MCP daemon is alive and operational."
 
 import os
+import json
 from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
+from visor.db.client import db_client
+
+# ---------------------------------------------------------------------------
+# Built-in Skill Strategies (seeded on first boot)
+# ---------------------------------------------------------------------------
+
+_DEFAULT_SKILLS = [
+    {
+        "name": "bug-fixer",
+        "description": "Deep call chain tracing with high recency boost for hunting bugs.",
+        "content": "Focus on recently modified files and dependency chains. Trace the call stack from the error location outward.",
+        "strategy": json.dumps({
+            "intent_override": "BUG_FIX",
+            "scoring_bias": {"dep": 1.2, "recency": 1.5},
+            "tool_priority": ["build_context", "get_dependency_chain", "impact_analysis"],
+        }),
+    },
+    {
+        "name": "architecture-explainer",
+        "description": "Wide graph traversal with embedding-heavy scoring for understanding codebases.",
+        "content": "Prioritize semantic similarity and broad architectural context. Explain how components connect.",
+        "strategy": json.dumps({
+            "intent_override": "EXPLAIN",
+            "scoring_bias": {"embed": 1.8, "dep": 0.8},
+            "tool_priority": ["build_context", "get_architecture_map", "trace_route"],
+        }),
+    },
+    {
+        "name": "refactor-assistant",
+        "description": "Dependency clustering and impact analysis for safe refactoring.",
+        "content": "Map all downstream dependencies before restructuring. Identify blast radius of changes.",
+        "strategy": json.dumps({
+            "intent_override": "REFACTOR",
+            "scoring_bias": {"dep": 1.5, "exact": 1.5},
+            "tool_priority": ["build_context", "impact_analysis", "dead_code_detection"],
+        }),
+    },
+    {
+        "name": "performance-optimizer",
+        "description": "Hotspot detection with recent file weighting for performance tuning.",
+        "content": "Find recently modified hot paths and co-located performance bottlenecks.",
+        "strategy": json.dumps({
+            "intent_override": "BUG_FIX",
+            "scoring_bias": {"recency": 2.0, "same": 1.5},
+            "tool_priority": ["build_context", "get_dependency_chain"],
+        }),
+    },
+]
+
+
+def _seed_default_skills():
+    """Insert built-in skills on first boot if they don't already exist."""
+    existing = {s["name"].lower() for s in db_client.get_custom_skills()}
+    for skill in _DEFAULT_SKILLS:
+        if skill["name"].lower() not in existing:
+            db_client.add_custom_skill(
+                name=skill["name"],
+                description=skill["description"],
+                content=skill["content"],
+                strategy=skill["strategy"],
+            )
+            logger.info(f"Seeded built-in skill: {skill['name']}")
 
 
 def _background_index(workspace: str) -> None:
@@ -40,6 +103,9 @@ def main():
     """CLI entrypoint to start the MCP daemon using stdio transport."""
     workspace = os.environ.get("WORKSPACE_ROOT", ".")
     logger.info(f"Starting V.I.S.O.R. MCP Server (workspace={workspace})")
+
+    # Seed built-in skill strategies
+    _seed_default_skills()
 
     # Kick off the workspace scan in the background — MCP server is usable immediately
     index_thread = threading.Thread(

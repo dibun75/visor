@@ -377,7 +377,7 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool()
     @track_telemetry
-    def build_context(query: str) -> str:
+    def build_context(query: str, skill: Optional[str] = None) -> str:
         """
         **Context Intelligence Engine** — the most powerful V.I.S.O.R. tool.
 
@@ -394,7 +394,7 @@ def register_tools(mcp: FastMCP):
         Example:
             ``build_context("how is authentication handled")``
         """
-        result = _build_context(query)
+        result = _build_context(query, skill_name=skill)
         return json.dumps(result)
 
     @mcp.prompt()
@@ -411,13 +411,13 @@ def register_tools(mcp: FastMCP):
     def list_custom_skills() -> str:
         """List all available custom V.I.S.O.R architecture skills."""
         skills = db_client.get_custom_skills()
-        return json.dumps([{"id": s["id"], "name": s["name"], "description": s["description"], "content": s["content"]} for s in skills])
+        return json.dumps([{"id": s["id"], "name": s["name"], "description": s["description"], "strategy": s.get("strategy")} for s in skills])
 
     @mcp.tool()
     @track_telemetry
-    def add_custom_skill(name: str, description: str, content: str) -> str:
+    def add_custom_skill(name: str, description: str, content: str, strategy: Optional[str] = None) -> str:
         """Adds a newly created custom skill via the UI."""
-        skill_id = db_client.add_custom_skill(name, description, content)
+        skill_id = db_client.add_custom_skill(name, description, content, strategy)
         return json.dumps({"success": True, "id": skill_id})
 
     @mcp.tool()
