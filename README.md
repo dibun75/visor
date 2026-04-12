@@ -1,6 +1,8 @@
 # V.I.S.O.R. (Visual Intelligence System for Orchestrated Reasoning)
 
-V.I.S.O.R. is a local-first, privacy-focused Model Context Protocol (MCP) server and 3D Developer HUD for AI-native IDEs like Google Antigravity and VS Code. It acts as a "second brain" for your AI coding agents, providing them with persistent memory and precise codebase context while drastically reducing your API token costs.
+[![Version](https://img.shields.io/badge/version-0.5.0-blue)](https://github.com/dibun75/visor) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
+
+V.I.S.O.R. is a local-first, privacy-focused Model Context Protocol (MCP) server and 3D Developer HUD for AI-native IDEs like Google Antigravity and VS Code. It acts as a "second brain" for your AI coding agents, providing them with persistent memory and **precise, semantically-ranked codebase context** while drastically reducing your API token costs.
 
 <div align="center">
   <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD Dashboard" width="800"/>
@@ -10,10 +12,12 @@ V.I.S.O.R. is a local-first, privacy-focused Model Context Protocol (MCP) server
 
 ## ✨ Features
 
-* **Interactive 3D WebGPU HUD**: Monitor your AI agents in real-time without leaving your IDE. The HUD visualizes your codebase architecture as a force-directed graph and displays live telemetry, including your Agent Context Burn and Graph Database Scale.
-* **Semantic Context Pruning**: Instead of dumping entire directories into your LLM's context window, V.I.S.O.R. uses Tree-sitter to parse your code into an Abstract Syntax Tree (AST). It only feeds the AI the exact files and dependencies needed for the task, saving massive amounts of tokens.
-* **Persistent Agentic Memory**: Powered by a local SQLite database with `sqlite-vec`, V.I.S.O.R. remembers past architectural decisions, user preferences, and custom rules across different chat sessions.
-* **Context Drift Alerts**: V.I.S.O.R. monitors your Git commits and file changes. If your AI's stored context becomes outdated compared to the actual codebase, it automatically intercepts the prompt and warns you before the agent hallucinates bad code.
+* **Interactive 3D WebGPU HUD**: Monitor your AI agents in real-time without leaving your IDE. The HUD visualises your codebase architecture as a force-directed graph and displays live telemetry, including your Agent Context Burn and Graph Database Scale.
+* **Context Intelligence Engine**: V.I.S.O.R.'s `build_context` tool goes beyond simple search. It uses a multi-signal relevance scoring formula combining embedding similarity, exact symbol matching, co-location, and dependency graph distance to rank and compress the most relevant code into a token-budget-aware payload.
+* **Semantic AST Indexing**: Powered by Tree-sitter (Python, TypeScript, JavaScript), V.I.S.O.R. parses your codebase into an Abstract Syntax Tree. Symbol definitions are embedded using `all-MiniLM-L6-v2` and stored in a local SQLite vector store for instant semantic retrieval.
+* **Persistent Agentic Memory**: A local SQLite database with `sqlite-vec` remembers past architectural decisions, user preferences, and custom rules across different chat sessions.
+* **Dual-Mode Drift Detection**: V.I.S.O.R. detects stale context via **SHA-256 hash comparison** (exact) or **file changelog timestamps** (fallback), warning agents before they hallucinate based on outdated code.
+* **Hash-based Indexing Cache**: Unchanged files are never re-embedded. The file watcher compares SHA-256 hashes before triggering the (expensive) embedding pipeline.
 
 <div align="center">
   <img src="./docs/assets/drift_alert.png" alt="Context Drift Alert" width="400"/>
@@ -38,11 +42,13 @@ V.I.S.O.R. acts as a local data provider, completely bypassing the risks of a ne
 
 V.I.S.O.R. is distributed as a native IDE extension, bundling both the Python backend engine and the React WebGPU frontend.
 
-1. Download the latest `visor-hud-0.4.1.vsix` release.
+1. Download the latest `visor-hud-0.5.0.vsix` release.
 2. Open your IDE (Antigravity or VS Code) and navigate to the Extensions panel.
 3. Click the `...` menu at the top right and select **Install from VSIX...**.
 4. Select the downloaded `.vsix` file.
 5. The extension will automatically use `uv` to bootstrap the Python MCP server and launch the HUD in your sidebar via the *Start V.I.S.O.R. HUD* command.
+
+> **Note**: First launch downloads the `all-MiniLM-L6-v2` embedding model (~80MB) from HuggingFace. Subsequent starts are instant (model is cached locally).
 
 ---
 
@@ -57,22 +63,52 @@ V.I.S.O.R operates entirely via the **Model Context Protocol (MCP)** boundary. I
 
 ---
 
-## 🛠️ V.I.S.O.R. Skills
+## 🛠️ MCP Tool Suite
 
-With version `0.4.1`, V.I.S.O.R. introduces Native Architectural Graph Tools and an internal AI Custom Skills Engine. By fetching dynamic contextual relations directly through our integrated local NetworkX engine, we eliminate the need for the LLM to recursively "grep" around the filesystem blindly. This dramatically isolates prompt orientation waste.
+With version `0.5.0`, V.I.S.O.R. exposes a full **Context Intelligence Engine** with 16 MCP tools across 5 categories. For the complete API reference see [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md).
 
-### The 5 Core Agentic Skills:
-1. **Impact Analysis (`impact_analysis`)**: An MCP tool that calculates the downstream blast radius dependencies of a given node using BFS (capped at depth 5). E.g. check what files will break if `utils.py` is removed.
-2. **Trace Route (`trace_route`)**: Leverages NetworkX `shortest_path` algorithm to find the exact topological call stack connecting a `source.js` to a `database.js` component.
-3. **Dead Code Detection (`dead_code_detection`)**: Flags orphaned nodes in your project by instantly finding components with a directed graph in-degree of 0.
-4. **Dynamic Codebase Search (`search_codebase`)**: Queries the SQLite embedding space for mathematically similar architecture structures using vector search.
-5. **Manage Custom Skills (`add_custom_skill`, `list_custom_skills`, `@mcp.prompt get_visor_skill`)**: Write Markdown prompts in the webview UI, and they will persist directly into V.I.S.O.R's database. This eliminates the need for any complex 3rd party "Skill directory" mapping frameworks.
+### 🧠 Intelligence
+| Tool | Description |
+|------|-------------|
+| `build_context(query)` | **Ranked, compressed context** from a natural language query. Multi-signal scoring: embedding similarity + exact match + co-location + dependency proximity. Token-budget enforced (8k cap). |
 
-**Example Chat Invocation:**
-> *"Use the `impact_analysis` tool on `auth.ts` to see what depends on it before we refactor."*
-> *"Please fetch the `backend-expert` instructions using the `get_visor_skill` prompt."*
+### 🔍 Search
+| Tool | Description |
+|------|-------------|
+| `search_codebase(query)` | Pure semantic vector search across indexed AST nodes |
+| `get_symbol_context(symbol)` | All definitions of a symbol with file + line range |
+| `get_file_context(path)` | Full AST symbol listing for a file |
 
----
+### 🗺️ Graph Analysis
+| Tool | Description |
+|------|-------------|
+| `get_dependency_chain(symbol)` | Transitive import chain from a symbol's source file (BFS depth 5) |
+| `impact_analysis(file_path)` | Downstream blast radius of a file change |
+| `trace_route(source, target)` | Shortest architectural path between two files |
+| `dead_code_detection()` | Files with no incoming dependency edges |
+
+### ⚠️ Drift Detection
+| Tool | Description |
+|------|-------------|
+| `get_drift_report(files, loaded_at, file_hashes?)` | Hash-based or timestamp-based context drift detection |
+
+### 🧩 Memory & Custom Skills
+| Tool | Description |
+|------|-------------|
+| `store_memory(role, content)` | Persist conversation turn with semantic embedding |
+| `get_visor_skill(name)` | Fetch a custom AI instruction pack |
+| `list_custom_skills()` | List all available custom skills |
+| `add_custom_skill(name, desc, content)` | Create a custom skill via API |
+| `delete_custom_skill(id)` | Remove a custom skill |
+
+**Example Chat Invocations:**
+```
+"Use build_context to find the most relevant code for handling user authentication."
+"Use get_symbol_context to find where VectorDBClient is defined."
+"Use get_dependency_chain on 'index_file' to see what it imports."
+"Use get_drift_report to check if any of my context files have changed."
+"Fetch the backend-expert skill using get_visor_skill."
+```
 
 ## 🔌 Wiring it to Your AI Agent (Antigravity)
 
@@ -107,6 +143,34 @@ If you are developing the WebGPU HUD or contributing to V.I.S.O.R., please note 
 
 ---
 
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Full system design, data flow, DB schema, and how to extend V.I.S.O.R. |
+| [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete MCP tool API reference for AI agents and developers |
+
+---
+
 ## 🤝 Contributing
 
 V.I.S.O.R. is built by the community, for the community. We recommend sharing short video demos of specific HUD features on social media to help others see the value of token optimization. Check our issues page to submit feature requests or report bugs.
+
+### Development Setup
+
+```bash
+# Clone and install
+git clone https://github.com/dibun75/visor.git
+cd visor
+uv sync
+
+# Run the MCP server directly
+uv run src/visor/server.py
+
+# Build the HUD
+cd src/visor/hud && npm install && npm run build
+
+# Build the extension
+cd src/visor/extension && npm install && npm run compile
+npx @vscode/vsce package -o visor-hud-0.5.0.vsix
+```

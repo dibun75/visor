@@ -8,6 +8,7 @@ import networkx as nx
 
 from visor.db.client import db_client, EMBEDDING_DIM
 from visor.db.embeddings import embedder
+from visor.tools.context_engine import build_context as _build_context
 
 class DriftReport(BaseModel):
     drift_detected: bool
@@ -60,8 +61,25 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @track_telemetry
     def get_file_context(path: str) -> str:
-        """Returns AST summary + related nodes for a given file. (Placeholder for Epic 2 AST parser)"""
-        return f"Context for {path}. Graph not fully built yet."
+        """
+        Returns a structured AST summary for a given file, including all indexed
+        symbols (classes, functions, imports) and their line ranges.
+        """
+        db_client.conn.commit()
+        cursor = db_client.conn.cursor()
+        cursor.execute(
+            "SELECT name, node_type, start_line, end_line, docstring FROM code_nodes "
+            "WHERE file_path = ? ORDER BY start_line ASC",
+            (path,)
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            return json.dumps({"error": f"No indexed nodes found for '{path}'. Has the file been saved?"})
+        symbols = [
+            {"name": r[0], "type": r[1], "start_line": r[2], "end_line": r[3], "docstring": r[4]}
+            for r in rows
+        ]
+        return json.dumps({"file_path": path, "symbol_count": len(symbols), "symbols": symbols})
         
     @mcp.tool()
     @track_telemetry
@@ -161,41 +179,62 @@ def register_tools(mcp: FastMCP):
         
     @mcp.tool()
     @track_telemetry
-    def get_drift_report(context_files: List[str], loaded_at: str) -> str:
-        """Returns stale context warnings based on recent Git changes to prevent hallucinations on outdated logic."""
-        try:
-            from dateutil.parser import parse as parse_date
-            context_time = parse_date(loaded_at)
-        except Exception:
-            return DriftReport(drift_detected=False, stale_files=[], severity="INFO").model_dump_json()
+    def get_drift_report(context_files: List[str], loaded_at: str, file_hashes: Optional[Dict[str, str]] = None) -> str:
+        """
+        Detects context drift between the AI's loaded snapshot and the current codebase.
 
-        cursor = db_client.conn.cursor()
-        placeholders = ','.join(['?'] * len(context_files))
-        query = f"SELECT file_path, changed_at FROM file_changelog WHERE file_path IN ({placeholders})"
-        cursor.execute(query, context_files)
-        
+        Two detection modes:
+        - **Hash-based** (preferred): Pass ``file_hashes`` as ``{file_path: sha256_hash}``.
+          V.I.S.O.R. compares the provided hashes against the indexed ``file_hash`` column.
+          If they differ, the file has changed since the agent last read it.
+        - **Timestamp-based** (fallback): Compares ``loaded_at`` against ``file_changelog``
+          entries when hashes are not supplied.
+
+        Args:
+            context_files: List of file paths the agent currently holds in context.
+            loaded_at:     ISO-8601 timestamp of when the agent loaded its context.
+            file_hashes:   Optional dict mapping file_path → sha256 hash the agent last saw.
+        """
         stale_files = []
-        for row in cursor.fetchall():
-            file_path, changed_at_str = row
-            try:
-                 changed_at = parse_date(changed_at_str)
-                 if changed_at > context_time:
-                     stale_files.append({"path": file_path, "changed_at": changed_at_str})
-            except Exception:
-                 pass
-                 
-        if stale_files:
-            report = DriftReport(
-                drift_detected=True,
-                stale_files=stale_files,
-                severity="CRITICAL"
-            )
+
+        if file_hashes:
+            # --- Hash-based drift (accurate) ---
+            cursor = db_client.conn.cursor()
+            for fpath, agent_hash in file_hashes.items():
+                cursor.execute("SELECT file_hash FROM code_nodes WHERE file_path=? LIMIT 1", (fpath,))
+                row = cursor.fetchone()
+                stored_hash = row[0] if row else None
+                if stored_hash and stored_hash != agent_hash:
+                    stale_files.append({
+                        "path": fpath,
+                        "reason": "hash_mismatch",
+                        "stored_hash": stored_hash[:8] + "...",
+                        "agent_hash": agent_hash[:8] + "...",
+                    })
         else:
-            report = DriftReport(
-                 drift_detected=False,
-                 stale_files=[],
-                 severity="INFO"
+            # --- Timestamp-based drift (fallback) ---
+            try:
+                from dateutil.parser import parse as parse_date
+                context_time = parse_date(loaded_at)
+            except Exception:
+                return DriftReport(drift_detected=False, stale_files=[], severity="INFO").model_dump_json()
+
+            cursor = db_client.conn.cursor()
+            placeholders = ','.join(['?'] * len(context_files))
+            cursor.execute(
+                f"SELECT file_path, changed_at FROM file_changelog WHERE file_path IN ({placeholders})",
+                context_files
             )
+            for file_path, changed_at_str in cursor.fetchall():
+                try:
+                    from dateutil.parser import parse as parse_date
+                    if parse_date(changed_at_str) > parse_date(loaded_at):
+                        stale_files.append({"path": file_path, "changed_at": changed_at_str, "reason": "timestamp"})
+                except Exception:
+                    pass
+
+        severity = "CRITICAL" if stale_files else "INFO"
+        report = DriftReport(drift_detected=bool(stale_files), stale_files=stale_files, severity=severity)
         return report.model_dump_json()
 
     @mcp.tool()
@@ -260,6 +299,92 @@ def register_tools(mcp: FastMCP):
         G = _build_nx_graph()
         dead_nodes = [n for n, d in G.in_degree() if d == 0]
         return json.dumps({"isolated_nodes": dead_nodes})
+
+    @mcp.tool()
+    @track_telemetry
+    def get_symbol_context(symbol: str) -> str:
+        """
+        Returns all indexed AST nodes matching a symbol name, including file path,
+        node type (class/function/import), and precise line range.
+
+        Useful for answering: *"Where is `VectorDBClient` defined and what does it do?"*
+
+        Args:
+            symbol: The exact or partial name of the class, function, or import to look up.
+        """
+        db_client.conn.commit()
+        cursor = db_client.conn.cursor()
+        cursor.execute(
+            "SELECT name, node_type, file_path, start_line, end_line, docstring "
+            "FROM code_nodes WHERE name LIKE ? ORDER BY node_type, file_path",
+            (f"%{symbol}%",)
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            return json.dumps({"error": f"Symbol '{symbol}' not found in index."})
+        results = [
+            {
+                "name": r[0],
+                "type": r[1],
+                "file": r[2],
+                "start_line": r[3],
+                "end_line": r[4],
+                "docstring": r[5],
+            }
+            for r in rows
+        ]
+        return json.dumps({"symbol": symbol, "matches": results})
+
+    @mcp.tool()
+    @track_telemetry
+    def get_dependency_chain(symbol: str) -> str:
+        """
+        Traverses the import edges graph from the file containing ``symbol``
+        and returns the full transitive dependency chain (max depth 5).
+
+        Useful for answering: *"What does `auth.py` ultimately depend on?"*
+
+        Args:
+            symbol: Name of a class or function. Its source file becomes the
+                    root of the BFS traversal.
+        """
+        db_client.conn.commit()
+        cursor = db_client.conn.cursor()
+        cursor.execute("SELECT file_path FROM code_nodes WHERE name LIKE ? LIMIT 1", (f"%{symbol}%",))
+        row = cursor.fetchone()
+        if not row:
+            return json.dumps({"error": f"Symbol '{symbol}' not found — cannot resolve dependency chain."})
+        source_file = row[0]
+
+        G = _build_nx_graph()
+        if not G.has_node(source_file):
+            return json.dumps({"source": source_file, "chain": [], "note": "No outgoing edges found. Run the file watcher to populate the edges table."})
+
+        chain = list(nx.bfs_tree(G, source=source_file, depth_limit=5).nodes())
+        chain.remove(source_file)  # Exclude the root itself
+        return json.dumps({"symbol": symbol, "source_file": source_file, "dependency_chain": chain})
+
+    @mcp.tool()
+    @track_telemetry
+    def build_context(query: str) -> str:
+        """
+        **Context Intelligence Engine** — the most powerful V.I.S.O.R. tool.
+
+        Builds a ranked, token-budget-enforced context payload from a natural
+        language query. Combines four signals:
+        - Embedding similarity (semantic proximity)
+        - Exact symbol name match
+        - Co-location in the same file as the top hit
+        - Dependency graph distance
+
+        Returns a scored list of code nodes ready to be injected into an LLM
+        prompt, capped at 8,000 tokens to prevent context overflow.
+
+        Example:
+            ``build_context("how is authentication handled")``
+        """
+        result = _build_context(query)
+        return json.dumps(result)
 
     @mcp.prompt()
     def get_visor_skill(skill_name: str) -> str:

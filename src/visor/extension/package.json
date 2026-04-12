@@ -2,7 +2,7 @@
   "name": "visor-hud",
   "displayName": "V.I.S.O.R. HUD",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/example/visor"
