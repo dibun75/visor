@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Database, ShieldAlert, Cpu, Maximize, Settings2, Plus, Trash2, X } from 'lucide-react';
+import { Activity, Database, ShieldAlert, Cpu, Maximize, Settings2, Plus, Trash2, X, Search, Zap, Brain } from 'lucide-react';
 
 interface TelemetryHUDProps {
     viewMode: 'sidebar' | 'panel';
@@ -11,6 +11,14 @@ const getVsCode = () => {
     }
     return (window as any).vscodeApiInstance || null;
 };
+
+interface ContextResult {
+    context: any[];
+    debug: { intent: string; skill: string | null; scores: Record<string, any>; reasoning: Record<string, string[]> };
+    metrics: { estimated_tokens_without: number; estimated_tokens_with: number; reduction_percent: number };
+    query: string;
+    total_tokens: number;
+}
 
 export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
     const [telemetry, setTelemetry] = useState({
@@ -24,6 +32,12 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
     const [newSkillName, setNewSkillName] = useState("");
     const [newSkillDesc, setNewSkillDesc] = useState("");
     const [newSkillContent, setNewSkillContent] = useState("");
+
+    // Intelligence state
+    const [contextResult, setContextResult] = useState<ContextResult | null>(null);
+    const [queryInput, setQueryInput] = useState("");
+    const [selectedSkill, setSelectedSkill] = useState("");
+    const [isQuerying, setIsQuerying] = useState(false);
 
     const isSidebar = viewMode === 'sidebar';
     const vscode = getVsCode();
@@ -39,6 +53,9 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                 });
             } else if (message.command === 'skillsData') {
                 setSkills(message.data || []);
+            } else if (message.command === 'contextResultData') {
+                setContextResult(message.data);
+                setIsQuerying(false);
             }
         };
         
@@ -81,6 +98,19 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
         if (showSkillModal) fetchSkills();
     }, [showSkillModal]);
 
+    const runQuery = () => {
+        if (!queryInput.trim()) return;
+        setIsQuerying(true);
+        const payload: any = { query: queryInput };
+        if (selectedSkill) payload.skill = selectedSkill;
+        vscode?.postMessage({ command: 'fetchContextResult', payload });
+    };
+
+    const clearContext = () => {
+        setContextResult(null);
+        setQueryInput("");
+    };
+
     return (
         <div style={{ 
             position: isSidebar ? 'relative' : 'absolute', 
@@ -118,6 +148,46 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                     </div>
                 )}
             </div>
+
+            {/* Task 4: Active Skill Badge */}
+            {contextResult && contextResult.debug.skill && (
+                <div className="glass-panel" style={{ padding: '10px 16px', display: 'flex', gap: '10px', alignItems: 'center', pointerEvents: 'auto' }}>
+                    <Brain color="#00f2fe" size={20} />
+                    <div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ACTIVE SKILL</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#00f2fe' }}>{contextResult.debug.skill}</div>
+                    </div>
+                    <div style={{ marginLeft: 'auto', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(0, 242, 254, 0.12)', color: '#00f2fe', fontWeight: 600, letterSpacing: '0.5px' }}>
+                        {contextResult.debug.intent}
+                    </div>
+                </div>
+            )}
+
+            {/* Task 5: Query Info Panel */}
+            {contextResult && contextResult.context.length > 0 && (
+                <div className="glass-panel" style={{ padding: '12px 16px', pointerEvents: 'auto' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '6px' }}>LAST QUERY</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>"{contextResult.query}"</div>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        <div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '1px' }}>INTENT</div>
+                            <div style={{ fontSize: '14px', fontWeight: 600, color: '#00f2fe' }}>{contextResult.debug.intent}</div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '1px' }}>NODES</div>
+                            <div style={{ fontSize: '14px', fontWeight: 600 }}>{contextResult.context.length}</div>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '1px' }}>REDUCTION</div>
+                            <div style={{ fontSize: '14px', fontWeight: 600, color: '#06d6a0' }}>{contextResult.metrics.reduction_percent}%</div>
+                        </div>
+                    </div>
+                    <div style={{ marginTop: '8px', display: 'flex', gap: '8px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                        <span>{contextResult.metrics.estimated_tokens_without.toLocaleString()} → {contextResult.metrics.estimated_tokens_with.toLocaleString()} tokens</span>
+                    </div>
+                    <button onClick={clearContext} style={{ marginTop: '8px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--text-muted)', padding: '4px 8px', cursor: 'pointer', fontSize: '10px' }}>✕ Clear</button>
+                </div>
+            )}
 
             {/* Bottom Bar Telemetry */}
             <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', gap: '16px', width: '100%', maxWidth: isSidebar ? 'none' : '800px', margin: isSidebar ? '0' : '0 auto', pointerEvents: 'none' }}>
@@ -164,6 +234,38 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                         <Maximize size={20} color="var(--primary)" />
                         EXPAND 3D GRAPH
                     </button>
+
+                    {/* Query Input (Sidebar only) */}
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                            <input
+                                placeholder='e.g. "fix login crash"'
+                                value={queryInput}
+                                onChange={(e) => setQueryInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && runQuery()}
+                                style={{ flex: 1, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', fontFamily: "'Inter', sans-serif" }}
+                            />
+                            <button
+                                onClick={runQuery}
+                                disabled={isQuerying || !queryInput.trim()}
+                                style={{ background: 'var(--primary)', color: 'black', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: isQuerying ? 'wait' : 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px', opacity: isQuerying ? 0.5 : 1 }}
+                            >
+                                {isQuerying ? <Zap size={14} /> : <Search size={14} />}
+                            </button>
+                        </div>
+                        <select
+                            value={selectedSkill}
+                            onChange={(e) => setSelectedSkill(e.target.value)}
+                            style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#8892a4', padding: '6px 8px', borderRadius: '6px', fontSize: '11px', fontFamily: "'Inter', sans-serif" }}
+                        >
+                            <option value="">Auto-detect skill</option>
+                            <option value="bug-fixer">🐛 bug-fixer</option>
+                            <option value="architecture-explainer">🏗 architecture-explainer</option>
+                            <option value="refactor-assistant">♻️ refactor-assistant</option>
+                            <option value="performance-optimizer">⚡ performance-optimizer</option>
+                        </select>
+                    </div>
+
                     <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px', marginTop: '16px', marginBottom: '0px' }}>
                         POWERED BY MCP
                     </p>

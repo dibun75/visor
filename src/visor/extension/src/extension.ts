@@ -132,6 +132,16 @@ function setupMessageListener(webview: vscode.Webview) {
             } catch(err) { console.error("deleteSkill failed", err); }
         } else if (message.command === 'openFullGraph') {
             vscode.commands.executeCommand('visor.startHUD');
+        } else if (message.command === 'fetchContextResult' && mcpClient) {
+            try {
+                const args: any = { query: message.payload.query };
+                if (message.payload.skill) { args.skill = message.payload.skill; }
+                const result = await mcpClient.callTool({ name: 'build_context', arguments: args });
+                if (result.content && (result.content as any[]).length > 0) {
+                    const data = JSON.parse((result.content as any)[0].text as string);
+                    webview.postMessage({ command: 'contextResultData', data: data });
+                }
+            } catch(err) { console.error("fetchContextResult failed", err); }
         }
     });
 }
