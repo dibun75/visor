@@ -11,7 +11,8 @@ def test_db(monkeypatch):
     temp_db = tempfile.NamedTemporaryFile(suffix=".db")
     db_path = temp_db.name
     
-    # Initialize real schema against temporary path
+    # Reset singleton so each test gets a genuinely fresh temp DB
+    VectorDBClient._instance = None
     client = VectorDBClient(db_path=db_path)
     
     # Monkeypatch the global db_client so all tools use the test db

@@ -48,12 +48,7 @@ class VectorDBClient:
     def _migrate(self):
         cursor = self.conn.cursor()
         
-        # We drop the existing tables to ensure a clean schema migration (except custom_skills and agent_memory)
-        cursor.execute("DROP TABLE IF EXISTS code_nodes")
-        cursor.execute("DROP TABLE IF EXISTS vec_code_nodes")
-        cursor.execute("DROP TABLE IF EXISTS edges")
-
-        # Base tables
+        # Base tables (persist across restarts — no DROP)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS code_nodes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -186,6 +186,22 @@ def index_workspace(root: str, open_files: Optional[list] = None):
 
     logger.info("Workspace scan complete.")
 
+    # Phase 3: Remove stale nodes for files that no longer exist on disk
+    indexed_paths = {str(p) for p in sorted_files}
+    cursor = db_client.conn.cursor()
+    cursor.execute("SELECT DISTINCT file_path FROM code_nodes")
+    db_paths = {row[0] for row in cursor.fetchall()}
+    stale = db_paths - indexed_paths
+    if stale:
+        for path in stale:
+            # Collect node names before deleting them
+            names = [r[0] for r in cursor.execute("SELECT name FROM code_nodes WHERE file_path = ?", (path,)).fetchall()]
+            for name in names:
+                cursor.execute("DELETE FROM edges WHERE from_node = ? OR to_node = ?", (name, name))
+            cursor.execute("DELETE FROM code_nodes WHERE file_path = ?", (path,))
+        db_client.conn.commit()
+        logger.info(f"Purged {len(stale)} stale file(s) from graph database.")
+
 # ---------------------------------------------------------------------------
 # Watchdog event handler with debounce
 # ---------------------------------------------------------------------------
