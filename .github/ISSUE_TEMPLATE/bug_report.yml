@@ -1,0 +1,70 @@
+name: bug_report
+description: Report a bug in V.I.S.O.R.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the details below.
+
+  - type: input
+    id: version
+    attributes:
+      label: V.I.S.O.R. Version
+      description: "Run `visor --version` to get this"
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows (WSL)
+        - Windows (native)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ide
+    attributes:
+      label: IDE / AI Client
+      options:
+        - Antigravity
+        - Cursor
+        - Claude Code
+        - VS Code + Continue
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: "What happened? What did you expect?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: "Minimal steps to reproduce the bug"
+      placeholder: |
+        1. Install visor-mcp
+        2. Run `visor init`
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: "Paste any error messages or logs"
+      render: shell

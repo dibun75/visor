@@ -1,13 +1,17 @@
-import asyncio
+import json
 import logging
+import os
 import threading
+
 from mcp.server.fastmcp import FastMCP
+
+from visor.db.client import db_client
+from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
+from visor.tools.core import register_tools
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-from visor.tools.core import register_tools
 
 # Initialize FastMCP Server
 mcp = FastMCP("VISOR")
@@ -18,11 +22,6 @@ register_tools(mcp)
 def health_check() -> str:
     """Basic health-check endpoint confirming the server is alive."""
     return "V.I.S.O.R MCP daemon is alive and operational."
-
-import os
-import json
-from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
-from visor.db.client import db_client
 
 # ---------------------------------------------------------------------------
 # Built-in Skill Strategies (seeded on first boot)
@@ -107,14 +106,29 @@ def main():
     # Seed built-in skill strategies
     _seed_default_skills()
 
-    # Kick off the workspace scan in the background — MCP server is usable immediately
-    index_thread = threading.Thread(
-        target=_background_index,
-        args=(workspace,),
-        daemon=True,
-        name="visor-indexer",
-    )
-    index_thread.start()
+    logger.debug(f"VISOR_DB_PATH: {os.environ.get('VISOR_DB_PATH')}")
+    logger.debug(f"WORKSPACE_ROOT: {os.environ.get('WORKSPACE_ROOT')}")
+
+    # Task 5: Log persisted data on startup for verification
+    cursor = db_client.conn.cursor()
+    node_count = cursor.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
+    edge_count = cursor.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+    logger.info(f"[VISOR] Startup DB check — Nodes: {node_count}, Edges: {edge_count}")
+
+    # Task 4: Only full re-index if the DB is empty.
+    # If nodes already exist, skip heavy boot scan — the file watcher will
+    # handle incremental changes going forward.
+    if node_count == 0:
+        logger.info("[VISOR] Empty database detected — running full workspace index.")
+        index_thread = threading.Thread(
+            target=_background_index,
+            args=(workspace,),
+            daemon=True,
+            name="visor-indexer",
+        )
+        index_thread.start()
+    else:
+        logger.info(f"[VISOR] Database already populated ({node_count} nodes). Skipping re-index.")
 
     try:
         start_watcher(workspace)

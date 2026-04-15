@@ -1,0 +1,40 @@
+name: add_language
+description: Request or contribute support for a new programming language
+title: "Add [LANGUAGE] language support"
+labels: ["language-support", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a new language is one of the easiest ways to contribute!
+        See [CONTRIBUTING.md](../CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution) for the step-by-step guide.
+
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: "e.g., Kotlin, Swift, Ruby"
+    validations:
+      required: true
+
+  - type: input
+    id: extensions
+    attributes:
+      label: File Extensions
+      placeholder: "e.g., .kt, .kts"
+    validations:
+      required: true
+
+  - type: input
+    id: grammar
+    attributes:
+      label: Tree-sitter Grammar Package
+      description: "Check https://github.com/tree-sitter for available grammars"
+      placeholder: "e.g., tree-sitter-kotlin"
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to implement this myself

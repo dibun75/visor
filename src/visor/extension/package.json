@@ -2,10 +2,10 @@
   "name": "visor-hud",
   "displayName": "V.I.S.O.R. HUD",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
-  "version": "0.9.1",
+  "version": "0.9.3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/example/visor"
+    "url": "https://github.com/dibun75/visor"
   },
   "license": "MIT",
   "engines": {
@@ -64,12 +64,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit -p ./",
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
     "@types/node": "18.x",
     "@types/vscode": "^1.80.0",
+    "esbuild": "^0.28.0",
     "typescript": "^5.1.3"
   },
   "dependencies": {

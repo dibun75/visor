@@ -41,9 +41,9 @@ No. V.I.S.O.R. is a **co-processor** for your AI agent. It doesn't generate code
 
 ### What languages can V.I.S.O.R. index?
 
-Currently: **Python**, **TypeScript**, **JavaScript**, and **TSX**.
+Currently: **Python**, **TypeScript**, **JavaScript**, **TSX**, **Go**, **Rust**, **Java**, **C**, and **C++** (9 languages).
 
-V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straightforward — see the "How to Extend" section in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straightforward (~15 lines of code) — see [CONTRIBUTING.md](../CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
 ---
 

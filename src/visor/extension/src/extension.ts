@@ -12,6 +12,12 @@ let activeTransport: StdioClientTransport | undefined = undefined;
 async function ensureMCPConnected(workspaceFolder: string, context: vscode.ExtensionContext) {
     if (mcpClient) return mcpClient;
 
+    // Clean up any previous transport
+    if (activeTransport) {
+        try { await activeTransport.close(); } catch {}
+        activeTransport = undefined;
+    }
+
     let uvPath = 'uv';
     try {
         uvPath = cp.execSync('which uv', { env: process.env }).toString().trim();
@@ -34,8 +40,16 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
         }
     });
 
-    activeTransport.onerror = (err) => console.error("Transport error:", err);
-    activeTransport.onclose = () => console.log("Transport closed.");
+    activeTransport.onerror = (err) => {
+        console.error("Transport error:", err);
+        mcpClient = undefined;
+        activeTransport = undefined;
+    };
+    activeTransport.onclose = () => {
+        console.log("Transport closed — will reconnect on next call.");
+        mcpClient = undefined;
+        activeTransport = undefined;
+    };
 
     const client = new Client({
         name: "VSCode-HUD",
@@ -44,15 +58,13 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
         capabilities: {}
     });
 
-    Object.defineProperty(activeTransport, 'stderr', {
-        get: function() { return undefined; }
-    });
-    
     try {
         await client.connect(activeTransport);
         console.log("VISOR MCP Connected via stdio");
         mcpClient = client;
     } catch (e) {
+        mcpClient = undefined;
+        activeTransport = undefined;
         vscode.window.showErrorMessage(`Failed to connect MCP: ${e}`);
         console.error("MCP Connect Error:", e);
         throw e;

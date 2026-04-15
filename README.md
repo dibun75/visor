@@ -2,7 +2,7 @@
 
 > **AI is wasting 60% of your tokens reading the wrong code. V.I.S.O.R. fixes that.**
 
-[![Version](https://img.shields.io/badge/version-0.8.0-blue)](https://github.com/dibun75/visor) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
+[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
 
 **Visual Intelligence System for Orchestrated Reasoning**
 
@@ -11,6 +11,18 @@ V.I.S.O.R. is a **Skill-Orchestrated Context Intelligence Engine** — a local-f
 <div align="center">
   <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD Dashboard" width="800"/>
 </div>
+
+---
+
+## 🚀 Install in 30 Seconds
+
+```bash
+pip install visor-mcp
+visor init
+# Done. Your AI agent now has V.I.S.O.R.
+```
+
+`visor init` auto-detects your IDE (Antigravity, Cursor) and writes the MCP config for you.
 
 ---
 
@@ -49,7 +61,20 @@ Pre-loaded strategies that change how V.I.S.O.R. retrieves context:
 Skills are defined as JSON strategies and stored in SQLite. Create your own via `add_custom_skill`.
 
 ### 🔍 Semantic AST Indexing
-Powered by Tree-sitter (Python, TypeScript, JavaScript, TSX), V.I.S.O.R. parses your codebase into an AST. Symbols are embedded using `all-MiniLM-L6-v2` and stored in a local SQLite + `sqlite-vec` vector store.
+Powered by Tree-sitter, V.I.S.O.R. indexes **9 languages** out of the box. Symbols are embedded using `all-MiniLM-L6-v2` and stored in a local SQLite + `sqlite-vec` vector store.
+
+| Language | Extensions | Status |
+|----------|-----------|--------|
+| Python | `.py` | ✅ |
+| TypeScript | `.ts`, `.tsx` | ✅ |
+| JavaScript | `.js`, `.jsx` | ✅ |
+| Go | `.go` | ✅ |
+| Rust | `.rs` | ✅ |
+| Java | `.java` | ✅ |
+| C | `.c`, `.h` | ✅ |
+| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp` | ✅ |
+
+> **Want more?** Adding a new language is ~15 lines of code. See [CONTRIBUTING.md](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
 ### 📊 3D WebGPU Developer HUD
 A real-time force-directed graph visualization of your codebase architecture, embedded directly in your IDE sidebar. Displays live telemetry: Agent Context Burn, Graph Scale, and Drift Alerts.
@@ -59,51 +84,15 @@ Dual-mode detection (SHA-256 hash comparison or file changelog timestamps) warns
 
 ---
 
-## 🚀 Quick Start
-
-### CLI (Immediate, no extension required)
+## 🛠️ CLI
 
 ```bash
-git clone https://github.com/dibun75/visor.git
-cd visor && uv sync
-
-# Find context for a bug
-uv run visor fix "login crash on null user"
-
-# Explain a module
-uv run visor explain "database client"
-
-# General context query
-uv run visor context "how is authentication handled"
-
-# Trace architectural path
-uv run visor trace src/auth.py src/db/client.py
-
-# Check for drift
-uv run visor drift
-```
-
-### IDE Extension
-
-1. Download the latest `visor-hud-0.8.0.vsix` release.
-2. Open VS Code / Antigravity → Extensions → `...` → **Install from VSIX...**
-3. The extension bootstraps the Python MCP server via `uv run` and launches the HUD.
-
-> **Note**: First launch downloads the `all-MiniLM-L6-v2` embedding model (~80MB). Subsequent starts are instant.
-
-### MCP Configuration (Antigravity)
-
-Add to `~/.gemini/antigravity/mcp_config.json`:
-
-```json
-"visor": {
-  "command": "uv",
-  "args": [
-    "--directory", "<PATH_TO_VISOR>",
-    "run", "-q", "<PATH_TO_VISOR>/src/visor/server.py"
-  ],
-  "env": {}
-}
+visor context "how is authentication handled"   # General context query
+visor fix "login crash on null user"             # Bug-fixer skill
+visor explain "database client"                  # Architecture-explainer skill
+visor trace src/auth.py src/db/client.py         # Trace architectural path
+visor drift                                       # Check for drift
+visor init                                        # Auto-configure for your IDE
 ```
 
 ---
@@ -150,7 +139,7 @@ V.I.S.O.R. exposes **16 MCP tools** across 5 categories. See [`docs/MCP_TOOLS.md
 ## 📦 Example Output
 
 ```bash
-$ uv run visor fix "authentication crash"
+$ visor fix "authentication crash"
 ```
 
 ```
@@ -189,31 +178,22 @@ $ uv run visor fix "authentication crash"
 | [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete MCP tool API reference |
 | [`docs/FAQ.md`](./docs/FAQ.md) | Frequently asked questions |
 | [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Common issues and solutions |
-| [`examples/use_cases.md`](./examples/use_cases.md) | 7 real-world usage scenarios |
-| [`demo/`](./demo/) | Demo script, sample output, comparison, recording guide |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to contribute (add languages, tools, skills) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Release history |
 
 ---
 
 ## 🤝 Contributing
 
+V.I.S.O.R. welcomes contributions! The easiest way to start is by [adding a new language](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution) — it's ~15 lines and a great first issue.
+
 ```bash
 git clone https://github.com/dibun75/visor.git
-cd visor && uv sync
-
-# Run the MCP server
-uv run src/visor/server.py
-
-# Run tests
-uv run pytest tests/
-
-# Build the HUD
-cd src/visor/hud && npm install && npm run build
-
-# Build the extension
-cd src/visor/extension && npm install && npm run compile
-npx @vscode/vsce package -o visor-hud-0.8.0.vsix
+cd visor && uv sync --dev
+uv run pytest tests/ -v
 ```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 ---
 

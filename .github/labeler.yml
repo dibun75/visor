@@ -1,0 +1,23 @@
+language-support:
+  - changed-files:
+      - any-glob-to-any-file: 'src/visor/parser/treesitter.py'
+
+mcp-tools:
+  - changed-files:
+      - any-glob-to-any-file: 'src/visor/tools/**'
+
+hud:
+  - changed-files:
+      - any-glob-to-any-file: 'src/visor/hud/**'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', '*.md']
+
+testing:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**'
+
+extension:
+  - changed-files:
+      - any-glob-to-any-file: 'src/visor/extension/**'

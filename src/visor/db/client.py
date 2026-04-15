@@ -1,5 +1,7 @@
 import sqlite3
 import sqlite_vec
+import sys
+import threading
 import struct
 from typing import List, Dict, Any, Optional
 
@@ -14,30 +16,36 @@ class VectorDBClient:
 
     def __new__(cls, db_path=None, *args, **kwargs):
         if not cls._instance:
+            cls._instance = super(VectorDBClient, cls).__new__(cls)
+            cls._instance._lock = threading.Lock()
+            
             if db_path is None or db_path == "visor_memory.db":
                 import os
                 import hashlib
                 
                 env_path = os.environ.get("VISOR_DB_PATH")
                 if env_path:
-                    if os.path.isdir(env_path):
+                    # If passed from VSCode extension, we ensure it maps to a directory
+                    # to prevent 'dibun75.visor' from accidentally becoming a SQLite file.
+                    if not env_path.endswith(".db"):
                         resolved_path = os.path.join(env_path, "visor_memory.db")
                     else:
                         resolved_path = env_path
                 else:
-                    workspace = os.getcwd()
+                    workspace = os.path.abspath(os.path.realpath(os.getcwd()))
                     hashed = hashlib.sha256(workspace.encode("utf-8")).hexdigest()[:12]
                     resolved_path = os.path.expanduser(f"~/.cache/visor/{hashed}/visor_memory.db")
                 
                 os.makedirs(os.path.dirname(resolved_path), exist_ok=True)
                 db_path = resolved_path
                 
-            cls._instance = super(VectorDBClient, cls).__new__(cls, *args, **kwargs)
+                print(f"[VISOR] Using DB path: {db_path}", file=sys.stderr, flush=True)
+                
             cls._instance._init_db(db_path)
         return cls._instance
 
     def _init_db(self, db_path: str):
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.conn = sqlite3.connect(db_path, check_same_thread=False, isolation_level=None)
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.execute("PRAGMA synchronous=NORMAL")
         self.conn.enable_load_extension(True)
@@ -128,31 +136,33 @@ class VectorDBClient:
         return cursor.lastrowid
 
     def upsert_node(self, file_path: str, node_type: str, name: str, docstring: str, vector: List[float], start_line: int = -1, end_line: int = -1, file_hash: str = "") -> int:
-        cursor = self.conn.cursor()
-        # Ensure we always update the latest info
-        cursor.execute("SELECT id FROM code_nodes WHERE file_path=? AND name=? AND node_type=?", (file_path, name, node_type))
-        row = cursor.fetchone()
-        
-        if row:
-            node_id = row[0]
-            cursor.execute(
-                "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?", 
-                (docstring, start_line, end_line, file_hash, node_id)
-            )
-            cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
-        else:
-            cursor.execute(
-                "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (file_path, node_type, name, docstring, start_line, end_line, file_hash)
-            )
-            node_id = cursor.lastrowid
+        with self._lock:
+            cursor = self.conn.cursor()
+            # Ensure we always update the latest info
+            cursor.execute("SELECT id FROM code_nodes WHERE file_path=? AND name=? AND node_type=?", (file_path, name, node_type))
+            row = cursor.fetchone()
             
-        cursor.execute(
-            "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
-            (node_id, serialize_vec(vector))
-        )
-        self.conn.commit()
-        return node_id
+            if row:
+                node_id = row[0]
+                cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
+                cursor.execute(
+                    "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?", 
+                    (docstring, start_line, end_line, file_hash, node_id)
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (file_path, node_type, name, docstring, start_line, end_line, file_hash)
+                )
+                node_id = cursor.lastrowid
+                
+            cursor.execute(
+                "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+                (node_id, serialize_vec(vector))
+            )
+
+            self.conn.commit()
+            return node_id
 
     def batch_upsert_nodes(
         self,
@@ -160,16 +170,8 @@ class VectorDBClient:
     ) -> None:
         """
         High-throughput bulk upsert of code nodes within a single transaction.
-
-        Each item in ``nodes`` must be a dict with keys:
-            file_path, node_type, name, docstring, vector,
-            start_line, end_line, file_hash.
-
-        This is ~10-20× faster than calling upsert_node() in a loop
-        because it batches all SQL writes into one COMMIT.
         """
         cursor = self.conn.cursor()
-        # Gather existing (file_path, name, node_type) → id mapping
         file_paths = list({n["file_path"] for n in nodes})
         placeholders = ",".join(["?"] * len(file_paths))
         cursor.execute(
@@ -180,35 +182,49 @@ class VectorDBClient:
             (r[1], r[2], r[3]): r[0] for r in cursor.fetchall()
         }
 
-        try:
-            cursor.execute("BEGIN")
-            for n in nodes:
-                key = (n["file_path"], n["name"], n["node_type"])
-                vec_blob = serialize_vec(n["vector"])
-                if key in existing:
-                    node_id = existing[key]
-                    cursor.execute(
-                        "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?",
-                        (n["docstring"], n["start_line"], n["end_line"], n["file_hash"], node_id),
-                    )
+        with self._lock:
+            # Safe sqlite-vec vector deletion OUTSIDE the insert transaction
+            if existing:
+                for node_id in existing.values():
                     cursor.execute("DELETE FROM vec_code_nodes WHERE rowid=?", (node_id,))
-                else:
-                    cursor.execute(
-                        "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        (n["file_path"], n["node_type"], n["name"], n["docstring"],
-                         n["start_line"], n["end_line"], n["file_hash"]),
-                    )
-                    node_id = cursor.lastrowid
-                    existing[key] = node_id
-                cursor.execute(
-                    "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
-                    (node_id, vec_blob),
-                )
-            cursor.execute("COMMIT")
-        except Exception:
-            cursor.execute("ROLLBACK")
-            raise
+                    
+            try:
+                cursor.execute("BEGIN")
+                for n in nodes:
+                    key = (n["file_path"], n["name"], n["node_type"])
+                    vec_blob = serialize_vec(n["vector"])
+                    if key in existing:
+                        node_id = existing[key]
+                        cursor.execute(
+                            "UPDATE code_nodes SET docstring=?, start_line=?, end_line=?, file_hash=? WHERE id=?",
+                            (n["docstring"], n["start_line"], n["end_line"], n["file_hash"], node_id),
+                        )
+                    else:
+                        cursor.execute(
+                            "INSERT INTO code_nodes (file_path, node_type, name, docstring, start_line, end_line, file_hash) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (n["file_path"], n["node_type"], n["name"], n["docstring"],
+                             n["start_line"], n["end_line"], n["file_hash"]),
+                        )
+                        node_id = cursor.lastrowid
+                        existing[key] = node_id
+
+                    try:
+                        cursor.execute(
+                            "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+                            (node_id, vec_blob),
+                        )
+                    except Exception as e:
+                        print(f"FAILED ON INSERT: {key} -> {node_id} -> {e}", file=sys.stderr)
+                        raise
+                try:
+                    cursor.execute("COMMIT")
+                except Exception as e:
+                    print(f"FAILED ON COMMIT: {e}", file=sys.stderr)
+                    raise
+            except Exception:
+                cursor.execute("ROLLBACK")
+                raise
 
     def upsert_edge(self, from_node: str, to_node: str, relation_type: str):
         cursor = self.conn.cursor()

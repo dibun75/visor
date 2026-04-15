@@ -1,12 +1,26 @@
 [project]
-name = "visor"
-version = "0.8.0"
+name = "visor-mcp"
+version = "1.0.0"
 description = "Skill-Orchestrated Context Intelligence Engine for AI coding agents"
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "Arunav Mandal", email = "dibun75@gmail.com" }
 ]
 requires-python = ">=3.10"
+keywords = ["mcp", "context", "ai", "coding-agent", "tree-sitter", "embeddings", "ast"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "gitpython>=3.1.46",
     "mcp>=1.27.0",
@@ -20,23 +34,38 @@ dependencies = [
     "tree-sitter-javascript>=0.25.0",
     "tree-sitter-python>=0.25.0",
     "tree-sitter-typescript>=0.23.2",
+    "tree-sitter-go>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
+    "tree-sitter-java>=0.23.0",
+    "tree-sitter-c>=0.23.0",
+    "tree-sitter-cpp>=0.23.0",
     "watchdog>=6.0.0",
 ]
 
-dependency-groups = [
-    "dev"
-]
-
-[dependency-groups]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-]
+[project.urls]
+Homepage = "https://github.com/dibun75/visor"
+Repository = "https://github.com/dibun75/visor"
+Documentation = "https://github.com/dibun75/visor/tree/main/docs"
+"Bug Tracker" = "https://github.com/dibun75/visor/issues"
 
 [project.scripts]
 visor-mcp = "visor.server:main"
 visor = "visor.cli:main"
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.11.0",
+]
+
 [build-system]
 requires = ["uv_build>=0.11.6,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "visor"
+module-root = "src"
+default-excludes = false
+source-include = ["src/visor/**/*.py", "pyproject.toml", "README.md", "LICENSE"]
+source-exclude = ["**/node_modules/**", "**/out/**", "**/dist/**", "**/.venv/**"]

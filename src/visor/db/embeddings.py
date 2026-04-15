@@ -1,4 +1,3 @@
-import numpy as np
 
 class SemanticEmbedder:
     _instance = None

@@ -4,7 +4,6 @@ Deterministically extracts classes, methods, and import edges from source files.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -14,6 +13,11 @@ import tree_sitter
 import tree_sitter_python
 import tree_sitter_typescript
 import tree_sitter_javascript
+import tree_sitter_go
+import tree_sitter_rust
+import tree_sitter_java
+import tree_sitter_c
+import tree_sitter_cpp
 
 # ---------------------------------------------------------------------------
 # Language setup
@@ -23,13 +27,27 @@ _LANG_PYTHON     = tree_sitter.Language(tree_sitter_python.language())
 _LANG_TYPESCRIPT = tree_sitter.Language(tree_sitter_typescript.language_typescript())
 _LANG_TSX        = tree_sitter.Language(tree_sitter_typescript.language_tsx())
 _LANG_JS         = tree_sitter.Language(tree_sitter_javascript.language())
+_LANG_GO         = tree_sitter.Language(tree_sitter_go.language())
+_LANG_RUST       = tree_sitter.Language(tree_sitter_rust.language())
+_LANG_JAVA       = tree_sitter.Language(tree_sitter_java.language())
+_LANG_C          = tree_sitter.Language(tree_sitter_c.language())
+_LANG_CPP        = tree_sitter.Language(tree_sitter_cpp.language())
 
 _EXT_MAP = {
-    ".py":  _LANG_PYTHON,
-    ".ts":  _LANG_TYPESCRIPT,
-    ".tsx": _LANG_TSX,
-    ".js":  _LANG_JS,
-    ".jsx": _LANG_JS,
+    ".py":   _LANG_PYTHON,
+    ".ts":   _LANG_TYPESCRIPT,
+    ".tsx":  _LANG_TSX,
+    ".js":   _LANG_JS,
+    ".jsx":  _LANG_JS,
+    ".go":   _LANG_GO,
+    ".rs":   _LANG_RUST,
+    ".java": _LANG_JAVA,
+    ".c":    _LANG_C,
+    ".h":    _LANG_C,
+    ".cpp":  _LANG_CPP,
+    ".cc":   _LANG_CPP,
+    ".cxx":  _LANG_CPP,
+    ".hpp":  _LANG_CPP,
 }
 
 # ---------------------------------------------------------------------------
@@ -57,6 +75,31 @@ _QUERIES = {
         "class":    "(class_declaration name: (identifier) @name) @node",
         "import":   "(import_statement source: (string) @module) @node",
     },
+    _LANG_GO: {
+        "function": "(function_declaration name: (identifier) @name) @node",
+        "class":    "(type_declaration (type_spec name: (type_identifier) @name)) @node",
+        "import":   "(import_spec path: (interpreted_string_literal) @module) @node",
+    },
+    _LANG_RUST: {
+        "function": "(function_item name: (identifier) @name) @node",
+        "class":    "(struct_item name: (type_identifier) @name) @node",
+        "import":   "(use_declaration argument: (scoped_identifier) @module) @node",
+    },
+    _LANG_JAVA: {
+        "function": "(method_declaration name: (identifier) @name) @node",
+        "class":    "(class_declaration name: (identifier) @name) @node",
+        "import":   "(import_declaration) @node",
+    },
+    _LANG_C: {
+        "function": "(function_definition declarator: (function_declarator declarator: (identifier) @name)) @node",
+        "class":    "(struct_specifier name: (type_identifier) @name) @node",
+        "import":   "(preproc_include path: (string_literal) @module) @node",
+    },
+    _LANG_CPP: {
+        "function": "(function_definition declarator: (function_declarator declarator: (identifier) @name)) @node",
+        "class":    "(class_specifier name: (type_identifier) @name) @node",
+        "import":   "(preproc_include path: (string_literal) @module) @node",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -65,10 +108,15 @@ _QUERIES = {
 # ---------------------------------------------------------------------------
 
 _CALL_QUERIES = {
-    _LANG_PYTHON: "(call function: [(identifier) @callee (attribute attribute: (identifier) @callee)]) @call",
+    _LANG_PYTHON:     "(call function: [(identifier) @callee (attribute attribute: (identifier) @callee)]) @call",
     _LANG_TYPESCRIPT: "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
     _LANG_TSX:        "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
     _LANG_JS:         "(call_expression function: [(identifier) @callee (member_expression property: (property_identifier) @callee)]) @call",
+    _LANG_GO:         "(call_expression function: [(identifier) @callee (selector_expression field: (field_identifier) @callee)]) @call",
+    _LANG_RUST:       "(call_expression function: [(identifier) @callee (field_expression field: (field_identifier) @callee)]) @call",
+    _LANG_JAVA:       "(method_invocation name: (identifier) @callee) @call",
+    _LANG_C:          "(call_expression function: (identifier) @callee) @call",
+    _LANG_CPP:        "(call_expression function: [(identifier) @callee (field_expression field: (field_identifier) @callee)]) @call",
 }
 
 # ---------------------------------------------------------------------------

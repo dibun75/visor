@@ -68,7 +68,7 @@ Watchdog detects change
         ↓
 SHA-256 hash compared to DB (cache hit → skip)
         ↓
-Tree-sitter parses AST (Python, TS, JS, TSX)
+Tree-sitter parses AST (Python, TS, JS, Go, Rust, Java, C, C++)
         ↓
 Nodes extracted: classes, functions, imports
         ↓
@@ -338,4 +338,5 @@ uv run visor fix "login crash"                 # Bug-fixer skill
 uv run visor explain "database client"         # Architecture-explainer skill
 uv run visor trace src/a.py src/b.py           # Trace path
 uv run visor drift                             # Recent file changes
+uv run visor init                              # Auto-configure IDE
 ```

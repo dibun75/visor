@@ -18,7 +18,6 @@ Pipeline:
 """
 from __future__ import annotations
 
-import math
 import os
 from typing import List, Dict, Any, Optional
 
@@ -44,6 +43,9 @@ MAX_CONTEXT_TOKENS = 8_000  # Conservative budget to avoid overflows
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+_ctx_graph_cache: nx.DiGraph | None = None
+_ctx_graph_edge_count: int = -1
+
 def _load_edges_graph() -> nx.DiGraph:
     """Load edges from the DB into a lightweight DiGraph for hop-distance queries."""
     G = nx.DiGraph()
@@ -52,6 +54,18 @@ def _load_edges_graph() -> nx.DiGraph:
     for from_n, to_n in cursor.fetchall():
         G.add_edge(from_n, to_n)
     return G
+
+def _get_cached_edges_graph() -> nx.DiGraph:
+    """Returns a cached edges graph, rebuilding only when edges change."""
+    global _ctx_graph_cache, _ctx_graph_edge_count
+    db_client.conn.commit()
+    cursor = db_client.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM edges")
+    current_count = cursor.fetchone()[0]
+    if _ctx_graph_cache is None or current_count != _ctx_graph_edge_count:
+        _ctx_graph_cache = _load_edges_graph()
+        _ctx_graph_edge_count = current_count
+    return _ctx_graph_cache
 
 
 def _estimate_tokens(text: str) -> int:
@@ -220,7 +234,7 @@ def build_context(query: str, max_results: int = 20, skill_name: Optional[str] =
     anchor_dist = candidates[0]["distance"]
 
     # 4. Compute hop map from anchor file using BFS (max depth 5)
-    G = _load_edges_graph()
+    G = _get_cached_edges_graph()
     hop_map: Dict[str, int] = {}
     if G.has_node(anchor_file):
         for target, hops in nx.single_source_shortest_path_length(G, anchor_file, cutoff=5).items():

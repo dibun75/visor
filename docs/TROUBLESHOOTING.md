@@ -47,7 +47,7 @@ uv run src/visor/server.py
 
 **Check these:**
 
-1. **File extension**: V.I.S.O.R. indexes `.py`, `.ts`, `.js`, and `.tsx` files only.
+1. **File extension**: V.I.S.O.R. indexes `.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.java`, `.c`, `.h`, `.cpp`, `.cc`, `.cxx`, and `.hpp` files.
 2. **Ignored paths**: Files in `node_modules/`, `.git/`, `__pycache__/`, and `dist/` are skipped.
 3. **Hash cache**: If a file hasn't changed (same SHA-256), it won't re-index. Modify the file to trigger re-indexing.
 
@@ -85,12 +85,13 @@ uv run visor --help
 
 **Fix:**
 ```bash
-# Option A: Use uv run (recommended)
-uv run visor fix "login crash"
-
-# Option B: Install globally
-uv pip install -e /path/to/visor
+# Option A: Install from PyPI (recommended)
+pip install visor-mcp
 visor fix "login crash"
+
+# Option B: Use uv run (development)
+cd /path/to/visor
+uv run visor fix "login crash"
 ```
 
 ### "--json flag not working with trace/drift"

@@ -1,12 +1,11 @@
 from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
-import numpy as np
 import functools
 import networkx as nx
 
-from visor.db.client import db_client, EMBEDDING_DIM
+from visor.db.client import db_client
 from visor.db.embeddings import embedder
 from visor.tools.context_engine import build_context as _build_context
 
@@ -33,6 +32,9 @@ def track_telemetry(func):
         return result
     return wrapper
 
+_graph_cache: nx.DiGraph | None = None
+_graph_edge_count: int = -1
+
 def _build_nx_graph() -> nx.DiGraph:
     """Builds a directed graph of the codebase pulling from the actual edges table."""
     G = nx.DiGraph()
@@ -55,6 +57,18 @@ def _build_nx_graph() -> nx.DiGraph:
             G.add_edge(from_n, to_n, type=rel_type)
                 
     return G
+
+def _get_nx_graph() -> nx.DiGraph:
+    """Returns a cached NetworkX graph, rebuilding only when edges change."""
+    global _graph_cache, _graph_edge_count
+    db_client.conn.commit()
+    cursor = db_client.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM edges")
+    current_count = cursor.fetchone()[0]
+    if _graph_cache is None or current_count != _graph_edge_count:
+        _graph_cache = _build_nx_graph()
+        _graph_edge_count = current_count
+    return _graph_cache
 
 def register_tools(mcp: FastMCP):
     
@@ -226,7 +240,7 @@ def register_tools(mcp: FastMCP):
             # --- Timestamp-based drift (fallback) ---
             try:
                 from dateutil.parser import parse as parse_date
-                context_time = parse_date(loaded_at)
+                parse_date(loaded_at)  # Validate date format
             except Exception:
                 return DriftReport(drift_detected=False, stale_files=[], severity="INFO").model_dump_json()
 
@@ -277,7 +291,7 @@ def register_tools(mcp: FastMCP):
     @track_telemetry
     def impact_analysis(file_path: str) -> str:
         """Fetch downstream dependent files impacted by a change using BFS (max depth 5)."""
-        G = _build_nx_graph()
+        G = _get_nx_graph()
         if not G.has_node(file_path):
             return json.dumps({"error": f"Node {file_path} not found in architecture graph."})
             
@@ -293,7 +307,7 @@ def register_tools(mcp: FastMCP):
     @track_telemetry
     def trace_route(source: str, target: str) -> str:
         """Trace a path from a source node to a target node."""
-        G = _build_nx_graph()
+        G = _get_nx_graph()
         if not G.has_node(source) or not G.has_node(target):
             return json.dumps({"error": "Source or Target node not found."})
             
@@ -307,7 +321,7 @@ def register_tools(mcp: FastMCP):
     @track_telemetry
     def dead_code_detection() -> str:
         """Finds nodes with an in-degree of 0 (no incoming callers)."""
-        G = _build_nx_graph()
+        G = _get_nx_graph()
         dead_nodes = [n for n, d in G.in_degree() if d == 0]
         return json.dumps({"isolated_nodes": dead_nodes})
 
@@ -367,7 +381,7 @@ def register_tools(mcp: FastMCP):
             return json.dumps({"error": f"Symbol '{symbol}' not found — cannot resolve dependency chain."})
         source_file = row[0]
 
-        G = _build_nx_graph()
+        G = _get_nx_graph()
         if not G.has_node(source_file):
             return json.dumps({"source": source_file, "chain": [], "note": "No outgoing edges found. Run the file watcher to populate the edges table."})
 

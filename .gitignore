@@ -1,11 +1,32 @@
-node_modules/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
 .venv/
-__pycache__/
-*.pyc
-visor_memory.db*
-tmp/
-*.vsix
-*.mjs
+.pytest_cache/
 
-__pycache__/
-*.pyc
+# V.I.S.O.R.
+visor_memory.db*
+*.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (HUD + Extension)
+node_modules/
+out/
+*.vsix
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+*.log
