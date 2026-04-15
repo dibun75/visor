@@ -37,14 +37,6 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     outputChannel.appendLine(`[VISOR] workspace: ${workspaceFolder}`);
     outputChannel.appendLine(`[VISOR] VISOR_DB_PATH: ${context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath}`);
 
-    const stderrStream = new (require('stream').PassThrough)();
-    stderrStream.on('data', (chunk: Buffer) => {
-        const line = chunk.toString().trim();
-        if (line) {
-            outputChannel.appendLine(`[server stderr] ${line}`);
-        }
-    });
-    
     activeTransport = new StdioClientTransport({
         command: uvPath,
         args: ['--directory', workspaceFolder, 'run', '-q', serverPath],
@@ -54,7 +46,7 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
             PYTHONPATH: workspaceFolder,
             VISOR_DB_PATH: context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath
         },
-        stderr: stderrStream,
+        stderr: 'pipe',
     });
 
     activeTransport.onerror = (err) => {
