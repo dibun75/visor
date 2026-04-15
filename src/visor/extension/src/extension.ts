@@ -9,6 +9,8 @@ let currentPanel: vscode.WebviewPanel | undefined = undefined;
 let mcpClient: Client | undefined = undefined;
 let activeTransport: StdioClientTransport | undefined = undefined;
 
+const outputChannel = vscode.window.createOutputChannel("V.I.S.O.R.");
+
 async function ensureMCPConnected(workspaceFolder: string, context: vscode.ExtensionContext) {
     if (mcpClient) return mcpClient;
 
@@ -29,6 +31,20 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
 
     const serverPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
     
+    outputChannel.appendLine(`[VISOR] uv path: ${uvPath}`);
+    outputChannel.appendLine(`[VISOR] server path: ${serverPath}`);
+    outputChannel.appendLine(`[VISOR] server exists: ${fs.existsSync(serverPath)}`);
+    outputChannel.appendLine(`[VISOR] workspace: ${workspaceFolder}`);
+    outputChannel.appendLine(`[VISOR] VISOR_DB_PATH: ${context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath}`);
+
+    const stderrStream = new (require('stream').PassThrough)();
+    stderrStream.on('data', (chunk: Buffer) => {
+        const line = chunk.toString().trim();
+        if (line) {
+            outputChannel.appendLine(`[server stderr] ${line}`);
+        }
+    });
+    
     activeTransport = new StdioClientTransport({
         command: uvPath,
         args: ['--directory', workspaceFolder, 'run', '-q', serverPath],
@@ -37,15 +53,18 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
             WORKSPACE_ROOT: workspaceFolder, 
             PYTHONPATH: workspaceFolder,
             VISOR_DB_PATH: context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath
-        }
+        },
+        stderr: stderrStream,
     });
 
     activeTransport.onerror = (err) => {
+        outputChannel.appendLine(`[VISOR] Transport error: ${err}`);
         console.error("Transport error:", err);
         mcpClient = undefined;
         activeTransport = undefined;
     };
     activeTransport.onclose = () => {
+        outputChannel.appendLine("[VISOR] Transport closed");
         console.log("Transport closed — will reconnect on next call.");
         mcpClient = undefined;
         activeTransport = undefined;
@@ -59,13 +78,18 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     });
 
     try {
+        outputChannel.appendLine("[VISOR] Connecting to MCP server...");
         await client.connect(activeTransport);
+        outputChannel.appendLine("[VISOR] MCP Connected successfully");
         console.log("VISOR MCP Connected via stdio");
         mcpClient = client;
-    } catch (e) {
+    } catch (e: any) {
         mcpClient = undefined;
         activeTransport = undefined;
-        vscode.window.showErrorMessage(`Failed to connect MCP: ${e}`);
+        const errMsg = e?.message || String(e);
+        outputChannel.appendLine(`[VISOR] MCP Connect FAILED: ${errMsg}`);
+        outputChannel.show(true);
+        vscode.window.showErrorMessage(`V.I.S.O.R. MCP connection failed: ${errMsg}`);
         console.error("MCP Connect Error:", e);
         throw e;
     }
