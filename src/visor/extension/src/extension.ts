@@ -11,6 +11,68 @@ let activeTransport: StdioClientTransport | undefined = undefined;
 
 const outputChannel = vscode.window.createOutputChannel("V.I.S.O.R.");
 
+/**
+ * Resolve the absolute path to `uv` across all environments:
+ *   - Local VS Code / Antigravity
+ *   - SSH Remote (minimal PATH in extension host)
+ */
+function resolveUvPath(): string {
+    const home = process.env.HOME || '';
+    const candidates = [
+        `${home}/.local/bin/uv`,
+        `${home}/.cargo/bin/uv`,
+        '/usr/local/bin/uv',
+        '/usr/bin/uv',
+    ];
+
+    // Try `which uv` with an augmented PATH that includes common locations
+    const augmentedPath = [
+        `${home}/.local/bin`,
+        `${home}/.cargo/bin`,
+        '/usr/local/bin',
+        process.env.PATH || ''
+    ].join(':');
+
+    try {
+        const found = cp.execSync('which uv', { 
+            env: { ...process.env, PATH: augmentedPath },
+            timeout: 5000 
+        }).toString().trim();
+        if (found && fs.existsSync(found)) return found;
+    } catch {}
+
+    // Fallback: check candidate paths directly
+    for (const p of candidates) {
+        if (fs.existsSync(p)) return p;
+    }
+
+    return 'uv'; // last resort — hope it's on PATH
+}
+
+/**
+ * Build environment for the spawned server process.
+ * Ensures PATH includes common tool locations even when
+ * the extension host has a minimal environment.
+ */
+function buildServerEnv(workspaceFolder: string, dbPath: string): Record<string, string> {
+    const home = process.env.HOME || '';
+    const extraPaths = [
+        `${home}/.local/bin`,
+        `${home}/.cargo/bin`,
+        '/usr/local/bin',
+    ];
+    const currentPath = process.env.PATH || '/usr/bin:/bin';
+    const fullPath = [...extraPaths, currentPath].join(':');
+
+    return {
+        ...process.env as Record<string, string>,
+        PATH: fullPath,
+        WORKSPACE_ROOT: workspaceFolder,
+        PYTHONPATH: workspaceFolder,
+        VISOR_DB_PATH: dbPath,
+    };
+}
+
 async function ensureMCPConnected(workspaceFolder: string, context: vscode.ExtensionContext) {
     if (mcpClient) return mcpClient;
 
@@ -20,33 +82,54 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
         activeTransport = undefined;
     }
 
-    let uvPath = 'uv';
-    try {
-        uvPath = cp.execSync('which uv', { env: process.env }).toString().trim();
-    } catch {
-        const home = process.env.HOME;
-        if (fs.existsSync(`${home}/.local/bin/uv`)) uvPath = `${home}/.local/bin/uv`;
-        else if (fs.existsSync(`${home}/.cargo/bin/uv`)) uvPath = `${home}/.cargo/bin/uv`;
-    }
-
+    const uvPath = resolveUvPath();
     const serverPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
-    
+    const dbPath = context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath;
+    const serverEnv = buildServerEnv(workspaceFolder, dbPath);
+
+    outputChannel.appendLine(`[VISOR] === Connection attempt at ${new Date().toISOString()} ===`);
     outputChannel.appendLine(`[VISOR] uv path: ${uvPath}`);
+    outputChannel.appendLine(`[VISOR] uv exists: ${fs.existsSync(uvPath)}`);
     outputChannel.appendLine(`[VISOR] server path: ${serverPath}`);
     outputChannel.appendLine(`[VISOR] server exists: ${fs.existsSync(serverPath)}`);
     outputChannel.appendLine(`[VISOR] workspace: ${workspaceFolder}`);
-    outputChannel.appendLine(`[VISOR] VISOR_DB_PATH: ${context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath}`);
+    outputChannel.appendLine(`[VISOR] VISOR_DB_PATH: ${dbPath}`);
+    outputChannel.appendLine(`[VISOR] PATH: ${serverEnv.PATH}`);
+
+    // Pre-flight: verify uv can run
+    try {
+        const uvVersion = cp.execSync(`"${uvPath}" --version`, { 
+            env: serverEnv, timeout: 10000 
+        }).toString().trim();
+        outputChannel.appendLine(`[VISOR] uv version: ${uvVersion}`);
+    } catch (e: any) {
+        const msg = `Cannot run uv at "${uvPath}": ${e.message}`;
+        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
+        outputChannel.show(true);
+        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
+        throw new Error(msg);
+    }
+
+    // Pre-flight: verify server file exists
+    if (!fs.existsSync(serverPath)) {
+        const msg = `Server not found at ${serverPath}`;
+        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
+        outputChannel.show(true);
+        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
+        throw new Error(msg);
+    }
 
     activeTransport = new StdioClientTransport({
         command: uvPath,
         args: ['--directory', workspaceFolder, 'run', '-q', serverPath],
-        env: { 
-            ...process.env, 
-            WORKSPACE_ROOT: workspaceFolder, 
-            PYTHONPATH: workspaceFolder,
-            VISOR_DB_PATH: context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath
-        },
+        env: serverEnv,
         stderr: 'pipe',
+    });
+
+    // Capture stderr from the server process for diagnostics
+    activeTransport.stderr?.on('data', (chunk: Buffer) => {
+        const lines = chunk.toString().trim();
+        if (lines) outputChannel.appendLine(`[server] ${lines}`);
     });
 
     activeTransport.onerror = (err) => {
@@ -57,7 +140,6 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     };
     activeTransport.onclose = () => {
         outputChannel.appendLine("[VISOR] Transport closed");
-        console.log("Transport closed — will reconnect on next call.");
         mcpClient = undefined;
         activeTransport = undefined;
     };
@@ -72,16 +154,15 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     try {
         outputChannel.appendLine("[VISOR] Connecting to MCP server...");
         await client.connect(activeTransport);
-        outputChannel.appendLine("[VISOR] MCP Connected successfully");
-        console.log("VISOR MCP Connected via stdio");
+        outputChannel.appendLine("[VISOR] ✅ MCP Connected successfully!");
         mcpClient = client;
     } catch (e: any) {
         mcpClient = undefined;
         activeTransport = undefined;
         const errMsg = e?.message || String(e);
-        outputChannel.appendLine(`[VISOR] MCP Connect FAILED: ${errMsg}`);
+        outputChannel.appendLine(`[VISOR] ❌ MCP Connect FAILED: ${errMsg}`);
         outputChannel.show(true);
-        vscode.window.showErrorMessage(`V.I.S.O.R. MCP connection failed: ${errMsg}`);
+        vscode.window.showErrorMessage(`V.I.S.O.R. connection failed. Check Output → V.I.S.O.R. for details.`);
         console.error("MCP Connect Error:", e);
         throw e;
     }
