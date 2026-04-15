@@ -25,12 +25,15 @@ class VectorDBClient:
                 
                 env_path = os.environ.get("VISOR_DB_PATH")
                 if env_path:
-                    # If passed from VSCode extension, we ensure it maps to a directory
-                    # to prevent 'dibun75.visor' from accidentally becoming a SQLite file.
-                    if not env_path.endswith(".db"):
-                        resolved_path = os.path.join(env_path, "visor_memory.db")
-                    else:
+                    if env_path.endswith(".db"):
+                        # Explicit .db file path
                         resolved_path = env_path
+                    elif os.path.isfile(env_path):
+                        # Path exists as a file (e.g., old SQLite DB) — use it directly
+                        resolved_path = env_path
+                    else:
+                        # Treat as directory: append visor_memory.db
+                        resolved_path = os.path.join(env_path, "visor_memory.db")
                 else:
                     workspace = os.path.abspath(os.path.realpath(os.getcwd()))
                     hashed = hashlib.sha256(workspace.encode("utf-8")).hexdigest()[:12]
