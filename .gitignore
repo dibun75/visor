@@ -37,3 +37,5 @@ test_*.js
 test_*.html
 test_*.mjs
 build.log
+dump_dom.mjs
+run_playwright.mjs
