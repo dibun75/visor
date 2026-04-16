@@ -92,9 +92,9 @@ graph TB
 ├── hub.db                          ← Global: workspaces registry, telemetry,
 │                                      custom skills, agent memory
 └── workspaces/
-    ├── 6764eab0d3ea/graph.db       ← Workspace: visor (code_nodes, edges, vec)
-    ├── a1b2c3d4e5f6/graph.db       ← Workspace: my-webapp
-    └── f6e5d4c3b2a1/graph.db       ← Workspace: react-app
+    ├── a1b2c3d4e5f6/graph.db       ← Workspace: my-project (code_nodes, edges, vec)
+    ├── f6e5d4c3b2a1/graph.db       ← Workspace: my-webapp
+    └── 9c8b7a6d5e4f/graph.db       ← Workspace: react-app
 ```
 
 ### Path Resolution

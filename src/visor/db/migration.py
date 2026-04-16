@@ -52,7 +52,7 @@ def _guess_workspace_root(db_path: str) -> str | None:
         conn.close()
         if row and row[0]:
             # Find the common root from the file_path
-            # e.g., /home/user/my-project/src/server.py → /home/arunav/visor
+            # e.g., /home/user/my-project/src/server.py → /home/user/my-project
             parts = row[0].split("/")
             # Walk up until we find a directory that looks like a workspace root
             for i in range(len(parts), 2, -1):

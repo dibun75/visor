@@ -30,3 +30,10 @@ Thumbs.db
 # Temporary
 tmp/
 *.log
+
+# Scratch / debug files
+test_*.py
+test_*.js
+test_*.html
+test_*.mjs
+build.log
