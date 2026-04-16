@@ -9,7 +9,7 @@
 V.I.S.O.R. is a **Skill-Orchestrated Context Intelligence Engine** — a local-first MCP server that indexes your codebase via Tree-sitter AST parsing, ranks code with a multi-signal scoring engine, and delivers surgical context to AI coding agents. It works with **Antigravity, VS Code, Cursor, and Claude Code**.
 
 <div align="center">
-  <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD Dashboard" width="800"/>
+  <img src="./docs/assets/hud_overview.png?v=0.10.0" alt="V.I.S.O.R HUD Dashboard" width="800"/>
 </div>
 
 ---
