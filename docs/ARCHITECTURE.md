@@ -6,15 +6,16 @@
 
 1. [System Overview](#system-overview)
 2. [Design Philosophy](#design-philosophy)
-3. [Data Flow](#data-flow)
-4. [Database Schema](#database-schema)
-5. [Component Breakdown](#component-breakdown)
-6. [Embedding Pipeline](#embedding-pipeline)
-7. [Context Scoring Engine](#context-scoring-engine)
-8. [MCP Server & Tool Registration](#mcp-server--tool-registration)
-9. [IDE Extension & WebGPU HUD](#ide-extension--webgpu-hud)
-10. [Security Model](#security-model)
-11. [How to Extend V.I.S.O.R.](#how-to-extend-visor)
+3. [Hub-and-Spoke Database Architecture](#hub-and-spoke-database-architecture)
+4. [Data Flow](#data-flow)
+5. [Database Schema](#database-schema)
+6. [Component Breakdown](#component-breakdown)
+7. [Embedding Pipeline](#embedding-pipeline)
+8. [Context Scoring Engine](#context-scoring-engine)
+9. [MCP Server & Tool Registration](#mcp-server--tool-registration)
+10. [IDE Extension & WebGPU HUD](#ide-extension--webgpu-hud)
+11. [Security Model](#security-model)
+12. [How to Extend V.I.S.O.R.](#how-to-extend-visor)
 
 ---
 
@@ -32,8 +33,8 @@ V.I.S.O.R. is a **local-first MCP (Model Context Protocol) server** that acts as
 │  └──────────────┘          └──────────────┬─────────────────┬─┘ │
 │                                           │                 │   │
 │                              ┌────────────▼──┐   ┌─────────▼─┐ │
-│                              │  SQLite DB    │   │  NetworkX  │ │
-│                              │  (vec + AST)  │   │  DiGraph   │ │
+│                              │  Hub + Spoke  │   │  NetworkX  │ │
+│                              │  SQLite DBs   │   │  DiGraph   │ │
 │                              └───────────────┘   └───────────┘ │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -49,11 +50,86 @@ V.I.S.O.R. is a **local-first MCP (Model Context Protocol) server** that acts as
 
 | Principle | Implementation |
 |-----------|---------------|
-| **Local-first** | All data lives in `visor_memory.db` (SQLite). No cloud calls. |
+| **Local-first** | All data lives in `~/.visor/` (SQLite). No cloud calls. |
 | **Privacy-preserving** | No traffic interception. Communicates via stdio only. |
 | **Token-efficient** | Context Scoring Engine ranks and compresses before returning context. |
 | **Zero-config** | Bootstrapped by the IDE extension via `uv run`. |
 | **Incremental** | File watcher only re-indexes changed files (hash-based cache). |
+| **Multi-workspace** | Hub-and-spoke DB separates user-global data from workspace-specific code graphs. |
+
+---
+
+## Hub-and-Spoke Database Architecture
+
+V.I.S.O.R. uses a **dual-database** architecture that separates user-global data from workspace-specific code graphs. This enables cross-workspace telemetry, portable AI skills, and per-project code isolation.
+
+```mermaid
+graph TB
+    subgraph "~/.visor/"
+        HUB["hub.db<br/>workspaces | telemetry_logs<br/>custom_skills | agent_memory"]
+        subgraph "workspaces/"
+            WS1["visor/graph.db<br/>code_nodes | edges<br/>vec_code_nodes"]
+            WS2["my-webapp/graph.db<br/>code_nodes | edges<br/>vec_code_nodes"]
+            WS3["react-app/graph.db<br/>code_nodes | edges<br/>vec_code_nodes"]
+        end
+    end
+    
+    EXT["VS Code Extension"] --> HUB
+    EXT --> WS1
+    MCP["MCP Agent Tools"] --> HUB
+    MCP --> WS1
+    CLI["visor CLI"] --> HUB
+    CLI --> WS1
+    
+    HUB -->|"register_workspace()"| WS1
+    HUB -->|"get_global_telemetry()"| EXT
+```
+
+### Directory Layout
+
+```
+~/.visor/
+├── hub.db                          ← Global: workspaces registry, telemetry,
+│                                      custom skills, agent memory
+└── workspaces/
+    ├── 6764eab0d3ea/graph.db       ← Workspace: visor (code_nodes, edges, vec)
+    ├── a1b2c3d4e5f6/graph.db       ← Workspace: my-webapp
+    └── f6e5d4c3b2a1/graph.db       ← Workspace: react-app
+```
+
+### Path Resolution
+
+Both the extension and standalone MCP use the **same deterministic convention** — no environment variables needed:
+
+- **Hub**: `~/.visor/hub.db` (always)
+- **Spoke**: `~/.visor/workspaces/{sha256(WORKSPACE_ROOT)[:12]}/graph.db`
+
+The `WORKSPACE_ROOT` environment variable (or `os.getcwd()` fallback) determines which spoke to use.
+
+### Data Classification
+
+| Table | Database | Scope | Reasoning |
+|-------|----------|-------|-----------|
+| `workspaces` | Hub | Global | Registry of all indexed workspaces |
+| `telemetry_logs` | Hub | Global | Token usage — user wants cross-project totals |
+| `custom_skills` | Hub | Global | AI strategies should be portable |
+| `agent_memory` | Hub | Hybrid | Tagged with `workspace_hash` for filtering |
+| `vec_agent_memory` | Hub | Global | Embeddings for memory recall |
+| `code_nodes` | Spoke | Workspace | AST of that project's code |
+| `edges` | Spoke | Workspace | Import/call graph of that project |
+| `vec_code_nodes` | Spoke | Workspace | Embeddings tied to that project's code |
+| `file_changelog` | Spoke | Workspace | File drift tracking for that project |
+| `ui_state` | Spoke | Workspace | HUD state for the current project view |
+
+### Auto-Migration
+
+On first boot, V.I.S.O.R. automatically discovers old monolith `visor_memory.db` files from previous versions and migrates them:
+
+1. Scans `~/.cache/visor/*/` and known extension storage paths
+2. Copies global tables (telemetry, skills, memory) to `hub.db`
+3. Copies workspace tables (code_nodes, edges) to the appropriate spoke
+4. Registers discovered workspaces in the hub registry
+5. Leaves old DBs intact as backups
 
 ---
 
@@ -74,7 +150,7 @@ Nodes extracted: classes, functions, imports
         ↓
 sentence-transformers encodes each node docstring/name
         ↓
-Embedding + metadata upserted to SQLite
+Embedding + metadata upserted to spoke graph.db
         ↓
 Import relationships written to `edges` table
 ```
@@ -86,7 +162,7 @@ MCP tool called by AI agent
         ↓
 build_context(query)
         ↓
-Semantic search via sqlite-vec (cosine similarity)
+Semantic search via sqlite-vec (cosine similarity) [spoke]
         ↓
 Dependency expansion via NetworkX BFS
         ↓
@@ -95,56 +171,42 @@ Multi-signal relevance scoring
 Token budget enforcement (8,000 token cap)
         ↓
 Ranked context payload returned as JSON
+        ↓
+Telemetry logged to hub.db (bytes transmitted, workspace tag)
 ```
 
 ---
 
 ## Database Schema
 
-All data is stored in `visor_memory.db` (SQLite with WAL mode).
+### Hub Database (`~/.visor/hub.db`)
 
-### `code_nodes`
-Primary store for all indexed AST symbols.
+#### `workspaces`
+Registry of all indexed workspaces.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `hash` | TEXT PK | SHA-256 hash of workspace root (12 chars) |
+| `name` | TEXT | Human-readable workspace name (basename) |
+| `root_path` | TEXT | Absolute path to workspace root |
+| `last_accessed` | DATETIME | Last time this workspace connected |
+| `total_nodes` | INTEGER | Cached node count |
+| `total_tokens` | INTEGER | Cached total bytes transmitted |
+
+#### `telemetry_logs`
+Tracks bytes transmitted per MCP tool call, tagged by workspace.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | INTEGER PK | Auto-increment row ID |
-| `file_path` | TEXT | Relative path to source file |
-| `node_type` | TEXT | `class`, `function`, or `import` |
-| `name` | TEXT | Symbol name |
-| `docstring` | TEXT | Extracted Python docstring (if any) |
-| `start_line` | INTEGER | First line of the symbol definition |
-| `end_line` | INTEGER | Last line of the symbol definition |
-| `file_hash` | TEXT | SHA-256 of the file at last index (cache key) |
-
-### `edges`
-Directed dependency relationships between files.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INTEGER PK | Auto-increment row ID |
-| `from_node` | TEXT | Source file path |
-| `to_node` | TEXT | Target module or file path |
-| `relation_type` | TEXT | e.g. `IMPORTS`, `CALLS`, `INHERITS` |
-
-### `vec_code_nodes` (virtual — sqlite-vec)
-Stores 384-dimensional float embeddings for ANN search.
-
-### `vec_agent_memory` (virtual — sqlite-vec)
-Stores embeddings for agent memory recall.
-
-### `agent_memory`
-Episodic memory of agent conversations.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INTEGER PK | Auto-increment row ID |
-| `role` | TEXT | `user` or `assistant` |
-| `content` | TEXT | Conversation turn content |
+| `workspace_hash` | TEXT | Workspace hash for aggregation |
+| `workspace_name` | TEXT | Human-readable workspace name |
+| `tool_name` | TEXT | Name of the MCP tool called |
+| `bytes_transmitted` | INTEGER | Size of the response payload |
 | `timestamp` | DATETIME | UTC timestamp |
 
-### `custom_skills`
-User-defined AI instruction packs with optional execution strategies.
+#### `custom_skills`
+User-defined AI instruction packs with optional execution strategies. **Shared globally across all workspaces.**
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -155,7 +217,50 @@ User-defined AI instruction packs with optional execution strategies.
 | `strategy` | TEXT | JSON execution strategy (intent overrides, scoring bias) |
 | `timestamp` | DATETIME | Created at |
 
-### `file_changelog`
+#### `agent_memory`
+Episodic memory of agent conversations, tagged with workspace context.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER PK | Auto-increment row ID |
+| `workspace_hash` | TEXT | Workspace context (NULL = global memory) |
+| `role` | TEXT | `user` or `assistant` |
+| `content` | TEXT | Conversation turn content |
+| `timestamp` | DATETIME | UTC timestamp |
+
+#### `vec_agent_memory` (virtual — sqlite-vec)
+Stores 384-dimensional float embeddings for agent memory recall.
+
+### Spoke Database (`~/.visor/workspaces/{hash}/graph.db`)
+
+#### `code_nodes`
+Primary store for all indexed AST symbols.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER PK | Auto-increment row ID |
+| `file_path` | TEXT | Absolute path to source file |
+| `node_type` | TEXT | `class`, `function`, or `import` |
+| `name` | TEXT | Symbol name |
+| `docstring` | TEXT | Extracted Python docstring (if any) |
+| `start_line` | INTEGER | First line of the symbol definition |
+| `end_line` | INTEGER | Last line of the symbol definition |
+| `file_hash` | TEXT | SHA-256 of the file at last index (cache key) |
+
+#### `edges`
+Directed dependency relationships between files.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER PK | Auto-increment row ID |
+| `from_node` | TEXT | Source file path |
+| `to_node` | TEXT | Target module or file path |
+| `relation_type` | TEXT | e.g. `IMPORTS`, `CALLS`, `INHERITS` |
+
+#### `vec_code_nodes` (virtual — sqlite-vec)
+Stores 384-dimensional float embeddings for ANN search.
+
+#### `file_changelog`
 Records file modification events for timestamp-based drift detection.
 
 | Column | Type | Description |
@@ -164,8 +269,13 @@ Records file modification events for timestamp-based drift detection.
 | `file_path` | TEXT | Path to modified file |
 | `changed_at` | TEXT | ISO-8601 UTC timestamp |
 
-### `telemetry_logs`
-Tracks bytes transmitted per MCP tool call for context burn metrics.
+#### `ui_state`
+Key-value store for bidirectional HUD state (e.g., agent focus).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `key` | TEXT PK | State key (e.g. `agent_focus`) |
+| `json_value` | TEXT | JSON-serialized state value |
 
 ---
 
@@ -173,16 +283,17 @@ Tracks bytes transmitted per MCP tool call for context burn metrics.
 
 ```
 visor/
-├── server.py               # FastMCP entrypoint + skill seeding + watcher bootstrap
+├── server.py               # FastMCP entrypoint + migration + workspace registration + skill seeding
 ├── cli.py                  # CLI interface: visor context/fix/explain/trace/drift
 ├── db/
-│   ├── client.py           # VectorDBClient: schema, CRUD, vector search, recency map
-│   └── embeddings.py       # SemanticEmbedder: lazy-loaded all-MiniLM-L6-v2 singleton
+│   ├── client.py           # VectorDBClient: dual-connection hub+spoke, schema, CRUD, vector search
+│   ├── embeddings.py       # SemanticEmbedder: lazy-loaded all-MiniLM-L6-v2 singleton
+│   └── migration.py        # Auto-migration from old monolith DBs to hub-and-spoke
 ├── parser/
 │   ├── treesitter.py       # ASTParser: extracts nodes + edges + file hash per file
 │   └── watcher.py          # Watchdog: debounced file watcher + index_workspace boot scan
 └── tools/
-    ├── core.py             # All MCP tool registrations (16 tools)
+    ├── core.py             # All MCP tool registrations (16 tools) + telemetry decorator
     └── context_engine.py   # Context Intelligence Engine: skill-aware scoring + reasoning + metrics
 ```
 
@@ -244,7 +355,7 @@ After scoring, a **token budget** of 8,000 tokens is enforced. Code snippets are
 
 V.I.S.O.R. uses `FastMCP` from the `mcp` Python package. Tools are registered via `@mcp.tool()` decorators inside `register_tools(mcp)` in `core.py`.
 
-All tools are automatically decorated with `@track_telemetry`, which logs the byte size of each response to `telemetry_logs` — powering the live **Agent Context Burn** metric in the HUD.
+Tools that transmit context to agents are decorated with `@track_telemetry`, which logs the byte size of each response to `hub.db`'s `telemetry_logs` — powering the live **Agent Context Burn** metric in the HUD. Internal polling endpoints (like `get_architecture_map` and `get_telemetry`) are **not** tracked to prevent metric inflation.
 
 See [`MCP_TOOLS.md`](./MCP_TOOLS.md) for a complete tool reference.
 
@@ -261,6 +372,14 @@ The HUD connects to the MCP server indirectly — the extension translates IPC `
 
 **Key constraint**: `acquireVsCodeApi()` may only be called **once** per Webview lifecycle. V.I.S.O.R. caches the instance in `window.vscodeApiInstance`.
 
+### Telemetry Display
+
+The HUD telemetry panel shows:
+- **Total tokens processed** across all workspaces (from `hub.db`)
+- **Per-workspace breakdown** with progress bars and percentages
+- **Graph database scale** for the current workspace (from spoke `graph.db`)
+- **Active workspace indicator** highlighting the current project
+
 ---
 
 ## Security Model
@@ -268,7 +387,7 @@ The HUD connects to the MCP server indirectly — the extension translates IPC `
 - **No network proxy**: V.I.S.O.R. does not intercept your IDE's outbound AI requests.
 - **No OAuth access**: Your Google or GitHub tokens are never touched.
 - **stdio-only**: The MCP server communicates exclusively over stdin/stdout — no open ports.
-- **Local-only data**: `visor_memory.db` never leaves your machine.
+- **Local-only data**: `~/.visor/` never leaves your machine.
 
 ---
 
@@ -327,6 +446,8 @@ add_custom_skill(
 ```
 
 The AI can invoke it with: `build_context("my query", skill="my-skill")`.
+
+> **Note**: Custom skills are stored in `hub.db` and shared across all workspaces automatically.
 
 ### CLI Commands
 

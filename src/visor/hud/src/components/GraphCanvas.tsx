@@ -473,8 +473,9 @@ const ViewModeToggle: React.FC<{
 const NodeCloud: React.FC<{
   graphData: GraphData;
   contextResult: ContextResult | null;
+  agentFocus: {paths: string[], intent: string} | null;
   viewMode: GraphViewMode;
-}> = ({ graphData, contextResult, viewMode }) => {
+}> = ({ graphData, contextResult, agentFocus, viewMode }) => {
   const groupRef = useRef<THREE.Group>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
 
@@ -486,9 +487,11 @@ const NodeCloud: React.FC<{
 
   // Build set of selected node IDs (graph node IDs whose file_path matches context)
   const selectedFilePaths = useMemo(() => {
-    if (!contextResult) return new Set<string>();
-    return new Set(contextResult.context.map(c => c.file_path));
-  }, [contextResult]);
+    const paths = new Set<string>();
+    if (contextResult) contextResult.context.forEach(c => paths.add(c.file_path));
+    if (agentFocus && agentFocus.paths) agentFocus.paths.forEach(p => paths.add(p));
+    return paths;
+  }, [contextResult, agentFocus]);
 
   const selectedNodeIds = useMemo(() => {
     const ids = new Set<number>();
@@ -514,7 +517,7 @@ const NodeCloud: React.FC<{
     return graphData.nodes.filter(n => selectedNodeIds.has(n.id));
   }, [graphData, contextResult, viewMode, selectedNodeIds]);
 
-  const hasContext = contextResult !== null && contextResult.context.length > 0;
+  const hasContext = (contextResult !== null && contextResult.context.length > 0) || (agentFocus !== null && agentFocus.paths.length > 0);
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -680,10 +683,40 @@ const QueryPanel: React.FC<{ contextResult: ContextResult | null }> = ({ context
   );
 };
 
-const EdgeLegend: React.FC = () => {
+const AgentFocusPanel: React.FC<{ agentFocus: { paths: string[], intent: string } | null }> = ({ agentFocus }) => {
+  if (!agentFocus || !agentFocus.paths || agentFocus.paths.length === 0) return null;
+
   return (
     <div style={{
-      position: 'absolute', bottom: 24, left: 24, zIndex: 10,
+      position: 'absolute', bottom: 24, left: 24, zIndex: 11,
+      background: 'rgba(255, 10, 84, 0.15)', backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255, 10, 84, 0.4)', borderRadius: '12px',
+      padding: '16px 20px', minWidth: '260px',
+      fontFamily: "'Inter', sans-serif", color: '#fff',
+      boxShadow: '0 8px 32px rgba(255, 10, 84, 0.2), inset 0 0 16px rgba(255, 10, 84, 0.1)', 
+      pointerEvents: 'none', userSelect: 'none',
+      animation: 'agent-focus-pulse 2s infinite alternate'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff0a54', boxShadow: '0 0 12px #ff0a54' }} />
+        <span style={{ fontSize: '11px', color: '#ff0a54', letterSpacing: '2px', fontWeight: 800 }}>AGENT FOCUS LIVE</span>
+      </div>
+      <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '6px' }}>{agentFocus.intent}</div>
+      <div style={{ fontSize: '11px', color: '#ff0a54', fontWeight: 600 }}>Tracking {agentFocus.paths.length} nodes</div>
+      <style>{`
+        @keyframes agent-focus-pulse {
+          0% { box-shadow: 0 8px 32px rgba(255, 10, 84, 0.2), inset 0 0 16px rgba(255, 10, 84, 0.1); border-color: rgba(255, 10, 84, 0.4); }
+          100% { box-shadow: 0 8px 32px rgba(255, 10, 84, 0.4), inset 0 0 24px rgba(255, 10, 84, 0.2); border-color: rgba(255, 10, 84, 0.8); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const EdgeLegend: React.FC<{ hasFocusPanel: boolean }> = ({ hasFocusPanel }) => {
+  return (
+    <div style={{
+      position: 'absolute', bottom: hasFocusPanel ? 130 : 24, left: 24, zIndex: 10,
       background: 'rgba(10, 12, 20, 0.65)', backdropFilter: 'blur(12px)',
       border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px',
       padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '6px',
@@ -716,6 +749,7 @@ const getVsCode = () => {
 export const GraphCanvas: React.FC = () => {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [contextResult, setContextResult] = useState<ContextResult | null>(null);
+  const [agentFocus, setAgentFocus] = useState<{paths: string[], intent: string} | null>(null);
   const [viewMode, setViewMode] = useState<GraphViewMode>('full');
   const [syncStatus, setSyncStatus] = useState<'SYNCING' | 'LIVE' | 'ERROR'>('SYNCING');
   const vscode = getVsCode();
@@ -737,6 +771,11 @@ export const GraphCanvas: React.FC = () => {
         } catch (err: any) {
           console.error('[Err] contextResultData failed:', err.message);
         }
+      } else if (event.data.command === 'agentFocusData') {
+        try {
+          setAgentFocus(event.data.data);
+          if (event.data.data && event.data.data.paths && event.data.data.paths.length > 0) setViewMode('context');
+        } catch (err) {}
       }
     };
 
@@ -760,13 +799,14 @@ export const GraphCanvas: React.FC = () => {
     };
   }, []);
 
-  const hasContext = contextResult !== null && contextResult.context.length > 0;
+  const hasContext = (contextResult !== null && contextResult.context.length > 0) || (agentFocus !== null && agentFocus.paths.length > 0);
 
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
       <StatusIndicator status={syncStatus} />
       <QueryPanel contextResult={contextResult} />
-      <EdgeLegend />
+      <AgentFocusPanel agentFocus={agentFocus} />
+      <EdgeLegend hasFocusPanel={agentFocus !== null && agentFocus.paths.length > 0} />
       <ViewModeToggle mode={viewMode} onChange={setViewMode} hasContext={hasContext} />
 
       <Canvas camera={{ position: [0, 0, 28], fov: 60 }}>
@@ -779,6 +819,7 @@ export const GraphCanvas: React.FC = () => {
           <NodeCloud
             graphData={graphData}
             contextResult={contextResult}
+            agentFocus={agentFocus}
             viewMode={viewMode}
           />
         ) : (

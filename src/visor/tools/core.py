@@ -104,7 +104,6 @@ def register_tools(mcp: FastMCP):
         return f"Successfully stored memory with ID: {mem_id}"
         
     @mcp.tool()
-    @track_telemetry
     def get_architecture_map(depth: int = 1) -> str:
         """Returns the full or partial CodeNode graph topology as a JSON string."""
         db_client.conn.commit()
@@ -267,25 +266,79 @@ def register_tools(mcp: FastMCP):
         """Returns the current state of telemetry data. graph_nodes, context_burn, drift_alert."""
         # Flush the read snapshot so we can see writes from the watchdog process
         db_client.conn.commit()
+        db_client.hub_conn.commit()
         
+        # Spoke: local graph stats
         cursor = db_client.conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM code_nodes")
         nodes = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT IFNULL(SUM(length(content)), 0) FROM agent_memory")
-        memory_burn = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT IFNULL(SUM(bytes_transmitted), 0) FROM telemetry_logs")
-        tool_burn = cursor.fetchone()[0]
-        
-        burn = memory_burn + tool_burn
         
         # Simple global drift proxy: Any modifications inside the last 60 seconds
         cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-60 seconds')")
         drift = cursor.fetchone()[0] > 0
         
-        data = {"graph_nodes": nodes, "context_burn": burn, "drift_alert": drift}
+        # Hub: telemetry aggregation
+        telemetry = db_client.get_global_telemetry()
+        total_burn = telemetry["total_bytes"]
+        
+        # Current workspace burn
+        ws_burn = 0
+        for ws in telemetry["per_workspace"]:
+            if ws["hash"] == db_client.workspace_hash:
+                ws_burn = ws["bytes"]
+                break
+        
+        # Per-workspace breakdown for HUD
+        workspaces = []
+        for ws in telemetry["per_workspace"]:
+            workspaces.append({
+                "name": ws["name"],
+                "tokens": ws["bytes"],
+            })
+        
+        # Update cached stats in hub
+        try:
+            db_client.update_workspace_stats(nodes, ws_burn)
+        except Exception:
+            pass
+        
+        agent_focus = db_client.get_ui_state('agent_focus')
+        
+        data = {
+            "graph_nodes": nodes,
+            "context_burn": ws_burn,
+            "context_burn_total": total_burn,
+            "drift_alert": drift,
+            "workspace_name": db_client.workspace_name,
+            "workspaces": workspaces,
+        }
+        if agent_focus:
+            data["agent_focus"] = agent_focus
+            
         return json.dumps(data)
+
+    @mcp.tool()
+    @track_telemetry
+    def set_hud_focus(file_paths: List[str], intent: str) -> str:
+        """
+        Directly controls the V.I.S.O.R Developer HUD to visually highlight specific files you are actively reasoning about.
+        Use this tool sequentially as you investigate the codebase to give the developer real-time 3D visual feedback of your attention and intent.
+        Pass an empty list for file_paths to clear the active focus.
+        
+        Args:
+            file_paths: List of absolute or relative paths to files you want to highlight on the graph.
+            intent: A concise 2-4 word description of what you are doing (e.g. "Reviewing Auth Flow", "Checking Schema").
+        """
+        if not file_paths:
+            db_client.set_ui_state('agent_focus', None)
+            return "HUD focus cleared."
+            
+        data = {
+            "paths": file_paths,
+            "intent": intent
+        }
+        db_client.set_ui_state('agent_focus', data)
+        return f"HUD now actively highlighting {len(file_paths)} nodes with intent: '{intent}'"
 
     @mcp.tool()
     @track_telemetry

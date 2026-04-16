@@ -4,6 +4,38 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ---
 
+## [0.10.0] — 2026-04-17
+
+### 🏗️ Hub-and-Spoke Database Architecture
+
+**Dual-Database Design**
+- Split monolithic `visor_memory.db` into `~/.visor/hub.db` (global) + `~/.visor/workspaces/{hash}/graph.db` (per-workspace)
+- Hub stores: workspace registry, telemetry logs, custom skills, agent memory
+- Spoke stores: code_nodes, edges, vec_code_nodes, file_changelog, ui_state
+- Deterministic path resolution — no more `VISOR_DB_PATH` environment variable
+
+**Multi-Workspace Telemetry**
+- `get_telemetry` now returns per-workspace token breakdown with total across all workspaces
+- Workspace auto-registration on MCP server boot
+- Cached workspace stats (node count, token usage) in the hub registry
+
+**HUD Enhancements**
+- Token counter now shows "LIFETIME · ALL WORKSPACES" total
+- Per-workspace breakdown with progress bars, percentages, and active workspace indicator
+- Graph database scale shows workspace name context
+
+**Auto-Migration**
+- On first boot, discovers old monolith DBs in `~/.cache/visor/` and extension storage
+- Copies global tables to hub, workspace tables to spokes
+- Deduplicates custom skills, tags telemetry/memory with workspace context
+- Leaves old DBs intact as backups
+
+**Extension Cleanup**
+- Removed `VISOR_DB_PATH` from extension env — Python uses `~/.visor/` convention directly
+- Removed `context.storageUri` dependency for DB path resolution
+
+---
+
 ## [0.8.0] — 2026-04-13
 
 ### 🚀 Skill-Orchestrated AI Engine (Wave 1)

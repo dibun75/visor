@@ -23,8 +23,11 @@ interface ContextResult {
 export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
     const [telemetry, setTelemetry] = useState({
         burn: 0,
+        burnTotal: 0,
         nodes: 0,
-        drift: false
+        drift: false,
+        workspaceName: '',
+        workspaces: [] as { name: string; tokens: number }[]
     });
     
     const [showSkillModal, setShowSkillModal] = useState(false);
@@ -48,8 +51,11 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             if (message.command === 'telemetryData') {
                 setTelemetry({
                     burn: message.data.context_burn || 0,
+                    burnTotal: message.data.context_burn_total || 0,
                     nodes: message.data.graph_nodes || 0,
-                    drift: message.data.drift_alert || false
+                    drift: message.data.drift_alert || false,
+                    workspaceName: message.data.workspace_name || '',
+                    workspaces: message.data.workspaces || []
                 });
             } else if (message.command === 'skillsData') {
                 setSkills(message.data || []);
@@ -191,19 +197,41 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
 
             {/* Bottom Bar Telemetry */}
             <div style={{ display: 'flex', flexDirection: isSidebar ? 'column' : 'row', gap: '16px', width: '100%', maxWidth: isSidebar ? 'none' : '800px', margin: isSidebar ? '0' : '0 auto', pointerEvents: 'none' }}>
-                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
-                    <Cpu color="var(--primary)" size={32} />
-                    <div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>AGENT CONTEXT BURN</div>
-                        <div style={{ fontSize: '20px', fontWeight: 600 }}>{telemetry.burn.toLocaleString()} <span style={{fontSize:'12px', color:'var(--text-muted)', display: isSidebar ? 'block' : 'inline'}}>/ 128,000 TOKENS</span></div>
+                <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <Cpu color="var(--primary)" size={32} />
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>TOTAL TOKENS PROCESSED</div>
+                            <div style={{ fontSize: '20px', fontWeight: 600 }}>{Math.round(telemetry.burnTotal / 4).toLocaleString()} <span style={{fontSize:'12px', color:'var(--text-muted)', display: isSidebar ? 'block' : 'inline'}}>LIFETIME · ALL WORKSPACES</span></div>
+                        </div>
                     </div>
+                    {telemetry.workspaces.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                            {telemetry.workspaces.map((ws, i) => {
+                                const total = telemetry.burnTotal || 1;
+                                const pct = Math.round((ws.tokens / total) * 100);
+                                const isActive = ws.name === telemetry.workspaceName;
+                                return (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.2)', boxShadow: isActive ? '0 0 6px var(--primary)' : 'none', flexShrink: 0 }} />
+                                        <span style={{ color: isActive ? 'var(--text-main)' : 'var(--text-muted)', fontWeight: isActive ? 600 : 400, minWidth: '80px' }}>{ws.name}</span>
+                                        <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${pct}%`, height: '100%', background: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.15)', borderRadius: '2px', transition: 'width 0.5s ease' }} />
+                                        </div>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '10px', minWidth: '55px', textAlign: 'right' }}>{Math.round(ws.tokens / 4).toLocaleString()}</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', minWidth: '30px', textAlign: 'right' }}>{pct}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
                 
                 <div className="glass-panel" style={{ padding: '16px', flex: 1, display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'auto' }}>
                     <Database color="var(--secondary)" size={32} />
                     <div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1px' }}>GRAPH DATABASE SCALE</div>
-                        <div style={{ fontSize: '20px', fontWeight: 600 }}>{telemetry.nodes.toLocaleString()} <span style={{fontSize:'12px', color:'var(--text-muted)', display: isSidebar ? 'block' : 'inline'}}>LOCAL NODES</span></div>
+                        <div style={{ fontSize: '20px', fontWeight: 600 }}>{telemetry.nodes.toLocaleString()} <span style={{fontSize:'12px', color:'var(--text-muted)', display: isSidebar ? 'block' : 'inline'}}>LOCAL NODES{telemetry.workspaceName ? ` · ${telemetry.workspaceName.toUpperCase()}` : ''}</span></div>
                     </div>
                 </div>
             </div>

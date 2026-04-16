@@ -54,7 +54,7 @@ function resolveUvPath(): string {
  * Ensures PATH includes common tool locations even when
  * the extension host has a minimal environment.
  */
-function buildServerEnv(workspaceFolder: string, dbPath: string): Record<string, string> {
+function buildServerEnv(workspaceFolder: string): Record<string, string> {
     const home = process.env.HOME || '';
     const extraPaths = [
         `${home}/.local/bin`,
@@ -69,7 +69,6 @@ function buildServerEnv(workspaceFolder: string, dbPath: string): Record<string,
         PATH: fullPath,
         WORKSPACE_ROOT: workspaceFolder,
         PYTHONPATH: workspaceFolder,
-        VISOR_DB_PATH: dbPath,
     };
 }
 
@@ -84,8 +83,7 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
 
     const uvPath = resolveUvPath();
     const serverPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
-    const dbPath = context.storageUri ? context.storageUri.fsPath : context.globalStorageUri.fsPath;
-    const serverEnv = buildServerEnv(workspaceFolder, dbPath);
+    const serverEnv = buildServerEnv(workspaceFolder);
 
     outputChannel.appendLine(`[VISOR] === Connection attempt at ${new Date().toISOString()} ===`);
     outputChannel.appendLine(`[VISOR] uv path: ${uvPath}`);
@@ -93,7 +91,7 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     outputChannel.appendLine(`[VISOR] server path: ${serverPath}`);
     outputChannel.appendLine(`[VISOR] server exists: ${fs.existsSync(serverPath)}`);
     outputChannel.appendLine(`[VISOR] workspace: ${workspaceFolder}`);
-    outputChannel.appendLine(`[VISOR] VISOR_DB_PATH: ${dbPath}`);
+    outputChannel.appendLine(`[VISOR] DB convention: ~/.visor/ (deterministic)`);
     outputChannel.appendLine(`[VISOR] PATH: ${serverEnv.PATH}`);
 
     // Pre-flight: verify uv can run
@@ -200,6 +198,12 @@ function setupMessageListener(webview: vscode.Webview) {
                         command: 'telemetryData',
                         data: data
                     });
+                    if (data.agent_focus) {
+                        webview.postMessage({
+                            command: 'agentFocusData',
+                            data: data.agent_focus
+                        });
+                    }
                 }
             } catch(err) {
                 console.error("Tool call failed", err);

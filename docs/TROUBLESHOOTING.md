@@ -19,23 +19,28 @@ Common issues and their solutions.
 
 ### Database location
 
-V.I.S.O.R. stores its SQLite database in this priority order:
+V.I.S.O.R. uses a hub-and-spoke architecture with databases stored in `~/.visor/`:
 
-1. `$VISOR_DB_PATH` (if set)
-2. `~/.cache/visor/visor_memory.db` (default)
+- **Hub**: `~/.visor/hub.db` — global telemetry, custom skills, workspace registry
+- **Spoke**: `~/.visor/workspaces/{hash}/graph.db` — per-workspace code nodes, edges, embeddings
 
-To reset the database:
+To reset the current workspace's graph:
 ```bash
-rm ~/.cache/visor/visor_memory.db
+rm ~/.visor/workspaces/*/graph.db
+```
+
+To reset everything (including telemetry and skills):
+```bash
+rm -rf ~/.visor/
 ```
 
 ### "sqlite3.OperationalError: no such table"
 
 **Cause:** Database was corrupted or partially migrated.
 
-**Fix:** Delete and let V.I.S.O.R. recreate:
+**Fix:** Delete the affected database and let V.I.S.O.R. recreate:
 ```bash
-rm ~/.cache/visor/visor_memory.db
+rm -rf ~/.visor/
 uv run src/visor/server.py
 ```
 

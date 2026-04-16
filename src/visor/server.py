@@ -6,6 +6,7 @@ import threading
 from mcp.server.fastmcp import FastMCP
 
 from visor.db.client import db_client
+from visor.db.migration import migrate_old_dbs
 from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
 from visor.tools.core import register_tools
 
@@ -103,13 +104,22 @@ def main():
     workspace = os.environ.get("WORKSPACE_ROOT", ".")
     logger.info(f"Starting V.I.S.O.R. MCP Server (workspace={workspace})")
 
-    # Seed built-in skill strategies
+    # Auto-migrate old monolith DBs on first boot
+    migrated = migrate_old_dbs(db_client.hub_conn)
+    if migrated:
+        logger.info(f"[VISOR] Migrated {migrated} old database(s) to hub-and-spoke.")
+
+    # Register this workspace in the global hub
+    db_client.register_workspace()
+    logger.info(f"[VISOR] Registered workspace: {db_client.workspace_name} ({db_client.workspace_hash})")
+
+    # Seed built-in skill strategies (into global hub)
     _seed_default_skills()
 
-    logger.debug(f"VISOR_DB_PATH: {os.environ.get('VISOR_DB_PATH')}")
-    logger.debug(f"WORKSPACE_ROOT: {os.environ.get('WORKSPACE_ROOT')}")
+    logger.info(f"[VISOR] Hub DB: {db_client.hub_path}")
+    logger.info(f"[VISOR] Spoke DB: {db_client.spoke_path}")
 
-    # Task 5: Log persisted data on startup for verification
+    # Log persisted data on startup for verification
     cursor = db_client.conn.cursor()
     node_count = cursor.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
     edge_count = cursor.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
