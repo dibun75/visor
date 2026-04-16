@@ -1,8 +1,10 @@
 {
   "name": "visor-hud",
   "displayName": "V.I.S.O.R. HUD",
+  "publisher": "dibun75",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
   "version": "0.9.7",
+  "icon": "assets/hero.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/dibun75/visor"
