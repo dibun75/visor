@@ -107,10 +107,7 @@ Or use Command Palette → `MCP: Add Server`.
   "mcpServers": {
     "visor": {
       "command": "uvx",
-      "args": ["visor-mcp"],
-      "env": {
-        "WORKSPACE_ROOT": "${workspaceFolder}"
-      }
+      "args": ["visor-mcp"]
     }
   }
 }
