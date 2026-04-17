@@ -277,24 +277,8 @@ def register_tools(mcp: FastMCP):
         cursor.execute("SELECT COUNT(*) FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-60 seconds')")
         drift = cursor.fetchone()[0] > 0
         
-        # Hub: telemetry aggregation
-        telemetry = db_client.get_global_telemetry()
-        total_burn = telemetry["total_bytes"]
-        
-        # Current workspace burn
-        ws_burn = 0
-        for ws in telemetry["per_workspace"]:
-            if ws["hash"] == db_client.workspace_hash:
-                ws_burn = ws["bytes"]
-                break
-        
-        # Per-workspace breakdown for HUD
-        workspaces = []
-        for ws in telemetry["per_workspace"]:
-            workspaces.append({
-                "name": ws["name"],
-                "tokens": ws["bytes"],
-            })
+        # Current workspace token burn
+        ws_burn = db_client.get_workspace_telemetry()
         
         # Update cached stats in hub
         try:
@@ -307,10 +291,8 @@ def register_tools(mcp: FastMCP):
         data = {
             "graph_nodes": nodes,
             "context_burn": ws_burn,
-            "context_burn_total": total_burn,
             "drift_alert": drift,
             "workspace_name": db_client.workspace_name,
-            "workspaces": workspaces,
         }
         if agent_focus:
             data["agent_focus"] = agent_focus

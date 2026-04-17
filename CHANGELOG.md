@@ -4,6 +4,23 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ---
 
+## [0.10.1] — 2026-04-17
+
+### 🔧 Hotfix
+
+**Bundled HUD into Extension**
+- Fixed "HUD Build Not Found" error when opening non-visor workspaces
+- React HUD assets are now bundled inside the `.vsix` instead of being loaded from the workspace folder
+- Extension uses `context.extensionPath` for all UI asset resolution
+
+**Simplified Telemetry to Per-Workspace**
+- Removed "ALL WORKSPACES" cross-workspace aggregation from the HUD
+- Token counter now shows only the current workspace's usage: `TOKENS PROCESSED · {WORKSPACE_NAME}`
+- Removed per-workspace breakdown bar chart — each workspace is self-contained
+- Added `get_workspace_telemetry()` DB method for efficient single-workspace queries
+
+---
+
 ## [0.10.0] — 2026-04-17
 
 ### 🏗️ Hub-and-Spoke Database Architecture
@@ -14,15 +31,14 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 - Spoke stores: code_nodes, edges, vec_code_nodes, file_changelog, ui_state
 - Deterministic path resolution — no more `VISOR_DB_PATH` environment variable
 
-**Multi-Workspace Telemetry**
-- `get_telemetry` now returns per-workspace token breakdown with total across all workspaces
+**Per-Workspace Telemetry**
+- `get_telemetry` returns token usage scoped to the active workspace
 - Workspace auto-registration on MCP server boot
 - Cached workspace stats (node count, token usage) in the hub registry
 
 **HUD Enhancements**
-- Token counter now shows "LIFETIME · ALL WORKSPACES" total
-- Per-workspace breakdown with progress bars, percentages, and active workspace indicator
-- Graph database scale shows workspace name context
+- Token counter shows workspace-scoped usage with workspace name context
+- Graph database scale shows current workspace node count
 
 **Auto-Migration**
 - On first boot, discovers old monolith DBs in `~/.cache/visor/` and extension storage

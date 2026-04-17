@@ -61,7 +61,7 @@ V.I.S.O.R. is a **local-first MCP (Model Context Protocol) server** that acts as
 
 ## Hub-and-Spoke Database Architecture
 
-V.I.S.O.R. uses a **dual-database** architecture that separates user-global data from workspace-specific code graphs. This enables cross-workspace telemetry, portable AI skills, and per-project code isolation.
+V.I.S.O.R. uses a **dual-database** architecture that separates user-global data from workspace-specific code graphs. This enables portable AI skills, per-project telemetry, and per-project code isolation.
 
 ```mermaid
 graph TB
@@ -375,10 +375,8 @@ The HUD connects to the MCP server indirectly — the extension translates IPC `
 ### Telemetry Display
 
 The HUD telemetry panel shows:
-- **Total tokens processed** across all workspaces (from `hub.db`)
-- **Per-workspace breakdown** with progress bars and percentages
+- **Tokens processed** for the current workspace (from `hub.db` telemetry_logs filtered by workspace hash)
 - **Graph database scale** for the current workspace (from spoke `graph.db`)
-- **Active workspace indicator** highlighting the current project
 
 ---
 

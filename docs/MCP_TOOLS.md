@@ -275,7 +275,7 @@ Returns the full codebase file topology as a graph JSON for the 3D WebGPU HUD.
 
 ### `get_telemetry`
 
-Returns live telemetry snapshot for the HUD sidebar.
+Returns live telemetry snapshot for the current workspace.
 
 **Parameters**: None
 
@@ -283,9 +283,10 @@ Returns live telemetry snapshot for the HUD sidebar.
 
 ```json
 {
-  "graph_nodes": 12673,
-  "context_burn": 1205981,
-  "drift_alert": false
+  "graph_nodes": 873,
+  "context_burn": 48210,
+  "drift_alert": false,
+  "workspace_name": "visor"
 }
 ```
 

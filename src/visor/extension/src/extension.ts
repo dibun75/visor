@@ -82,17 +82,29 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     }
 
     const uvPath = resolveUvPath();
-    const serverPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
+    const config = vscode.workspace.getConfiguration('visor');
+    let customServerPath = config.get<string>('serverPath');
+    
+    const localServerPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
     const serverEnv = buildServerEnv(workspaceFolder);
+    
+    let cmd = uvPath;
+    let args: string[] = [];
 
     outputChannel.appendLine(`[VISOR] === Connection attempt at ${new Date().toISOString()} ===`);
     outputChannel.appendLine(`[VISOR] uv path: ${uvPath}`);
-    outputChannel.appendLine(`[VISOR] uv exists: ${fs.existsSync(uvPath)}`);
-    outputChannel.appendLine(`[VISOR] server path: ${serverPath}`);
-    outputChannel.appendLine(`[VISOR] server exists: ${fs.existsSync(serverPath)}`);
-    outputChannel.appendLine(`[VISOR] workspace: ${workspaceFolder}`);
-    outputChannel.appendLine(`[VISOR] DB convention: ~/.visor/ (deterministic)`);
-    outputChannel.appendLine(`[VISOR] PATH: ${serverEnv.PATH}`);
+
+    if (customServerPath) {
+        outputChannel.appendLine(`[VISOR] Using configured serverPath: ${customServerPath}`);
+        args = ['--directory', workspaceFolder, 'run', '-q', customServerPath];
+    } else if (fs.existsSync(localServerPath)) {
+        outputChannel.appendLine(`[VISOR] Found local server.py in workspace: ${localServerPath}`);
+        args = ['--directory', workspaceFolder, 'run', '-q', localServerPath];
+    } else {
+        outputChannel.appendLine(`[VISOR] No local server.py found. Trying global 'visor-mcp' tool...`);
+        // Use uv to run the globally installed visor-mcp or fetch it
+        args = ['tool', 'run', 'visor-mcp'];
+    }
 
     // Pre-flight: verify uv can run
     try {
@@ -108,18 +120,9 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
         throw new Error(msg);
     }
 
-    // Pre-flight: verify server file exists
-    if (!fs.existsSync(serverPath)) {
-        const msg = `Server not found at ${serverPath}`;
-        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
-        outputChannel.show(true);
-        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
-        throw new Error(msg);
-    }
-
     activeTransport = new StdioClientTransport({
-        command: uvPath,
-        args: ['--directory', workspaceFolder, 'run', '-q', serverPath],
+        command: cmd,
+        args: args,
         env: serverEnv,
         stderr: 'pipe',
     });
@@ -168,17 +171,17 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     return mcpClient;
 }
 
-function getWebviewContent(webview: vscode.Webview, workspaceFolder: string, viewType: string): string {
-    const hudHtmlPath = path.join(workspaceFolder, 'src', 'visor', 'hud', 'dist', 'index.html');
+function getWebviewContent(webview: vscode.Webview, extensionPath: string, viewType: string): string {
+    const hudHtmlPath = path.join(extensionPath, 'hud-dist', 'index.html');
     let htmlContent = "";
     try {
         htmlContent = fs.readFileSync(hudHtmlPath, 'utf-8');
         htmlContent = htmlContent.replace('<head>', `<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; script-src 'unsafe-inline' 'unsafe-eval' ${webview.cspSource} https:; style-src 'unsafe-inline' ${webview.cspSource} https:; font-src data: ${webview.cspSource} https:; connect-src ws: wss: https: http:;">`);
-        const assetsUri = webview.asWebviewUri(vscode.Uri.file(path.join(workspaceFolder, 'src', 'visor', 'hud', 'dist', 'assets')));
+        const assetsUri = webview.asWebviewUri(vscode.Uri.file(path.join(extensionPath, 'hud-dist', 'assets')));
         htmlContent = htmlContent.replace(/(href|src)="\/assets([^"]+)"/g, `$1="${assetsUri}$2"`);
         htmlContent = htmlContent.replace('</head>', `<script>window.INITIAL_VIEW_MODE = "${viewType}";</script></head>`);
     } catch(e) {
-        htmlContent = `<h1>HUD Build Not Found</h1><p>Run <code>npm run build</code> in src/visor/hud</p>`;
+        htmlContent = `<h1>HUD Build Not Found</h1><p>Expected bundled UI at ${hudHtmlPath}</p>`;
     }
     return htmlContent;
 }
@@ -269,10 +272,10 @@ class VisorSidebarProvider implements vscode.WebviewViewProvider {
     ) {
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [vscode.Uri.file(path.join(this._workspaceFolder, 'src', 'visor', 'hud', 'dist'))]
+            localResourceRoots: [vscode.Uri.file(path.join(this._context.extensionPath, 'hud-dist'))]
         };
 
-        webviewView.webview.html = getWebviewContent(webviewView.webview, this._workspaceFolder, 'sidebar');
+        webviewView.webview.html = getWebviewContent(webviewView.webview, this._context.extensionPath, 'sidebar');
 
         setupMessageListener(webviewView.webview);
         await ensureMCPConnected(this._workspaceFolder, this._context);
@@ -315,11 +318,11 @@ export async function activate(context: vscode.ExtensionContext) {
             {
                 enableScripts: true,
                 retainContextWhenHidden: true,
-                localResourceRoots: [vscode.Uri.file(path.join(workspaceFolder, 'src', 'visor', 'hud', 'dist'))]
+                localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'hud-dist'))]
             }
         );
 
-        currentPanel.webview.html = getWebviewContent(currentPanel.webview, workspaceFolder, 'panel');
+        currentPanel.webview.html = getWebviewContent(currentPanel.webview, context.extensionPath, 'panel');
         
         setupMessageListener(currentPanel.webview);
 

@@ -277,6 +277,16 @@ class VectorDBClient:
             "per_workspace": per_workspace,
         }
 
+    def get_workspace_telemetry(self) -> int:
+        """Return token burn for the current workspace only."""
+        self.hub_conn.commit()
+        cursor = self.hub_conn.cursor()
+        cursor.execute(
+            "SELECT IFNULL(SUM(bytes_transmitted), 0) FROM telemetry_logs WHERE workspace_hash = ?",
+            (self.workspace_hash,)
+        )
+        return cursor.fetchone()[0]
+
     # ──────────────────────────────────────────────
     # Hub methods: custom skills (shared globally)
     # ──────────────────────────────────────────────

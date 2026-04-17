@@ -3,7 +3,7 @@
   "displayName": "V.I.S.O.R. HUD",
   "publisher": "dibun75",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "icon": "assets/hero.png",
   "repository": {
     "type": "git",
@@ -60,13 +60,18 @@
           "type": "boolean",
           "default": true,
           "description": "Enable automatic reverse-tunnel over SSH for Docker HUD"
+        },
+        "visor.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the V.I.S.O.R Python server file (server.py) or executable. If empty, the extension attempts to find it automatically."
         }
       }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run check-types && node esbuild.js",
+    "compile": "rm -rf hud-dist && cp -r ../hud/dist ./hud-dist && npm run check-types && node esbuild.js",
     "check-types": "tsc --noEmit -p ./",
     "watch": "tsc -watch -p ./"
   },
