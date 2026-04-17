@@ -14,17 +14,131 @@ V.I.S.O.R. is a **Skill-Orchestrated Context Intelligence Engine** — a local-f
 
 ---
 
-## 🚀 Install in 30 Seconds
+## 🚀 Install
+
+### 1. Install the Backend
 
 ```bash
 pip install visor-mcp
-visor init
-# Done. Your AI agent now has V.I.S.O.R.
 ```
 
-`visor init` auto-detects your IDE (Antigravity, Cursor) and writes the MCP config for you.
+Or run directly without installing (recommended):
 
----
+```bash
+uvx visor-mcp
+```
+
+### 2. Configure Your IDE
+
+Add V.I.S.O.R. to your IDE's MCP config. The JSON block is the same everywhere — only the file location changes.
+
+<details>
+<summary><b>Claude Code</b> (one command)</summary>
+
+```bash
+claude mcp add visor -- uvx visor-mcp
+```
+
+Done. Claude Code handles everything.
+
+</details>
+
+<details>
+<summary><b>Cursor</b> (~/.cursor/mcp.json)</summary>
+
+```json
+{
+  "mcpServers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"]
+    }
+  }
+}
+```
+
+Or per-project: create `.cursor/mcp.json` in your repo root.
+
+</details>
+
+<details>
+<summary><b>Claude Desktop</b> (claude_desktop_config.json)</summary>
+
+macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+Linux: `~/.config/claude/claude_desktop_config.json`
+Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"]
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>VS Code</b> (.vscode/mcp.json)</summary>
+
+```json
+{
+  "mcpServers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"]
+    }
+  }
+}
+```
+
+Or use Command Palette → `MCP: Add Server`.
+
+</details>
+
+<details>
+<summary><b>Antigravity</b> (~/.gemini/antigravity/mcp_config.json)</summary>
+
+```json
+{
+  "mcpServers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"],
+      "env": {
+        "WORKSPACE_ROOT": "${workspaceFolder}"
+      }
+    }
+  }
+}
+```
+
+For the full 3D HUD experience, also install the [V.I.S.O.R. HUD extension](https://marketplace.visualstudio.com/items?itemName=dibun75.visor-hud) from the VS Code Marketplace.
+
+</details>
+
+<details>
+<summary><b>Windsurf</b></summary>
+
+Open Plugins sidebar → Manage plugins → View raw config, then add:
+
+```json
+{
+  "mcpServers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"]
+    }
+  }
+}
+```
+
+</details>
+
+> **Prerequisite:** You need [`uv`](https://docs.astral.sh/uv/getting-started/installation/) installed. `uvx` (included with `uv`) handles virtual environments and dependencies automatically — no manual setup needed.
 
 ## Why V.I.S.O.R.?
 
@@ -201,10 +315,12 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 | IDE | Support | Method |
 |------|---------|--------|
-| Google Antigravity | ✅ Full | MCP config + Extension |
-| VS Code | ✅ Full | MCP config + Extension |
-| Cursor | ✅ MCP tools | MCP config |
-| Claude Code | ✅ MCP tools | MCP config |
+| Claude Code | ✅ Full | `claude mcp add visor -- uvx visor-mcp` |
+| Cursor | ✅ Full | `~/.cursor/mcp.json` |
+| Claude Desktop | ✅ Full | `claude_desktop_config.json` |
+| VS Code | ✅ Full | `.vscode/mcp.json` |
+| Antigravity | ✅ Full | MCP config + [HUD Extension](https://marketplace.visualstudio.com/items?itemName=dibun75.visor-hud) |
+| Windsurf | ✅ Full | Plugin raw config |
 
 ---
 
