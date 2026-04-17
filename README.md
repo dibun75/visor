@@ -100,18 +100,25 @@ Or use Command Palette → `MCP: Add Server`.
 </details>
 
 <details>
-<summary><b>Antigravity</b> (~/.gemini/antigravity/mcp_config.json)</summary>
+<summary><b>Antigravity</b> (.vscode/mcp.json in your project)</summary>
+
+Create `.vscode/mcp.json` in your project root:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "visor": {
       "command": "uvx",
-      "args": ["visor-mcp"]
+      "args": ["visor-mcp"],
+      "env": {
+        "WORKSPACE_ROOT": "${workspaceFolder}"
+      }
     }
   }
 }
 ```
+
+> **Note:** Do NOT use the global `~/.gemini/antigravity/mcp_config.json` for V.I.S.O.R. — it doesn't resolve `${workspaceFolder}` and will index the wrong directory.
 
 For the full 3D HUD experience, also install the [V.I.S.O.R. HUD extension](https://marketplace.visualstudio.com/items?itemName=dibun75.visor-hud) from the VS Code Marketplace.
 
