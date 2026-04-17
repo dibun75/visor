@@ -85,6 +85,43 @@ class VectorDBClient:
         self._migrate_hub()
         self._migrate_spoke()
 
+    def reinitialize(self, workspace_root: str):
+        """Re-initialize with a new workspace root (e.g. after MCP roots/list).
+
+        Closes existing spoke connection and opens a new one for the target workspace.
+        The hub connection is shared across workspaces so it stays open.
+        """
+        workspace_root = os.path.abspath(os.path.realpath(workspace_root))
+        if workspace_root == self.workspace_root:
+            return False  # Already pointing at this workspace
+
+        # Close old spoke connection
+        try:
+            self.spoke_conn.close()
+        except Exception:
+            pass
+
+        # Recompute paths for new workspace
+        ws_hash = hashlib.sha256(workspace_root.encode("utf-8")).hexdigest()[:12]
+        ws_name = os.path.basename(workspace_root) or "unknown"
+        spoke_dir = os.path.join(VISOR_HOME, "workspaces", ws_hash)
+        spoke_path = os.path.join(spoke_dir, "graph.db")
+        os.makedirs(spoke_dir, exist_ok=True)
+
+        self.spoke_path = spoke_path
+        self.workspace_hash = ws_hash
+        self.workspace_name = ws_name
+        self.workspace_root = workspace_root
+
+        self.spoke_conn = _open_connection(spoke_path, load_vec=True)
+        self.conn = self.spoke_conn
+
+        print(f"[VISOR] Workspace switched → {ws_name} ({ws_hash})", file=sys.stderr, flush=True)
+        print(f"[VISOR] New Spoke DB: {spoke_path}", file=sys.stderr, flush=True)
+
+        self._migrate_spoke()
+        return True
+
     # ──────────────────────────────────────────────
     # Schema migrations
     # ──────────────────────────────────────────────
