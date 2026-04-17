@@ -13,7 +13,7 @@ from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
 from visor.tools.core import register_tools
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Initialize FastMCP Server
@@ -21,10 +21,12 @@ mcp = FastMCP("VISOR")
 
 register_tools(mcp)
 
+
 @mcp.tool()
 def health_check() -> str:
     """Basic health-check endpoint confirming the server is alive."""
     return "V.I.S.O.R MCP daemon is alive and operational."
+
 
 # ---------------------------------------------------------------------------
 # Built-in Skill Strategies (seeded on first boot)
@@ -35,41 +37,61 @@ _DEFAULT_SKILLS = [
         "name": "bug-fixer",
         "description": "Deep call chain tracing with high recency boost for hunting bugs.",
         "content": "Focus on recently modified files and dependency chains. Trace the call stack from the error location outward.",
-        "strategy": json.dumps({
-            "intent_override": "BUG_FIX",
-            "scoring_bias": {"dep": 1.2, "recency": 1.5},
-            "tool_priority": ["build_context", "get_dependency_chain", "impact_analysis"],
-        }),
+        "strategy": json.dumps(
+            {
+                "intent_override": "BUG_FIX",
+                "scoring_bias": {"dep": 1.2, "recency": 1.5},
+                "tool_priority": [
+                    "build_context",
+                    "get_dependency_chain",
+                    "impact_analysis",
+                ],
+            }
+        ),
     },
     {
         "name": "architecture-explainer",
         "description": "Wide graph traversal with embedding-heavy scoring for understanding codebases.",
         "content": "Prioritize semantic similarity and broad architectural context. Explain how components connect.",
-        "strategy": json.dumps({
-            "intent_override": "EXPLAIN",
-            "scoring_bias": {"embed": 1.8, "dep": 0.8},
-            "tool_priority": ["build_context", "get_architecture_map", "trace_route"],
-        }),
+        "strategy": json.dumps(
+            {
+                "intent_override": "EXPLAIN",
+                "scoring_bias": {"embed": 1.8, "dep": 0.8},
+                "tool_priority": [
+                    "build_context",
+                    "get_architecture_map",
+                    "trace_route",
+                ],
+            }
+        ),
     },
     {
         "name": "refactor-assistant",
         "description": "Dependency clustering and impact analysis for safe refactoring.",
         "content": "Map all downstream dependencies before restructuring. Identify blast radius of changes.",
-        "strategy": json.dumps({
-            "intent_override": "REFACTOR",
-            "scoring_bias": {"dep": 1.5, "exact": 1.5},
-            "tool_priority": ["build_context", "impact_analysis", "dead_code_detection"],
-        }),
+        "strategy": json.dumps(
+            {
+                "intent_override": "REFACTOR",
+                "scoring_bias": {"dep": 1.5, "exact": 1.5},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "dead_code_detection",
+                ],
+            }
+        ),
     },
     {
         "name": "performance-optimizer",
         "description": "Hotspot detection with recent file weighting for performance tuning.",
         "content": "Find recently modified hot paths and co-located performance bottlenecks.",
-        "strategy": json.dumps({
-            "intent_override": "BUG_FIX",
-            "scoring_bias": {"recency": 2.0, "same": 1.5},
-            "tool_priority": ["build_context", "get_dependency_chain"],
-        }),
+        "strategy": json.dumps(
+            {
+                "intent_override": "BUG_FIX",
+                "scoring_bias": {"recency": 2.0, "same": 1.5},
+                "tool_priority": ["build_context", "get_dependency_chain"],
+            }
+        ),
     },
 ]
 
@@ -91,12 +113,22 @@ def _seed_default_skills():
 _WORKSPACE_FROM_ENV = os.environ.get("WORKSPACE_ROOT")
 
 # Project markers that indicate a directory is a real project root
-_PROJECT_MARKERS = {".git", "pyproject.toml", "package.json", "Cargo.toml", "go.mod", "pom.xml", ".sln"}
+_PROJECT_MARKERS = {
+    ".git",
+    "pyproject.toml",
+    "package.json",
+    "Cargo.toml",
+    "go.mod",
+    "pom.xml",
+    ".sln",
+}
 
 
 def _is_project_dir(path: str) -> bool:
     """Check if a directory looks like a real project (has common project markers)."""
-    return any(os.path.exists(os.path.join(path, marker)) for marker in _PROJECT_MARKERS)
+    return any(
+        os.path.exists(os.path.join(path, marker)) for marker in _PROJECT_MARKERS
+    )
 
 
 def _detect_workspace() -> str:
@@ -122,7 +154,9 @@ async def _lifespan(server: FastMCP):
     needs_roots = not _WORKSPACE_FROM_ENV and not _is_project_dir(workspace)
 
     if needs_roots:
-        logger.info("[VISOR] No WORKSPACE_ROOT set and cwd is not a project — will query MCP roots after handshake.")
+        logger.info(
+            "[VISOR] No WORKSPACE_ROOT set and cwd is not a project — will query MCP roots after handshake."
+        )
 
     yield  # MCP handshake completes here
 
@@ -146,9 +180,13 @@ async def _lifespan(server: FastMCP):
                     if switched:
                         db_client.register_workspace()
                         # Re-index the correct workspace
-                        node_count = db_client.conn.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
+                        node_count = db_client.conn.execute(
+                            "SELECT COUNT(*) FROM code_nodes"
+                        ).fetchone()[0]
                         if node_count == 0:
-                            logger.info("[VISOR] Empty database for new workspace — indexing...")
+                            logger.info(
+                                "[VISOR] Empty database for new workspace — indexing..."
+                            )
                             index_thread = threading.Thread(
                                 target=_background_index,
                                 args=(root_path,),
@@ -159,7 +197,9 @@ async def _lifespan(server: FastMCP):
                         try:
                             start_watcher(root_path)
                         except Exception as e:
-                            logger.warning(f"[VISOR] File watcher failed for {root_path}: {e}")
+                            logger.warning(
+                                f"[VISOR] File watcher failed for {root_path}: {e}"
+                            )
         except Exception as e:
             logger.warning(f"[VISOR] Could not query MCP roots: {e}")
 
@@ -193,7 +233,9 @@ def main():
 
     # Register this workspace in the global hub
     db_client.register_workspace()
-    logger.info(f"[VISOR] Registered workspace: {db_client.workspace_name} ({db_client.workspace_hash})")
+    logger.info(
+        f"[VISOR] Registered workspace: {db_client.workspace_name} ({db_client.workspace_hash})"
+    )
 
     # Seed built-in skill strategies (into global hub)
     _seed_default_skills()
@@ -218,9 +260,13 @@ def main():
         )
         index_thread.start()
     elif node_count == 0:
-        logger.info("[VISOR] Empty database but cwd is not a project — deferring index until MCP roots are available.")
+        logger.info(
+            "[VISOR] Empty database but cwd is not a project — deferring index until MCP roots are available."
+        )
     else:
-        logger.info(f"[VISOR] Database already populated ({node_count} nodes). Skipping re-index.")
+        logger.info(
+            f"[VISOR] Database already populated ({node_count} nodes). Skipping re-index."
+        )
 
     try:
         if _is_project_dir(workspace):

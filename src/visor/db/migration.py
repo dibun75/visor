@@ -21,9 +21,15 @@ VISOR_HOME = os.path.expanduser("~/.visor")
 # Known locations where old monolith DBs may exist
 _OLD_DB_PATTERNS = [
     os.path.expanduser("~/.cache/visor/*/visor_memory.db"),
-    os.path.expanduser("~/.antigravity-server/data/User/workspaceStorage/*/dibun75.visor-hud/visor_memory.db"),
-    os.path.expanduser("~/.antigravity-server/data/User/workspaceStorage/*/undefined_publisher.visor-hud/visor_memory.db"),
-    os.path.expanduser("~/.config/Code/User/workspaceStorage/*/dibun75.visor/visor_memory.db"),
+    os.path.expanduser(
+        "~/.antigravity-server/data/User/workspaceStorage/*/dibun75.visor-hud/visor_memory.db"
+    ),
+    os.path.expanduser(
+        "~/.antigravity-server/data/User/workspaceStorage/*/undefined_publisher.visor-hud/visor_memory.db"
+    ),
+    os.path.expanduser(
+        "~/.config/Code/User/workspaceStorage/*/dibun75.visor/visor_memory.db"
+    ),
 ]
 
 
@@ -39,7 +45,7 @@ def _discover_old_dbs() -> list[str]:
 
 def _guess_workspace_root(db_path: str) -> str | None:
     """Try to find the WORKSPACE_ROOT that was used for an old DB.
-    
+
     For ~/.cache/visor/{hash}/visor_memory.db, we can't reverse the hash,
     but we can read code_nodes file_paths to infer the workspace root.
     """
@@ -69,13 +75,15 @@ def _guess_workspace_root(db_path: str) -> str | None:
 
 def _has_table(conn: sqlite3.Connection, table_name: str) -> bool:
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+    )
     return cursor.fetchone() is not None
 
 
 def migrate_old_dbs(hub_conn: sqlite3.Connection) -> int:
     """Migrate data from discovered old DBs into the hub + spokes.
-    
+
     Returns the number of databases migrated.
     """
     # Only run if hub has no workspaces yet (first boot)
@@ -96,7 +104,9 @@ def migrate_old_dbs(hub_conn: sqlite3.Connection) -> int:
         try:
             ws_root = _guess_workspace_root(db_path)
             if not ws_root:
-                logger.warning(f"[VISOR] Cannot determine workspace root for {db_path}, skipping.")
+                logger.warning(
+                    f"[VISOR] Cannot determine workspace root for {db_path}, skipping."
+                )
                 continue
 
             ws_hash = hashlib.sha256(ws_root.encode("utf-8")).hexdigest()[:12]
@@ -120,24 +130,33 @@ def migrate_old_dbs(hub_conn: sqlite3.Connection) -> int:
             # ── Register workspace in hub ──
             node_count = 0
             if _has_table(old_conn, "code_nodes"):
-                node_count = old_conn.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
-            
+                node_count = old_conn.execute(
+                    "SELECT COUNT(*) FROM code_nodes"
+                ).fetchone()[0]
+
             total_bytes = 0
             if _has_table(old_conn, "telemetry_logs"):
-                total_bytes = old_conn.execute("SELECT IFNULL(SUM(bytes_transmitted), 0) FROM telemetry_logs").fetchone()[0]
+                total_bytes = old_conn.execute(
+                    "SELECT IFNULL(SUM(bytes_transmitted), 0) FROM telemetry_logs"
+                ).fetchone()[0]
 
-            hub_conn.execute('''
+            hub_conn.execute(
+                """
                 INSERT INTO workspaces (hash, name, root_path, total_nodes, total_tokens)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(hash) DO UPDATE SET
                     total_nodes = MAX(workspaces.total_nodes, excluded.total_nodes),
                     total_tokens = MAX(workspaces.total_tokens, excluded.total_tokens)
-            ''', (ws_hash, ws_name, ws_root, node_count, total_bytes))
+            """,
+                (ws_hash, ws_name, ws_root, node_count, total_bytes),
+            )
             hub_conn.commit()
 
             old_conn.close()
             migrated += 1
-            logger.info(f"[VISOR] Migrated: {db_path} → workspace={ws_name} ({node_count} nodes)")
+            logger.info(
+                f"[VISOR] Migrated: {db_path} → workspace={ws_name} ({node_count} nodes)"
+            )
 
         except Exception as e:
             logger.warning(f"[VISOR] Failed to migrate {db_path}: {e}")
@@ -146,11 +165,16 @@ def migrate_old_dbs(hub_conn: sqlite3.Connection) -> int:
     return migrated
 
 
-def _migrate_telemetry(old_conn: sqlite3.Connection, hub_conn: sqlite3.Connection, ws_hash: str, ws_name: str):
+def _migrate_telemetry(
+    old_conn: sqlite3.Connection,
+    hub_conn: sqlite3.Connection,
+    ws_hash: str,
+    ws_name: str,
+):
     """Copy telemetry_logs from old DB to hub with workspace context."""
     if not _has_table(old_conn, "telemetry_logs"):
         return
-    
+
     try:
         rows = old_conn.execute(
             "SELECT tool_name, bytes_transmitted, timestamp FROM telemetry_logs"
@@ -201,7 +225,9 @@ def _migrate_skills(old_conn: sqlite3.Connection, hub_conn: sqlite3.Connection):
         logger.info(f"[VISOR]   → Migrated {inserted} custom skills")
 
 
-def _migrate_memory(old_conn: sqlite3.Connection, hub_conn: sqlite3.Connection, ws_hash: str):
+def _migrate_memory(
+    old_conn: sqlite3.Connection, hub_conn: sqlite3.Connection, ws_hash: str
+):
     """Copy agent_memory from old DB to hub with workspace tag."""
     if not _has_table(old_conn, "agent_memory"):
         return
@@ -226,11 +252,12 @@ def _migrate_memory(old_conn: sqlite3.Connection, hub_conn: sqlite3.Connection, 
 
 def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
     """Copy code_nodes, edges to a new spoke graph.db.
-    
+
     We skip vec_code_nodes because the rowids may not align;
     re-indexing will rebuild them.
     """
     import sqlite_vec
+
     spoke_conn = sqlite3.connect(spoke_path, isolation_level=None)
     spoke_conn.execute("PRAGMA journal_mode=WAL")
     spoke_conn.execute("PRAGMA synchronous=NORMAL")
@@ -241,27 +268,27 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
     from visor.db.client import EMBEDDING_DIM
 
     # Create spoke tables
-    spoke_conn.execute('''
+    spoke_conn.execute("""
         CREATE TABLE IF NOT EXISTS code_nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             file_path TEXT NOT NULL, node_type TEXT NOT NULL, name TEXT NOT NULL,
             docstring TEXT, start_line INTEGER, end_line INTEGER, file_hash TEXT
         )
-    ''')
-    spoke_conn.execute('''
+    """)
+    spoke_conn.execute("""
         CREATE TABLE IF NOT EXISTS edges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             from_node TEXT NOT NULL, to_node TEXT NOT NULL, relation_type TEXT NOT NULL
         )
-    ''')
-    spoke_conn.execute(f'''
+    """)
+    spoke_conn.execute(f"""
         CREATE VIRTUAL TABLE IF NOT EXISTS vec_code_nodes USING vec0(
             embedding float[{EMBEDDING_DIM}]
         )
-    ''')
-    spoke_conn.execute('''
+    """)
+    spoke_conn.execute("""
         CREATE TABLE IF NOT EXISTS ui_state (key TEXT PRIMARY KEY, json_value TEXT NOT NULL)
-    ''')
+    """)
 
     # Copy code_nodes (without vectors — re-index will rebuild)
     if _has_table(old_conn, "code_nodes"):
@@ -278,7 +305,9 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
 
     # Copy edges
     if _has_table(old_conn, "edges"):
-        rows = old_conn.execute("SELECT from_node, to_node, relation_type FROM edges").fetchall()
+        rows = old_conn.execute(
+            "SELECT from_node, to_node, relation_type FROM edges"
+        ).fetchall()
         if rows:
             spoke_conn.executemany(
                 "INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)",

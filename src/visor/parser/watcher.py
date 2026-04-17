@@ -3,6 +3,7 @@ Incremental File Watcher for V.I.S.O.R.
 Listens for file saves and Git commits, re-parses only changed files,
 and writes updated CodeNodes to the local vector DB.
 """
+
 from __future__ import annotations
 
 import logging
@@ -31,6 +32,7 @@ INDEX_WORKERS = 4  # Parallel threads for workspace scan
 # FileChangelog table (created alongside CodeNodes)
 # ---------------------------------------------------------------------------
 
+
 def _ensure_changelog(conn: sqlite3.Connection):
     conn.execute("""
         CREATE TABLE IF NOT EXISTS file_changelog (
@@ -41,16 +43,19 @@ def _ensure_changelog(conn: sqlite3.Connection):
     """)
     conn.commit()
 
+
 def _log_file_change(conn: sqlite3.Connection, file_path: str):
     conn.execute(
         "INSERT INTO file_changelog (file_path, changed_at) VALUES (?, ?)",
-        (file_path, datetime.now(timezone.utc).isoformat())
+        (file_path, datetime.now(timezone.utc).isoformat()),
     )
     conn.commit()
+
 
 # ---------------------------------------------------------------------------
 # Index a single file → CodeNodes in DB
 # ---------------------------------------------------------------------------
+
 
 def index_file(file_path: str, skip_changelog: bool = False):
     """Parse a file and batch-upsert all its AST nodes into the vector DB.
@@ -71,7 +76,9 @@ def index_file(file_path: str, skip_changelog: bool = False):
 
     # Cache check — skip if file content is unchanged
     cursor = db_client.conn.cursor()
-    cursor.execute("SELECT file_hash FROM code_nodes WHERE file_path=? LIMIT 1", (file_path,))
+    cursor.execute(
+        "SELECT file_hash FROM code_nodes WHERE file_path=? LIMIT 1", (file_path,)
+    )
     row = cursor.fetchone()
     if row and row[0] == result.file_hash:
         if not skip_changelog:
@@ -86,16 +93,18 @@ def index_file(file_path: str, skip_changelog: bool = False):
     batch = []
     for node in result.nodes:
         vec = embedder.encode(node.docstring if node.docstring else node.name)
-        batch.append({
-            "file_path":  node.file_path,
-            "node_type":  node.node_type,
-            "name":       node.name,
-            "docstring":  node.docstring,
-            "vector":     vec,
-            "start_line": node.start_line,
-            "end_line":   node.end_line,
-            "file_hash":  result.file_hash,
-        })
+        batch.append(
+            {
+                "file_path": node.file_path,
+                "node_type": node.node_type,
+                "name": node.name,
+                "docstring": node.docstring,
+                "vector": vec,
+                "start_line": node.start_line,
+                "end_line": node.end_line,
+                "file_hash": result.file_hash,
+            }
+        )
 
     # Single-transaction batch write
     db_client.batch_upsert_nodes(batch)
@@ -103,18 +112,20 @@ def index_file(file_path: str, skip_changelog: bool = False):
     # Edge writes (separate — edges table has no vec table to batch)
     for edge in result.edges:
         db_client.upsert_edge(
-            from_node=edge["from"],
-            to_node=edge["to"],
-            relation_type=edge["type"]
+            from_node=edge["from"], to_node=edge["to"], relation_type=edge["type"]
         )
 
     if not skip_changelog:
         _log_file_change(db_client.conn, file_path)
-    logger.info(f"Indexed {len(result.nodes)} nodes & {len(result.edges)} edges from {file_path}")
+    logger.info(
+        f"Indexed {len(result.nodes)} nodes & {len(result.edges)} edges from {file_path}"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Full workspace scan (run once on daemon start)
 # ---------------------------------------------------------------------------
+
 
 def index_workspace(root: str, open_files: Optional[list] = None):
     """Walk the workspace tree and index all supported source files.
@@ -145,7 +156,8 @@ def index_workspace(root: str, open_files: Optional[list] = None):
     _IGNORE = {".venv", "__pycache__", "node_modules", ".git", "dist", ".agent"}
 
     all_files = [
-        p for p in root_path.rglob("*")
+        p
+        for p in root_path.rglob("*")
         if p.is_file()
         and p.suffix.lower() in SUPPORTED_EXTS
         and not any(part in _IGNORE for part in p.parts)
@@ -195,16 +207,25 @@ def index_workspace(root: str, open_files: Optional[list] = None):
     if stale:
         for path in stale:
             # Collect node names before deleting them
-            names = [r[0] for r in cursor.execute("SELECT name FROM code_nodes WHERE file_path = ?", (path,)).fetchall()]
+            names = [
+                r[0]
+                for r in cursor.execute(
+                    "SELECT name FROM code_nodes WHERE file_path = ?", (path,)
+                ).fetchall()
+            ]
             for name in names:
-                cursor.execute("DELETE FROM edges WHERE from_node = ? OR to_node = ?", (name, name))
+                cursor.execute(
+                    "DELETE FROM edges WHERE from_node = ? OR to_node = ?", (name, name)
+                )
             cursor.execute("DELETE FROM code_nodes WHERE file_path = ?", (path,))
         db_client.conn.commit()
         logger.info(f"Purged {len(stale)} stale file(s) from graph database.")
 
+
 # ---------------------------------------------------------------------------
 # Watchdog event handler with debounce
 # ---------------------------------------------------------------------------
+
 
 class _VisorEventHandler(FileSystemEventHandler):
     def __init__(self):
@@ -226,7 +247,11 @@ class _VisorEventHandler(FileSystemEventHandler):
                 time.sleep(0.1)
                 now = time.monotonic()
                 with self._lock:
-                    ready = [p for p, t in self._pending.items() if now - t >= DEBOUNCE_SECONDS]
+                    ready = [
+                        p
+                        for p, t in self._pending.items()
+                        if now - t >= DEBOUNCE_SECONDS
+                    ]
                     for p in ready:
                         del self._pending[p]
                 for p in ready:
@@ -236,11 +261,13 @@ class _VisorEventHandler(FileSystemEventHandler):
         t = threading.Thread(target=flush, daemon=True)
         t.start()
 
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 _observer: Optional[Observer] = None
+
 
 def start_watcher(workspace_root: str):
     """Start the background file watcher on the given workspace root."""
@@ -252,6 +279,7 @@ def start_watcher(workspace_root: str):
     _observer.daemon = True
     _observer.start()
     logger.info(f"File watcher started on: {workspace_root}")
+
 
 def stop_watcher():
     global _observer
