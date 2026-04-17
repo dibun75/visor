@@ -63,7 +63,15 @@ class VectorDBClient:
 
     def _init_dual(self, legacy_path: Optional[str] = None):
         """Initialize the hub + spoke dual-DB connections."""
-        hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths()
+        if legacy_path:
+            # Use test paths to ensure tests remain isolated
+            hub_path = legacy_path + ".hub"
+            spoke_path = legacy_path
+            ws_hash = "test_hash"
+            ws_name = "test_ws"
+            ws_root = "/test/root"
+        else:
+            hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths()
 
         self.hub_path = hub_path
         self.spoke_path = spoke_path

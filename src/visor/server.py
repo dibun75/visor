@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import threading
-import asyncio
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
