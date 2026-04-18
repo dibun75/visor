@@ -18,12 +18,8 @@ It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
   <h3>🎬 See it in action</h3>
 </div>
 
-https://github.com/user-attachments/assets/demo.mp4
-
 <div align="center">
-
-https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4
-
+  <video src="https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4" controls="controls" muted="muted" playsinline="playsinline" width="800"></video>
 </div>
 
 ---
