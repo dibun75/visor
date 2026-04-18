@@ -111,30 +111,39 @@ uv run visor fix "login crash"
 
 **Check your MCP config:**
 
+The recommended config uses `uvx` which handles everything automatically:
+
 ```json
-// ~/.gemini/antigravity/mcp_config.json
 {
-  "mcpServers": {
+  "servers": {
     "visor": {
-      "command": "uv",
-      "args": [
-        "--directory", "/absolute/path/to/visor",
-        "run", "-q", "/absolute/path/to/visor/src/visor/server.py"
-      ],
-      "env": {}
+      "command": "uvx",
+      "args": ["visor-mcp"]
     }
   }
 }
 ```
 
+Put this in `.vscode/mcp.json` (VS Code / Antigravity) or `~/.cursor/mcp.json` (Cursor).
+
 **Common mistakes:**
-- Using relative paths (must be absolute)
-- Missing `--directory` flag
-- Not having `uv` on PATH
+- Not having `uv` installed — get it from [astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Using old `uv --directory ... run` pattern instead of `uvx visor-mcp`
+- Forgetting to restart the IDE after editing the config
+
+### "V.I.S.O.R. is indexing the wrong directory"
+
+**Cause:** This was a known bug in versions before 1.0.2.
+
+**Fix:** Update to the latest version. V.I.S.O.R. now automatically detects your active project workspace using the MCP roots API — no environment variables needed.
+
+```bash
+pip install --upgrade visor-mcp
+```
 
 ### "MCP server starts but no tools appear"
 
-**Fix:** Restart your AI session after editing `mcp_config.json`. Most IDEs require a full restart or session reload.
+**Fix:** Restart your AI session after editing the MCP config. Most IDEs require a full restart or session reload.
 
 ---
 

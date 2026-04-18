@@ -21,6 +21,7 @@ This document is the authoritative API reference for all tools exposed by the V.
 | [`get_drift_report`](#get_drift_report) | ⚠️ Drift | Detect stale context via hash or timestamp comparison |
 | [`get_architecture_map`](#get_architecture_map) | 📊 HUD | Full codebase topology for the 3D visualiser |
 | [`get_telemetry`](#get_telemetry) | 📊 HUD | Live telemetry: node count, context burn, drift alert |
+| [`set_hud_focus`](#set_hud_focus) | 📊 HUD | Highlight files on the 3D graph to show agent attention |
 | [`store_memory`](#store_memory) | 🧩 Memory | Persist a conversation turn with semantic embedding |
 | [`get_visor_skill`](#get_visor_skill) | 🧩 Skills | Fetch a custom skill instruction pack by name |
 | [`list_custom_skills`](#list_custom_skills) | 🧩 Skills | List all available custom skills with strategies |
@@ -292,7 +293,22 @@ Returns live telemetry snapshot for the current workspace.
 
 ---
 
-## 🧩 Memory & Skills
+### `set_hud_focus`
+
+Controls the V.I.S.O.R. Developer HUD to visually highlight files the AI agent is actively reasoning about. Gives the developer real-time 3D visual feedback of the agent's attention and intent.
+
+**When to use**: Call this as you investigate the codebase to show the developer which files you're looking at. Pass an empty list to clear the focus.
+
+**Parameters**:
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_paths` | string[] | ✅ | Paths to files to highlight on the graph (empty list to clear) |
+| `intent` | string | ✅ | 2–4 word description of what the agent is doing (e.g. "Reviewing Auth Flow") |
+
+**Returns**: JSON confirmation with highlighted file count.
+
+---
 
 ### `store_memory`
 

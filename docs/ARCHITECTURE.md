@@ -99,12 +99,21 @@ graph TB
 
 ### Path Resolution
 
-Both the extension and standalone MCP use the **same deterministic convention** — no environment variables needed:
+Both the extension and standalone MCP use the **same deterministic convention**:
 
 - **Hub**: `~/.visor/hub.db` (always)
-- **Spoke**: `~/.visor/workspaces/{sha256(WORKSPACE_ROOT)[:12]}/graph.db`
+- **Spoke**: `~/.visor/workspaces/{sha256(workspace_root)[:12]}/graph.db`
 
-The `WORKSPACE_ROOT` environment variable (or `os.getcwd()` fallback) determines which spoke to use.
+#### Automatic Workspace Detection (v1.0.2+)
+
+V.I.S.O.R. automatically detects the active project workspace using the MCP `session.list_roots()` API. When the IDE connects, V.I.S.O.R.:
+
+1. Queries the MCP session for workspace roots
+2. Uses the first root as the workspace path
+3. Computes the SHA-256 hash to determine the spoke database path
+4. Initializes or switches to that spoke database
+
+This replaces the old `WORKSPACE_ROOT` environment variable approach — no manual configuration needed.
 
 ### Data Classification
 

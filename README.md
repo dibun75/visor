@@ -1,36 +1,52 @@
 # V.I.S.O.R.
 
-> **AI is wasting 60% of your tokens reading the wrong code. V.I.S.O.R. fixes that.**
+> **Your AI coding assistant wastes time reading the wrong files. V.I.S.O.R. fixes that.**
 
-[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml) [![MCP](https://img.shields.io/badge/protocol-MCP-purple)](https://modelcontextprotocol.io)
+[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml)
 
 **Visual Intelligence System for Orchestrated Reasoning**
 
-V.I.S.O.R. is a **Skill-Orchestrated Context Intelligence Engine** — a local-first MCP server that indexes your codebase via Tree-sitter AST parsing, ranks code with a multi-signal scoring engine, and delivers surgical context to AI coding agents. It works with **Antigravity, VS Code, Cursor, and Claude Code**.
+V.I.S.O.R. is a **smart helper for your AI coding assistant**. It reads your code, understands how files are connected, and gives your AI exactly the right context — so it spends less time searching and more time solving.
+
+It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
 
 <div align="center">
-  <img src="./docs/assets/hud_overview.png?v=0.10.0" alt="V.I.S.O.R HUD Dashboard" width="800"/>
+  <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD — 3D codebase visualization in your IDE" width="800"/>
 </div>
 
 ---
 
-## 🚀 Install
+## 💬 What Can You Do With It?
 
-### 1. Install the Backend
+Just talk to your AI agent like normal. V.I.S.O.R. works behind the scenes to find the right code automatically.
 
-```bash
-pip install visor-mcp
-```
+### Find a bug
+> "Find the code related to the login crash"
 
-Or run directly without installing (recommended):
+Without V.I.S.O.R., your AI reads 20+ files blindly. With V.I.S.O.R., it gets the 3–5 most relevant files instantly.
 
-```bash
-uvx visor-mcp
-```
+### Understand your code
+> "Explain how authentication works in this project"
 
-### 2. Configure Your IDE
+V.I.S.O.R. traces the full auth flow across files — showing your AI exactly which functions call which, and in what order.
 
-Add V.I.S.O.R. to your IDE's MCP config. The JSON block is the same everywhere — only the file location changes.
+### Refactor safely
+> "What files would break if I change the database client?"
+
+V.I.S.O.R. runs an **impact analysis** and shows every file that depends on the one you're changing.
+
+### Check for stale context
+> "Are the files you read earlier still up to date?"
+
+V.I.S.O.R. checks file hashes and warns your AI if something changed since it last looked.
+
+---
+
+## 🚀 Install (2 minutes)
+
+### Step 1: Add V.I.S.O.R. to your IDE
+
+Pick your IDE below and add the config. That's it — V.I.S.O.R. installs itself automatically the first time it runs.
 
 <details>
 <summary><b>Claude Code</b> (one command)</summary>
@@ -62,6 +78,28 @@ Or per-project: create `.cursor/mcp.json` in your repo root.
 </details>
 
 <details>
+<summary><b>VS Code / Antigravity</b> (.vscode/mcp.json)</summary>
+
+Create `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "visor": {
+      "command": "uvx",
+      "args": ["visor-mcp"]
+    }
+  }
+}
+```
+
+Or use Command Palette → `MCP: Add Server`.
+
+For the full 3D HUD experience, also install the [V.I.S.O.R. HUD extension](https://open-vsx.org/extension/dibun75/visor-hud).
+
+</details>
+
+<details>
 <summary><b>Claude Desktop</b> (claude_desktop_config.json)</summary>
 
 macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -78,49 +116,6 @@ Windows: `%APPDATA%\Claude\claude_desktop_config.json`
   }
 }
 ```
-
-</details>
-
-<details>
-<summary><b>VS Code</b> (.vscode/mcp.json)</summary>
-
-```json
-{
-  "mcpServers": {
-    "visor": {
-      "command": "uvx",
-      "args": ["visor-mcp"]
-    }
-  }
-}
-```
-
-Or use Command Palette → `MCP: Add Server`.
-
-</details>
-
-<details>
-<summary><b>Antigravity</b> (.vscode/mcp.json in your project)</summary>
-
-Create `.vscode/mcp.json` in your project root:
-
-```json
-{
-  "servers": {
-    "visor": {
-      "command": "uvx",
-      "args": ["visor-mcp"],
-      "env": {
-        "WORKSPACE_ROOT": "${workspaceFolder}"
-      }
-    }
-  }
-}
-```
-
-> **Note:** Do NOT use the global `~/.gemini/antigravity/mcp_config.json` for V.I.S.O.R. — it doesn't resolve `${workspaceFolder}` and will index the wrong directory.
-
-For the full 3D HUD experience, also install the [V.I.S.O.R. HUD extension](https://marketplace.visualstudio.com/items?itemName=dibun75.visor-hud) from the VS Code Marketplace.
 
 </details>
 
@@ -144,117 +139,75 @@ Open Plugins sidebar → Manage plugins → View raw config, then add:
 
 > **Prerequisite:** You need [`uv`](https://docs.astral.sh/uv/getting-started/installation/) installed. `uvx` (included with `uv`) handles virtual environments and dependencies automatically — no manual setup needed.
 
-## Why V.I.S.O.R.?
+### Step 2 (Optional): Install the 3D HUD Extension
 
-Every time your AI agent searches for context, it burns tokens reading irrelevant files. V.I.S.O.R. eliminates this waste:
+Search for **"V.I.S.O.R. HUD"** in your editor's extension panel, or install from [Open VSX](https://open-vsx.org/extension/dibun75/visor-hud). This gives you a live 3D visualization of your codebase graph right in the sidebar.
+
+---
+
+## 🤔 Why V.I.S.O.R.?
+
+Every time your AI agent searches for context, it wastes time reading irrelevant files. V.I.S.O.R. eliminates that waste:
 
 | Without V.I.S.O.R. | With V.I.S.O.R. |
 |---|---|
-| Agent greps 20+ files blindly | Agent gets 3-5 precise snippets |
-| ~12,000 tokens per context fetch | ~2,300 tokens (80% reduction) |
-| No reasoning — just raw search | Every selection is explainable |
-| Stale context → hallucinations | Drift detection prevents errors |
+| AI reads 20+ files blindly | AI gets 3–5 precise code snippets |
+| ~12,000 tokens per search | ~2,300 tokens (80% reduction) |
+| No reasoning — raw text search | Every selection has an explanation |
+| Stale context → wrong answers | Drift detection prevents mistakes |
 
 ---
 
 ## ✨ Key Features
 
-### 🧠 Context Intelligence Engine
-The `build_context` tool is the core differentiator. It doesn't just search — it **reasons**:
-- **Intent Classification** — Detects if you're debugging, refactoring, or exploring, and adjusts weights dynamically
-- **5-Signal Scoring** — Combines embedding similarity, exact match, co-location, dependency proximity, and recency
-- **Explainable Decisions** — Every node includes human-readable reasoning for why it was selected
-- **Token Metrics** — Shows exact reduction percentage vs. naive full-file approach
+### 🧠 Smart Context Engine
+The heart of V.I.S.O.R. When your AI asks "find code related to X", it doesn't just search by text — it **thinks**:
 
-### ⚡ Skill Execution Layer
-Pre-loaded strategies that change how V.I.S.O.R. retrieves context:
+- **Understands your question** — Detects if you're fixing a bug, exploring, or refactoring, and adjusts accordingly
+- **Scores code 5 different ways** — Combines meaning similarity, name matching, file proximity, code connections, and how recently the file was changed
+- **Explains its choices** — Every code snippet includes a plain-English reason for why it was picked
+- **Saves tokens** — Shows you exactly how many tokens it saved vs. a naive approach
 
-| Skill | Intent | Behavior |
-|---|---|---|
-| `bug-fixer` | BUG_FIX | Boosts dependency chains + recently modified files |
-| `architecture-explainer` | EXPLAIN | Heavy embedding similarity for broad understanding |
-| `refactor-assistant` | REFACTOR | Wide dependency graph + exact symbol matching |
-| `performance-optimizer` | BUG_FIX | Hotspot detection via extreme recency weighting |
+### ⚡ Built-in Skills
+Pre-built strategies that change how V.I.S.O.R. finds code. Think of them as "modes":
 
-Skills are defined as JSON strategies and stored in SQLite. Create your own via `add_custom_skill`.
+| Skill | What it does |
+|---|---|
+| `bug-fixer` | Focuses on recently changed files and dependency chains |
+| `architecture-explainer` | Casts a wide net to help explain how things connect |
+| `refactor-assistant` | Traces all dependencies so you know what might break |
+| `performance-optimizer` | Finds hotspots by prioritizing recently modified code |
 
-### 🔍 Semantic AST Indexing
-Powered by Tree-sitter, V.I.S.O.R. indexes **9 languages** out of the box. Symbols are embedded using `all-MiniLM-L6-v2` and stored in a local SQLite + `sqlite-vec` vector store.
+You can also create your own custom skills.
 
-| Language | Extensions | Status |
-|----------|-----------|--------|
-| Python | `.py` | ✅ |
-| TypeScript | `.ts`, `.tsx` | ✅ |
-| JavaScript | `.js`, `.jsx` | ✅ |
-| Go | `.go` | ✅ |
-| Rust | `.rs` | ✅ |
-| Java | `.java` | ✅ |
-| C | `.c`, `.h` | ✅ |
-| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp` | ✅ |
+### 🔍 Code Understanding
+V.I.S.O.R. reads your code structure (classes, functions, imports) in **9 languages**:
+
+| Language | File Types |
+|----------|-----------|
+| Python | `.py` |
+| TypeScript | `.ts`, `.tsx` |
+| JavaScript | `.js`, `.jsx` |
+| Go | `.go` |
+| Rust | `.rs` |
+| Java | `.java` |
+| C | `.c`, `.h` |
+| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp` |
 
 > **Want more?** Adding a new language is ~15 lines of code. See [CONTRIBUTING.md](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
-### 📊 3D WebGPU Developer HUD
-A real-time force-directed graph visualization of your codebase architecture, embedded directly in your IDE sidebar. Displays live telemetry: Agent Context Burn, Graph Scale, and Drift Alerts.
+### 📊 3D HUD (VS Code / Antigravity)
+A real-time interactive graph of your codebase — right in your editor sidebar. Shows:
+- Your code as connected nodes you can explore
+- Live stats: how many tokens your AI is using, how many files are indexed
+- Drift alerts when files change under your AI
 
 ### ⚠️ Drift Detection
-Dual-mode detection (SHA-256 hash comparison or file changelog timestamps) warns agents before they hallucinate from stale context.
+Knows when your AI is looking at outdated code. Compares file hashes and warns before your AI makes decisions on stale information.
 
 ---
 
-## 🛠️ CLI
-
-```bash
-visor context "how is authentication handled"   # General context query
-visor fix "login crash on null user"             # Bug-fixer skill
-visor explain "database client"                  # Architecture-explainer skill
-visor trace src/auth.py src/db/client.py         # Trace architectural path
-visor drift                                       # Check for drift
-visor init                                        # Auto-configure for your IDE
-```
-
----
-
-## 🛠️ MCP Tool Suite
-
-V.I.S.O.R. exposes **16 MCP tools** across 5 categories. See [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) for the full API reference.
-
-### 🧠 Intelligence
-| Tool | Description |
-|------|-------------|
-| `build_context(query, skill?)` | Ranked context with scoring, reasoning, metrics, and prompt export |
-
-### 🔍 Search
-| Tool | Description |
-|------|-------------|
-| `search_codebase(query)` | Semantic vector search across AST nodes |
-| `get_symbol_context(symbol)` | Find all definitions with file + line range |
-| `get_file_context(path)` | Full AST symbol listing for a file |
-
-### 🗺️ Graph Analysis
-| Tool | Description |
-|------|-------------|
-| `get_dependency_chain(symbol)` | Transitive import chain (BFS depth 5) |
-| `impact_analysis(file_path)` | Downstream blast radius |
-| `trace_route(source, target)` | Shortest path between files |
-| `dead_code_detection()` | Files with zero incoming edges |
-
-### ⚠️ Drift Detection
-| Tool | Description |
-|------|-------------|
-| `get_drift_report(files, loaded_at, hashes?)` | Hash or timestamp-based drift detection |
-
-### 🧩 Memory & Skills
-| Tool | Description |
-|------|-------------|
-| `store_memory(role, content)` | Persist conversation with embedding |
-| `add_custom_skill(name, desc, content, strategy?)` | Create a skill with optional JSON strategy |
-| `list_custom_skills()` | List all skills with strategies |
-| `delete_custom_skill(id)` | Remove a skill |
-
----
-
-## 📦 Example Output
+## 📦 Example: Finding a Bug
 
 ```bash
 $ visor fix "authentication crash"
@@ -274,30 +227,63 @@ $ visor fix "authentication crash"
 ────────────────────────────────────────────────────────────
   Selected 4 nodes (truncated=False):
 
-  [2.8500]  src/auth/jwt.py:verify_token
-            → Matched query token in symbol name
-            → Co-located in same file as top semantic hit
-            → Recently modified file (boosted)
+  [2.85]  src/auth/jwt.py:verify_token
+          → Matched query token in symbol name
+          → Co-located in same file as top semantic hit
+          → Recently modified file (boosted)
 
-  [2.1200]  src/auth/middleware.py:auth_guard
-            → Reachable via dependency chain
-            → Semantic similarity (score: 0.375)
+  [2.12]  src/auth/middleware.py:auth_guard
+          → Reachable via dependency chain
+          → Semantic similarity (score: 0.375)
 
 ============================================================
 ```
+
+**What happened:** Instead of your AI reading every file in the project, V.I.S.O.R. found the 4 most relevant functions and saved 80% of the tokens.
+
+---
+
+## 🛠️ CLI Commands
+
+You can also use V.I.S.O.R. from the terminal:
+
+```bash
+visor fix "login crash on null user"         # Find bug-related code
+visor explain "database client"              # Understand how a module works
+visor context "how is auth handled"          # General code search
+visor trace src/auth.py src/db/client.py     # Show how two files are connected
+visor drift                                  # Check for changed files
+```
+
+---
+
+## 🛠️ MCP Tools (for AI Agents)
+
+V.I.S.O.R. gives your AI agent **17 tools** across 5 categories. Your AI uses these automatically — you don't need to call them manually.
+
+| Category | Tools |
+|----------|-------|
+| 🧠 **Intelligence** | `build_context` — the main tool that finds and ranks relevant code |
+| 🔍 **Search** | `search_codebase`, `get_symbol_context`, `get_file_context` |
+| 🗺️ **Graph** | `get_dependency_chain`, `impact_analysis`, `trace_route`, `dead_code_detection` |
+| ⚠️ **Drift** | `get_drift_report` |
+| 🧩 **Memory & Skills** | `store_memory`, `add_custom_skill`, `list_custom_skills`, `delete_custom_skill` |
+| 📊 **HUD** | `get_architecture_map`, `get_telemetry`, `set_hud_focus` |
+
+See [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) for the full API reference.
 
 ---
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System design, data flow, DB schema |
-| [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete MCP tool API reference |
-| [`docs/FAQ.md`](./docs/FAQ.md) | Frequently asked questions |
-| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Common issues and solutions |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to contribute (add languages, tools, skills) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Release history |
+| Document | What's Inside |
+|----------|--------------|
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | How V.I.S.O.R. works under the hood |
+| [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete reference for all 17 tools |
+| [`docs/FAQ.md`](./docs/FAQ.md) | Common questions answered |
+| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Fixing common problems |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to add languages, tools, and skills |
+| [`CHANGELOG.md`](./CHANGELOG.md) | What changed in each version |
 
 ---
 
@@ -315,15 +301,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 ---
 
-## 🌐 Compatibility
+## 🌐 Works With
 
-| IDE | Support | Method |
-|------|---------|--------|
+| IDE | Support | How to Set Up |
+|------|---------|--------------|
 | Claude Code | ✅ Full | `claude mcp add visor -- uvx visor-mcp` |
 | Cursor | ✅ Full | `~/.cursor/mcp.json` |
 | Claude Desktop | ✅ Full | `claude_desktop_config.json` |
-| VS Code | ✅ Full | `.vscode/mcp.json` |
-| Antigravity | ✅ Full | MCP config + [HUD Extension](https://marketplace.visualstudio.com/items?itemName=dibun75.visor-hud) |
+| VS Code | ✅ Full | `.vscode/mcp.json` + [HUD Extension](https://open-vsx.org/extension/dibun75/visor-hud) |
+| Antigravity | ✅ Full | `.vscode/mcp.json` + [HUD Extension](https://open-vsx.org/extension/dibun75/visor-hud) |
 | Windsurf | ✅ Full | Plugin raw config |
 
 ---
