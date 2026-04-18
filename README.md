@@ -19,7 +19,7 @@ It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
 </div>
 
 <div align="center">
-  <video src="https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4" controls="controls" muted="muted" playsinline="playsinline" width="800"></video>
+  <img src="./docs/assets/demo.gif" alt="V.I.S.O.R HUD in action" width="800"/>
 </div>
 
 ---

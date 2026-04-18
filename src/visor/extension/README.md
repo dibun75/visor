@@ -15,7 +15,7 @@ The **HUD extension** adds a visual layer: an interactive 3D graph of your codeb
 </div>
 
 <div align="center">
-  <video src="https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4" controls="controls" muted="muted" playsinline="playsinline" width="800"></video>
+  <img src="../../docs/assets/demo.gif" alt="V.I.S.O.R HUD in action" width="800"/>
 </div>
 
 ## 💬 What Can You Do With It?
