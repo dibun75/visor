@@ -19,7 +19,7 @@ It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
 </div>
 
 <div align="center">
-  <img src="./docs/assets/demo.gif" alt="V.I.S.O.R HUD in action" width="800"/>
+  <img src="https://github.com/dibun75/visor/raw/main/docs/assets/demo.gif" alt="V.I.S.O.R HUD in action" width="800"/>
 </div>
 
 ---
