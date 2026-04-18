@@ -1,11 +1,11 @@
-name: Publish to PyPI
+name: Release Packages
 
 on:
   release:
     types: [published]
 
 jobs:
-  publish:
+  publish-pypi:
     name: Build & Publish to PyPI
     runs-on: ubuntu-latest
     environment: pypi
@@ -22,3 +22,28 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-openvsx:
+    name: Build & Publish to Open VSX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Web HUD
+        working-directory: src/visor/hud
+        run: |
+          npm install
+          npm run build
+
+      - name: Install Extension Dependencies
+        working-directory: src/visor/extension
+        run: npm install
+
+      - name: Publish to Open VSX
+        working-directory: src/visor/extension
+        run: npx ovsx publish -p ${{ secrets.OVSX_PAT }}
