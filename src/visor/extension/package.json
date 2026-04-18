@@ -3,7 +3,7 @@
   "displayName": "V.I.S.O.R. HUD",
   "publisher": "dibun75",
   "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "icon": "assets/hero.png",
   "repository": {
     "type": "git",

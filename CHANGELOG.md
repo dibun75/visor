@@ -2,6 +2,14 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.0.9] — 2026-04-19
+
+### 🧠 New Built-In Graph Strategies
+Ported three popular agent skills into native V.I.S.O.R. Graph Traversal Strategies:
+- **`security-auditor`**: Heavy dependency weighting to track data flows from entry points to sinks for vulnerability analysis.
+- **`clean-code-reviewer`**: High semantic embedding weighting for architectural adherence and code smell detection.
+- **`systematic-debugger`**: Extreme dependency weighting to trace exact execution paths for root cause analysis.
+
 ---
 
 ## [1.0.8] — 2026-04-19

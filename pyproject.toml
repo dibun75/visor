@@ -1,6 +1,6 @@
 [project]
 name = "visor-mcp"
-version = "1.0.8"
+version = "1.0.9"
 description = "Skill-Orchestrated Context Intelligence Engine for AI coding agents"
 readme = "README.md"
 license = "MIT"

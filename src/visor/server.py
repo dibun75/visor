@@ -93,6 +93,50 @@ _DEFAULT_SKILLS = [
             }
         ),
     },
+    {
+        "name": "security-auditor",
+        "description": "Deep data-flow tracking for identifying vulnerabilities and tracing untrusted input.",
+        "content": "Follow data flows from entry points to sinks. Look for missing validation, fail-open states, and OWASP vulnerabilities.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "SECURITY_AUDIT",
+                "scoring_bias": {"dep": 1.5, "embed": 1.2},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "get_dependency_chain",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "clean-code-reviewer",
+        "description": "Semantic pattern matching for code reviews and anti-pattern detection.",
+        "content": "Analyze code for structural integrity, single responsibility, and architectural adherence. Highlight over-engineering.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "CODE_REVIEW",
+                "scoring_bias": {"embed": 1.5, "exact": 1.2},
+                "tool_priority": ["build_context", "get_architecture_map"],
+            }
+        ),
+    },
+    {
+        "name": "systematic-debugger",
+        "description": "Heavy graph-traversal strategy for root cause analysis of complex bugs.",
+        "content": "Do not guess. Trace the exact execution path from the error origin to the ultimate root cause using deep dependency graphs.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "ROOT_CAUSE_ANALYSIS",
+                "scoring_bias": {"dep": 2.0, "recency": 1.0},
+                "tool_priority": [
+                    "trace_route",
+                    "get_dependency_chain",
+                    "build_context",
+                ],
+            }
+        ),
+    },
 ]
 
 
