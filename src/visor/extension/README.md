@@ -10,6 +10,14 @@ V.I.S.O.R. is a **smart helper for AI coding assistants**. It reads your code, u
 
 The **HUD extension** adds a visual layer: an interactive 3D graph of your codebase that updates in real-time as your AI agent works.
 
+<div align="center">
+  <h3>🎬 See it in action</h3>
+</div>
+
+<div align="center">
+https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4
+</div>
+
 ## 💬 What Can You Do With It?
 
 Just talk to your AI like normal. V.I.S.O.R. works behind the scenes.

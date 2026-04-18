@@ -14,6 +14,18 @@ It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
   <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD — 3D codebase visualization in your IDE" width="800"/>
 </div>
 
+<div align="center">
+  <h3>🎬 See it in action</h3>
+</div>
+
+https://github.com/user-attachments/assets/demo.mp4
+
+<div align="center">
+
+https://github.com/dibun75/visor/raw/main/docs/assets/demo.mp4
+
+</div>
+
 ---
 
 ## 💬 What Can You Do With It?
