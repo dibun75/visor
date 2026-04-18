@@ -4,6 +4,44 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ---
 
+## [1.0.7] — 2026-04-18
+
+### 🎨 Branding & Asset Standardization
+- New high-contrast "Cyber Eye" icon replacing the generic telescope icon
+- Deployed icon variants: `hero.png` (128px), `logo_square.png` (256px), `icon.png` (512px)
+- Fixed icon blending issues on dark/light backgrounds in Open VSX and GitHub
+- Replaced MP4 demo with web-optimized GIF for inline autoplay on all platforms
+- Switched all documentation media to absolute raw GitHub URLs for marketplace compatibility
+
+### 📖 Documentation
+- Streamlined installation section with `uvx visor-mcp init` as the primary method
+- Added side-by-side benchmark proof table ("The Proof: Why You Need V.I.S.O.R.")
+- Collapsed per-IDE manual configs into a single expandable `<details>` block
+
+### 🔒 Security & CI
+- Added CodeQL scanning workflow for Python and JavaScript
+- Extended Dependabot to cover npm dependencies (HUD + Extension)
+- Cleaned up Actions history
+
+---
+
+## [1.0.6] — 2026-04-18
+
+### 📖 Documentation Overhaul
+- Rewrote main README to be beginner-friendly with plain English descriptions
+- Added "What Can You Do With It?" section with 4 real-world usage examples
+- Fixed marketplace link: VS Code Marketplace → Open VSX
+- Fixed Antigravity config: removed `WORKSPACE_ROOT` env var (auto-detected since v1.0.2)
+- Updated tool count: 16 → 17 (added `set_hud_focus`)
+- Added Open VSX badge to badge row
+- Rewrote extension README for Open VSX with example prompts
+- Added missing CHANGELOG entries for v1.0.2 through v1.0.5
+- Updated TROUBLESHOOTING.md with modern `uvx visor-mcp` config
+- Documented `session.list_roots()` auto-detection in ARCHITECTURE.md
+- Added `set_hud_focus` tool documentation to MCP_TOOLS.md
+
+---
+
 ## [1.0.5] — 2026-04-18
 
 ### 📖 Documentation
