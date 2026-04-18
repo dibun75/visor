@@ -44,6 +44,10 @@ jobs:
         working-directory: src/visor/extension
         run: npm install
 
+      - name: Create Open VSX Namespace (if needed)
+        working-directory: src/visor/extension
+        run: npx ovsx create-namespace dibun75 -p ${{ secrets.OVSX_PAT }} || true
+
       - name: Publish to Open VSX
         working-directory: src/visor/extension
         run: npx ovsx publish -p ${{ secrets.OVSX_PAT }}
