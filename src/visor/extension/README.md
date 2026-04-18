@@ -1,4 +1,7 @@
-# V.I.S.O.R. HUD
+<div align="center">
+  <img src="https://github.com/dibun75/visor/raw/main/docs/assets/icon.png" alt="V.I.S.O.R. Logo" width="120"/>
+  <h1>V.I.S.O.R. HUD</h1>
+</div>
 
 > A real-time 3D visualization of your codebase — right inside your editor. Watch your AI agent think.
 

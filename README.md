@@ -1,4 +1,7 @@
-# V.I.S.O.R.
+<div align="center">
+  <img src="./docs/assets/icon.png" alt="V.I.S.O.R. Logo" width="120"/>
+  <h1>V.I.S.O.R.</h1>
+</div>
 
 > **Your AI coding assistant wastes time reading the wrong files. V.I.S.O.R. fixes that.**
 
