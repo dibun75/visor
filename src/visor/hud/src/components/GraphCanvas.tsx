@@ -231,7 +231,7 @@ const PulseParticles: React.FC<{
 };
 
 // ────────────────────────────────────────────────────
-// Drift pulse ring
+// Drift pulse ring (generic recently-modified)
 // ────────────────────────────────────────────────────
 
 const DriftPulse: React.FC = () => {
@@ -252,6 +252,27 @@ const DriftPulse: React.FC = () => {
 };
 
 // ────────────────────────────────────────────────────
+// Drift WARNING pulse (amber hexagonal — for actively drifted files)
+// ────────────────────────────────────────────────────
+
+const DriftWarningPulse: React.FC = () => {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      const s = 1 + Math.sin(clock.elapsedTime * 4) * 0.35;
+      ref.current.scale.set(s, s, s);
+      (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(clock.elapsedTime * 4) * 0.25;
+    }
+  });
+  return (
+    <mesh ref={ref}>
+      <ringGeometry args={[0.7, 0.95, 6]} />
+      <meshBasicMaterial color="#f59e0b" transparent opacity={0.5} side={THREE.DoubleSide} />
+    </mesh>
+  );
+};
+
+// ────────────────────────────────────────────────────
 // Single graph node sphere with intelligence highlighting
 // ────────────────────────────────────────────────────
 
@@ -260,15 +281,16 @@ const GraphNodeMesh: React.FC<{
   position: THREE.Vector3;
   color: string;
   isSelected: boolean;
+  isDrifted: boolean;
   hasContext: boolean;
   onHover: (node: GraphNode | null) => void;
-}> = ({ node, position, color, isSelected, hasContext, onHover }) => {
+}> = ({ node, position, color, isSelected, isDrifted, hasContext, onHover }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const radius = Math.max(0.15, Math.min(0.8, 0.1 + node.node_count * 0.015));
 
   // Intelligence-driven appearance
-  const nodeColor = isSelected ? '#00f2fe' : color;
-  const emissiveIntensity = isSelected ? 1.2 : (hasContext ? 0.05 : (node.recently_modified ? 0.8 : 0.4));
+  const nodeColor = isDrifted ? '#f59e0b' : (isSelected ? '#00f2fe' : color);
+  const emissiveIntensity = isDrifted ? 1.4 : (isSelected ? 1.2 : (hasContext ? 0.05 : (node.recently_modified ? 0.8 : 0.4)));
   const nodeOpacity = hasContext && !isSelected ? 0.12 : 1.0;
 
   return (
@@ -297,7 +319,8 @@ const GraphNodeMesh: React.FC<{
             <meshBasicMaterial color="#00f2fe" transparent opacity={0.3} side={THREE.DoubleSide} />
           </mesh>
         )}
-        {node.recently_modified && !isSelected && <DriftPulse />}
+        {isDrifted && <DriftWarningPulse />}
+        {node.recently_modified && !isSelected && !isDrifted && <DriftPulse />}
       </group>
     </Float>
   );
@@ -474,8 +497,9 @@ const NodeCloud: React.FC<{
   graphData: GraphData;
   contextResult: ContextResult | null;
   agentFocus: {paths: string[], intent: string} | null;
+  driftFiles: string[];
   viewMode: GraphViewMode;
-}> = ({ graphData, contextResult, agentFocus, viewMode }) => {
+}> = ({ graphData, contextResult, agentFocus, driftFiles, viewMode }) => {
   const groupRef = useRef<THREE.Group>(null);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
 
@@ -484,6 +508,9 @@ const NodeCloud: React.FC<{
     () => computePositions(graphData.nodes, clusterIndex),
     [graphData.nodes]
   );
+
+  // Build set of drifted file paths for quick lookup
+  const driftedFilePaths = useMemo(() => new Set(driftFiles), [driftFiles]);
 
   // Build set of selected node IDs (graph node IDs whose file_path matches context)
   const selectedFilePaths = useMemo(() => {
@@ -549,6 +576,7 @@ const NodeCloud: React.FC<{
         if (!pos) return null;
         const color = getClusterColor(node.cluster, clusterIndex);
         const isSelected = selectedNodeIds.has(node.id);
+        const isDrifted = driftedFilePaths.has(node.file_path);
         return (
           <GraphNodeMesh
             key={node.id}
@@ -556,6 +584,7 @@ const NodeCloud: React.FC<{
             position={pos}
             color={color}
             isSelected={isSelected}
+            isDrifted={isDrifted}
             hasContext={hasContext}
             onHover={handleHover}
           />
@@ -713,6 +742,56 @@ const AgentFocusPanel: React.FC<{ agentFocus: { paths: string[], intent: string 
   );
 };
 
+const DriftPanel: React.FC<{ driftFiles: string[] }> = ({ driftFiles }) => {
+  if (driftFiles.length === 0) return null;
+
+  return (
+    <div style={{
+      position: 'absolute', bottom: 140, left: 24, zIndex: 11,
+      background: 'rgba(245, 158, 11, 0.12)', backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: '12px',
+      padding: '14px 18px', minWidth: '240px', maxWidth: '320px',
+      fontFamily: "'Inter', sans-serif", color: '#fff',
+      boxShadow: '0 8px 32px rgba(245, 158, 11, 0.15), inset 0 0 16px rgba(245, 158, 11, 0.08)',
+      pointerEvents: 'none', userSelect: 'none',
+      animation: 'drift-warn-pulse 2s infinite alternate'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+        <div style={{
+          width: '8px', height: '8px', borderRadius: '2px',
+          background: '#f59e0b', boxShadow: '0 0 12px #f59e0b',
+          transform: 'rotate(45deg)'
+        }} />
+        <span style={{ fontSize: '11px', color: '#f59e0b', letterSpacing: '2px', fontWeight: 800 }}>⚠ CONTEXT DRIFT</span>
+      </div>
+      <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#f59e0b' }}>
+        {driftFiles.length} file{driftFiles.length !== 1 ? 's' : ''} modified locally
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {driftFiles.slice(0, 6).map(f => (
+          <div key={f} style={{
+            fontSize: '10px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px'
+          }}>
+            <span style={{ color: '#f59e0b' }}>▸</span>
+            <span style={{ wordBreak: 'break-all' }}>{f.split('/').pop()}</span>
+          </div>
+        ))}
+        {driftFiles.length > 6 && (
+          <div style={{ fontSize: '10px', color: '#d97706', fontStyle: 'italic' }}>
+            +{driftFiles.length - 6} more
+          </div>
+        )}
+      </div>
+      <style>{`
+        @keyframes drift-warn-pulse {
+          0% { box-shadow: 0 8px 32px rgba(245, 158, 11, 0.15), inset 0 0 16px rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.4); }
+          100% { box-shadow: 0 8px 32px rgba(245, 158, 11, 0.35), inset 0 0 24px rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.7); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const EdgeLegend: React.FC<{ hasFocusPanel: boolean }> = ({ hasFocusPanel }) => {
   return (
     <div style={{
@@ -750,6 +829,7 @@ export const GraphCanvas: React.FC = () => {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [contextResult, setContextResult] = useState<ContextResult | null>(null);
   const [agentFocus, setAgentFocus] = useState<{paths: string[], intent: string} | null>(null);
+  const [driftFiles, setDriftFiles] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<GraphViewMode>('full');
   const [syncStatus, setSyncStatus] = useState<'SYNCING' | 'LIVE' | 'ERROR'>('SYNCING');
   const vscode = getVsCode();
@@ -775,6 +855,10 @@ export const GraphCanvas: React.FC = () => {
         try {
           setAgentFocus(event.data.data);
           if (event.data.data && event.data.data.paths && event.data.data.paths.length > 0) setViewMode('context');
+        } catch (err) {}
+      } else if (event.data.command === 'driftFilesData') {
+        try {
+          setDriftFiles(event.data.data || []);
         } catch (err) {}
       }
     };
@@ -806,6 +890,7 @@ export const GraphCanvas: React.FC = () => {
       <StatusIndicator status={syncStatus} />
       <QueryPanel contextResult={contextResult} />
       <AgentFocusPanel agentFocus={agentFocus} />
+      <DriftPanel driftFiles={driftFiles} />
       <EdgeLegend hasFocusPanel={agentFocus !== null && agentFocus.paths.length > 0} />
       <ViewModeToggle mode={viewMode} onChange={setViewMode} hasContext={hasContext} />
 
@@ -820,6 +905,7 @@ export const GraphCanvas: React.FC = () => {
             graphData={graphData}
             contextResult={contextResult}
             agentFocus={agentFocus}
+            driftFiles={driftFiles}
             viewMode={viewMode}
           />
         ) : (

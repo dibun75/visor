@@ -4,6 +4,19 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ---
 
+## [1.0.8] — 2026-04-19
+
+### ⚠️ Context Drift Warnings (HUD Integration)
+- Per-file drift detection: `get_telemetry()` now returns `drift_files[]` listing exactly which files changed locally
+- Extended drift detection window from 60s → 120s for better visibility
+- New amber hexagonal `DriftWarningPulse` ring on 3D graph nodes (visually distinct from the existing red "recently modified" ring)
+- New `DriftPanel` overlay in the 3D HUD listing affected filenames
+- Enhanced `TelemetryHUD` sidebar section with file count and individual file names
+- VS Code extension forwards drift data to webview via `driftFilesData` message
+- Zero new dependencies — all changes leverage existing `watchdog` → `file_changelog` infrastructure
+
+---
+
 ## [1.0.7] — 2026-04-18
 
 ### 🎨 Branding & Asset Standardization

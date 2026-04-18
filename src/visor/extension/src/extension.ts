@@ -207,6 +207,12 @@ function setupMessageListener(webview: vscode.Webview) {
                             data: data.agent_focus
                         });
                     }
+                    if (data.drift_files && data.drift_files.length > 0) {
+                        webview.postMessage({
+                            command: 'driftFilesData',
+                            data: data.drift_files
+                        });
+                    }
                 }
             } catch(err) {
                 console.error("Tool call failed", err);

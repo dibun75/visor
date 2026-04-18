@@ -332,11 +332,12 @@ def register_tools(mcp: FastMCP):
         cursor.execute("SELECT COUNT(*) FROM code_nodes")
         nodes = cursor.fetchone()[0]
 
-        # Simple global drift proxy: Any modifications inside the last 60 seconds
+        # Per-file drift detection: files modified in the last 120 seconds
         cursor.execute(
-            "SELECT COUNT(*) FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-60 seconds')"
+            "SELECT DISTINCT file_path FROM file_changelog WHERE datetime(changed_at) > datetime('now', '-120 seconds')"
         )
-        drift = cursor.fetchone()[0] > 0
+        drift_files = [row[0] for row in cursor.fetchall()]
+        drift = len(drift_files) > 0
 
         # Current workspace token burn
         ws_burn = db_client.get_workspace_telemetry()
@@ -353,6 +354,7 @@ def register_tools(mcp: FastMCP):
             "graph_nodes": nodes,
             "context_burn": ws_burn,
             "drift_alert": drift,
+            "drift_files": drift_files,
             "workspace_name": db_client.workspace_name,
         }
         if agent_focus:

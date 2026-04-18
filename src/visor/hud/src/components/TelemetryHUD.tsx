@@ -25,6 +25,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
         burn: 0,
         nodes: 0,
         drift: false,
+        driftFiles: [] as string[],
         workspaceName: ''
     });
     
@@ -51,6 +52,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                     burn: message.data.context_burn || 0,
                     nodes: message.data.graph_nodes || 0,
                     drift: message.data.drift_alert || false,
+                    driftFiles: message.data.drift_files || [],
                     workspaceName: message.data.workspace_name || ''
                 });
             } else if (message.command === 'skillsData') {
@@ -141,11 +143,28 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
                 </div>
 
                 {telemetry.drift && (
-                    <div className="glass-panel critical-flash" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: 'rgba(255, 10, 84, 0.1)', pointerEvents: 'auto' }}>
-                        <ShieldAlert color="var(--accent-critical)" size={32} />
-                        <div>
-                            <h2 style={{ fontSize: '12px', margin: 0, color: 'var(--accent-critical)', letterSpacing: '2px' }}>CRITICAL ALERT</h2>
-                            <div style={{ fontSize: isSidebar ? '14px' : '18px', fontWeight: 'bold', color: 'var(--text-main)' }}>CONTEXT DRIFT: STALE AST</div>
+                    <div className="glass-panel critical-flash" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'flex-start', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.4)', pointerEvents: 'auto' }}>
+                        <ShieldAlert color="#f59e0b" size={32} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div style={{ flex: 1 }}>
+                            <h2 style={{ fontSize: '12px', margin: 0, color: '#f59e0b', letterSpacing: '2px' }}>⚠ CONTEXT DRIFT</h2>
+                            <div style={{ fontSize: isSidebar ? '14px' : '18px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '6px' }}>
+                                {telemetry.driftFiles.length} file{telemetry.driftFiles.length !== 1 ? 's' : ''} modified locally
+                            </div>
+                            {telemetry.driftFiles.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {telemetry.driftFiles.slice(0, 5).map(f => (
+                                        <div key={f} style={{ fontSize: '11px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span style={{ color: '#f59e0b', fontSize: '8px' }}>▸</span>
+                                            <span style={{ wordBreak: 'break-all' }}>{f.split('/').pop()}</span>
+                                        </div>
+                                    ))}
+                                    {telemetry.driftFiles.length > 5 && (
+                                        <div style={{ fontSize: '10px', color: '#d97706', fontStyle: 'italic' }}>
+                                            +{telemetry.driftFiles.length - 5} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
