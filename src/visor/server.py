@@ -137,6 +137,303 @@ _DEFAULT_SKILLS = [
             }
         ),
     },
+    # ───────────────────────────────────────────────
+    # Tier 1: High-value graph strategies
+    # ───────────────────────────────────────────────
+    {
+        "name": "test-coverage-mapper",
+        "description": "Reverse dependency mapping to find test ↔ source relationships.",
+        "content": "Map test files to their source targets. Find untested code paths. Trace which tests cover a given function.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "TEST_COVERAGE",
+                "scoring_bias": {"dep": 1.8, "exact": 1.5, "same": 0.5},
+                "tool_priority": [
+                    "build_context",
+                    "trace_route",
+                    "impact_analysis",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "api-flow-tracer",
+        "description": "Trace API request lifecycle from route to database. Endpoint mapping and middleware analysis.",
+        "content": "Follow the request path: route → middleware → handler → service → repository → database. Map all endpoints and their dependencies.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "API_TRACE",
+                "scoring_bias": {"dep": 1.8, "exact": 1.3, "embed": 0.8},
+                "tool_priority": [
+                    "trace_route",
+                    "build_context",
+                    "get_dependency_chain",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "schema-analyzer",
+        "description": "Database schema analysis. Model relationships, migration tracking, query pattern detection.",
+        "content": "Focus on ORM models, migration files, and database query patterns. Map entity relationships and index usage.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "SCHEMA_ANALYSIS",
+                "scoring_bias": {"exact": 2.0, "dep": 1.2, "recency": 0.3},
+                "tool_priority": [
+                    "build_context",
+                    "get_symbol_context",
+                    "search_codebase",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "red-team-scanner",
+        "description": "Offensive attack chain mapping. Trace lateral movement paths from entry to impact.",
+        "content": "Think like an attacker. Map entry points, find auth weaknesses, trace privilege escalation paths, identify data exfiltration routes.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "ATTACK_CHAIN",
+                "scoring_bias": {"dep": 2.0, "embed": 1.5, "exact": 1.0},
+                "tool_priority": [
+                    "trace_route",
+                    "impact_analysis",
+                    "get_dependency_chain",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "deployment-mapper",
+        "description": "CI/CD pipeline analysis. Map deployment configs, infrastructure files, and environment dependencies.",
+        "content": "Analyze Dockerfiles, CI workflows, deployment scripts, and environment configs. Map the deployment pipeline end-to-end.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "DEPLOYMENT_ANALYSIS",
+                "scoring_bias": {"embed": 2.0, "same": 1.5, "dep": 0.5},
+                "tool_priority": [
+                    "build_context",
+                    "search_codebase",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "mcp-tool-designer",
+        "description": "MCP server analysis. Tool design patterns, resource schemas, and transport architecture.",
+        "content": "Analyze MCP tool definitions, resource patterns, and server architecture. Focus on tool naming, input schemas, and error handling.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "MCP_ANALYSIS",
+                "scoring_bias": {"exact": 1.8, "same": 1.5, "embed": 1.0},
+                "tool_priority": [
+                    "build_context",
+                    "get_symbol_context",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    # ───────────────────────────────────────────────
+    # Tier 2: Framework-specific strategies
+    # ───────────────────────────────────────────────
+    {
+        "name": "react-optimizer",
+        "description": "React/Next.js component tree analysis. Render optimization, bundle splitting, waterfall elimination.",
+        "content": "Analyze component hierarchy, identify re-render cascades, find bundle bloat, and trace data-fetching waterfalls across server/client boundaries.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "REACT_OPTIMIZATION",
+                "scoring_bias": {"dep": 1.5, "same": 1.5, "embed": 1.2},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "get_dependency_chain",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "css-analyzer",
+        "description": "Stylesheet and design token analysis. Unused styles, specificity conflicts, and theming patterns.",
+        "content": "Map CSS/Tailwind class usage, detect unused styles, find specificity conflicts, and analyze design token propagation.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "CSS_ANALYSIS",
+                "scoring_bias": {"embed": 1.8, "same": 2.0, "dep": 0.5},
+                "tool_priority": [
+                    "build_context",
+                    "search_codebase",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "rust-analyzer",
+        "description": "Rust ownership and type system analysis. Trait resolution, lifetime tracking, and borrow chain tracing.",
+        "content": "Trace ownership chains, resolve trait implementations, map lifetime dependencies, and analyze async task boundaries.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "RUST_ANALYSIS",
+                "scoring_bias": {"exact": 1.8, "dep": 1.5, "embed": 1.0},
+                "tool_priority": [
+                    "build_context",
+                    "get_dependency_chain",
+                    "get_symbol_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "python-analyzer",
+        "description": "Python project analysis. Import resolution, type hint coverage, async pattern detection.",
+        "content": "Analyze import graphs, map decorator usage, trace async chains, and detect type hint gaps across modules.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "PYTHON_ANALYSIS",
+                "scoring_bias": {"dep": 1.5, "embed": 1.3, "exact": 1.2},
+                "tool_priority": [
+                    "build_context",
+                    "get_dependency_chain",
+                    "impact_analysis",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "node-analyzer",
+        "description": "Node.js async pattern analysis. Event loop, callback chains, middleware stacks, and package dependency audit.",
+        "content": "Trace async/await chains, map middleware execution order, analyze package.json dependency trees, and find event loop blockers.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "NODE_ANALYSIS",
+                "scoring_bias": {"dep": 1.8, "embed": 1.2, "recency": 1.0},
+                "tool_priority": [
+                    "build_context",
+                    "get_dependency_chain",
+                    "trace_route",
+                ],
+            }
+        ),
+    },
+    # ───────────────────────────────────────────────
+    # Tier 3: Domain-specific analyzers
+    # ───────────────────────────────────────────────
+    {
+        "name": "i18n-scanner",
+        "description": "Internationalization analysis. Detect hardcoded strings, map translation coverage, and trace locale file usage.",
+        "content": "Find untranslated strings, map i18n key usage across components, detect missing locale entries, and verify RTL support.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "I18N_ANALYSIS",
+                "scoring_bias": {"exact": 2.0, "same": 1.5, "embed": 0.8},
+                "tool_priority": [
+                    "search_codebase",
+                    "build_context",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "frontend-analyzer",
+        "description": "UI component tree analysis. Layout hierarchy, accessibility audit, and design system compliance.",
+        "content": "Map component hierarchy, trace prop drilling chains, detect accessibility gaps, and verify design system token usage.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "FRONTEND_ANALYSIS",
+                "scoring_bias": {"same": 1.8, "dep": 1.3, "embed": 1.2},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "e2e-flow-tracer",
+        "description": "End-to-end user flow tracing. Map critical paths from UI action to API response to database write.",
+        "content": "Trace full user journeys: button click → event handler → API call → server handler → database mutation → response. Identify break points.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "E2E_TRACE",
+                "scoring_bias": {"dep": 2.0, "exact": 1.2, "embed": 0.8},
+                "tool_priority": [
+                    "trace_route",
+                    "get_dependency_chain",
+                    "build_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "documentation-mapper",
+        "description": "Documentation coverage analysis. Map documented vs undocumented public APIs and modules.",
+        "content": "Find undocumented public functions, verify README accuracy against code, and map doc-to-source alignment.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "DOC_ANALYSIS",
+                "scoring_bias": {"embed": 1.8, "exact": 1.5, "dep": 0.5},
+                "tool_priority": [
+                    "build_context",
+                    "search_codebase",
+                    "get_symbol_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "lint-validator",
+        "description": "Code quality pattern analysis. Style consistency, anti-pattern detection, and config compliance.",
+        "content": "Detect code style inconsistencies, find anti-patterns, verify linter config coverage, and map quality hotspots.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "LINT_ANALYSIS",
+                "scoring_bias": {"exact": 1.5, "same": 1.5, "embed": 1.0},
+                "tool_priority": [
+                    "build_context",
+                    "search_codebase",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "mobile-ux-analyzer",
+        "description": "Mobile app component analysis. Touch targets, navigation flow, platform convention compliance.",
+        "content": "Analyze mobile component hierarchy, verify touch target sizes, map navigation flows, and check platform-specific patterns.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "MOBILE_ANALYSIS",
+                "scoring_bias": {"same": 1.8, "dep": 1.3, "embed": 1.5},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "get_file_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "game-asset-mapper",
+        "description": "Game project analysis. Asset dependency tracking, scene graph mapping, and game loop architecture.",
+        "content": "Map asset references, trace scene graph hierarchy, analyze game loop structure, and detect orphaned resources.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "GAME_ANALYSIS",
+                "scoring_bias": {"same": 2.0, "dep": 1.5, "exact": 1.0},
+                "tool_priority": [
+                    "build_context",
+                    "get_dependency_chain",
+                    "search_codebase",
+                ],
+            }
+        ),
+    },
 ]
 
 

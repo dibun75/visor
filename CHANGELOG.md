@@ -2,6 +2,38 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.1.0] — 2026-04-19
+
+### 🧠 Full Skill Library — 25 Built-In Graph Strategies
+
+Expanded from 7 → 25 built-in graph traversal strategies across three tiers:
+
+**Tier 1 — High-Value Analysis (6 new):**
+- `test-coverage-mapper` — Reverse dependency mapping for test ↔ source relationships
+- `api-flow-tracer` — Trace API request lifecycle from route to database
+- `schema-analyzer` — Database schema, ORM models, and migration analysis
+- `red-team-scanner` — Offensive attack chain mapping (MITRE ATT&CK-inspired)
+- `deployment-mapper` — CI/CD pipeline and infrastructure file analysis
+- `mcp-tool-designer` — MCP server tool design pattern analysis
+
+**Tier 2 — Framework-Specific (5 new):**
+- `react-optimizer` — React/Next.js component tree and render optimization
+- `css-analyzer` — Stylesheet, design token, and specificity analysis
+- `rust-analyzer` — Rust ownership, trait resolution, and lifetime tracking
+- `python-analyzer` — Import graph, decorator, and async pattern detection
+- `node-analyzer` — Node.js async chains, middleware stacks, and package audit
+
+**Tier 3 — Domain-Specific (7 new):**
+- `i18n-scanner` — Internationalization and hardcoded string detection
+- `frontend-analyzer` — UI component hierarchy and accessibility audit
+- `e2e-flow-tracer` — End-to-end user flow tracing (UI → API → DB)
+- `documentation-mapper` — Documentation coverage analysis
+- `lint-validator` — Code quality pattern and anti-pattern detection
+- `mobile-ux-analyzer` — Mobile component and navigation flow analysis
+- `game-asset-mapper` — Game asset dependency and scene graph mapping
+
+---
+
 ## [1.0.9] — 2026-04-19
 
 ### 🧠 New Built-In Graph Strategies
