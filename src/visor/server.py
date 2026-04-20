@@ -434,6 +434,73 @@ _DEFAULT_SKILLS = [
             }
         ),
     },
+    # ───────────────────────────────────────────────
+    # Workflow-aware graph strategies
+    # ───────────────────────────────────────────────
+    {
+        "name": "test-first-resolver",
+        "description": "Test-first development context. Surfaces test files matching the symbol under edit and prioritizes failing test paths.",
+        "content": "When building test-first, surface the test file that imports the target symbol. Boost recently-failing test files by recency. Trace test→source dependency edges to keep implementation aligned with assertions.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "TDD_CONTEXT",
+                "scoring_bias": {"dep": 2.0, "exact": 1.5, "recency": 1.5, "same": 0.5},
+                "tool_priority": [
+                    "build_context",
+                    "trace_route",
+                    "impact_analysis",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "fault-tracer",
+        "description": "Root cause tracing. Backward traversal from error site through call chain to find the originating fault.",
+        "content": "Trace data flow backward from the error site. Weight recent changes heavily since regressions correlate with recent commits. Expand symbol matching on error messages, stack frames, and exception types.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "FAULT_TRACE",
+                "scoring_bias": {"dep": 2.0, "recency": 1.8, "embed": 1.0, "exact": 1.2},
+                "tool_priority": [
+                    "trace_route",
+                    "get_dependency_chain",
+                    "build_context",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "pre-commit-scanner",
+        "description": "Pre-completion verification context. Surfaces test files, CI configs, and build scripts that must pass before a change is considered done.",
+        "content": "Before claiming a change is complete, surface all verification-relevant files: test suites that cover the changed code, CI workflow definitions, build configs, and linter rules. Co-location weighted heavily.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "VERIFICATION",
+                "scoring_bias": {"same": 2.0, "dep": 1.5, "recency": 1.5, "exact": 0.8},
+                "tool_priority": [
+                    "build_context",
+                    "impact_analysis",
+                    "search_codebase",
+                ],
+            }
+        ),
+    },
+    {
+        "name": "change-impact-mapper",
+        "description": "Change blast radius mapping. Given a set of modified files, surfaces everything downstream that could break.",
+        "content": "Map all downstream consumers of the changed files. Expand dependency graph to find transitive impact. Surface test files that exercise the affected paths. Ideal for code review preparation.",
+        "strategy": json.dumps(
+            {
+                "intent_override": "CHANGE_IMPACT",
+                "scoring_bias": {"dep": 2.0, "same": 1.5, "embed": 0.8, "exact": 1.0},
+                "tool_priority": [
+                    "impact_analysis",
+                    "get_dependency_chain",
+                    "build_context",
+                ],
+            }
+        ),
+    },
 ]
 
 

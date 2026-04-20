@@ -2,6 +2,19 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.1.1] — 2026-04-21
+
+### 🔄 Workflow-Aware Graph Strategies (4 new, 29 total)
+
+New graph traversal strategies for common development workflows:
+
+- `test-first-resolver` — Surfaces test files matching the symbol under edit, boosts recently-failing tests
+- `fault-tracer` — Backward traversal from error site through call chain to find originating fault
+- `pre-commit-scanner` — Surfaces test suites, CI configs, and build scripts for pre-completion verification
+- `change-impact-mapper` — Maps downstream blast radius of modified files for code review preparation
+
+---
+
 ## [1.1.0] — 2026-04-19
 
 ### 🧠 Full Skill Library — 25 Built-In Graph Strategies
