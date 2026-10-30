@@ -1,38 +1,50 @@
-import pytest
+import os
+import shutil
 import tempfile
-import time
-from visor.db.client import VectorDBClient
+from pathlib import Path
+
+import pytest
+
+_TEST_VISOR_HOME = tempfile.mkdtemp(prefix="visor-tests-")
+os.environ["VISOR_HOME"] = _TEST_VISOR_HOME
+os.environ.pop("WORKSPACE_ROOT", None)
+
+from visor.db.client import VectorDBClient  # noqa: E402
+
+
+def pytest_sessionfinish():
+    shutil.rmtree(_TEST_VISOR_HOME, ignore_errors=True)
+
 
 @pytest.fixture
 def test_db(monkeypatch):
-    "Creates an isolated in-memory or tempfile SQLite DB with sqlite-vec loaded."
-    # Using a fast temporary file instead of :memory: because sqlite-vec sometimes
-    # struggles with loading extensions securely on purely ephemeral URI attachments
-    temp_db = tempfile.NamedTemporaryFile(suffix=".db")
-    db_path = temp_db.name
-    
-    # Reset singleton so each test gets a genuinely fresh temp DB
-    VectorDBClient._instance = None
-    client = VectorDBClient(db_path=db_path)
-    
-    # Monkeypatch the global db_client so all tools use the test db
-    import visor.db.client as db_module
-    monkeypatch.setattr(db_module, "db_client", client)
-    
-    # Also patch it in core and context_engine if they imported the instance directly
-    import visor.tools.core as core_module
-    import visor.tools.context_engine as ce_module
-    monkeypatch.setattr(core_module, "db_client", client, raising=False)
-    monkeypatch.setattr(ce_module, "db_client", client, raising=False)
-    
-    yield client
-    
-    # Teardown
-    client.conn.close()
-    temp_db.close()
-    VectorDBClient._instance = None
+    """Create an isolated SQLite hub and spoke with sqlite-vec loaded."""
+    with tempfile.TemporaryDirectory(prefix="visor-db-") as temp_dir:
+        db_path = str(Path(temp_dir) / "graph.db")
+
+        VectorDBClient._instance = None
+        client = VectorDBClient(db_path=db_path)
+
+        import visor.db.client as db_module
+        import visor.tools.context_engine as ce_module
+        import visor.tools.core as core_module
+
+        monkeypatch.setattr(db_module, "db_client", client)
+        monkeypatch.setattr(core_module, "db_client", client, raising=False)
+        monkeypatch.setattr(ce_module, "db_client", client, raising=False)
+        monkeypatch.setattr(core_module, "_graph_cache", None, raising=False)
+        monkeypatch.setattr(core_module, "_graph_cache_key", None, raising=False)
+        monkeypatch.setattr(ce_module, "_ctx_graph_cache", None, raising=False)
+        monkeypatch.setattr(ce_module, "_ctx_graph_cache_key", None, raising=False)
+
+        yield client
+
+        client.spoke_conn.close()
+        client.hub_conn.close()
+        VectorDBClient._instance = None
+
 
 @pytest.fixture
 def mock_embedding():
-    "Returns a fake 384-dimensional vector mimicking all-MiniLM-L6-v2"
+    """Return a fake 384-dimensional all-MiniLM-L6-v2 vector."""
     return [0.1] * 384

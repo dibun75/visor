@@ -219,6 +219,7 @@ def index_workspace(root: str, open_files: Optional[list] = None):
                 )
             cursor.execute("DELETE FROM code_nodes WHERE file_path = ?", (path,))
         db_client.conn.commit()
+        db_client.graph_revision += 1
         logger.info(f"Purged {len(stale)} stale file(s) from graph database.")
 
 
@@ -232,6 +233,8 @@ class _VisorEventHandler(FileSystemEventHandler):
         super().__init__()
         self._pending: dict[str, float] = {}
         self._lock = threading.Lock()
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
         self._start_debounce_thread()
 
     def on_modified(self, event):
@@ -243,8 +246,7 @@ class _VisorEventHandler(FileSystemEventHandler):
 
     def _start_debounce_thread(self):
         def flush():
-            while True:
-                time.sleep(0.1)
+            while not self._stop_event.wait(0.1):
                 now = time.monotonic()
                 with self._lock:
                     ready = [
@@ -259,7 +261,13 @@ class _VisorEventHandler(FileSystemEventHandler):
                     index_file(p)
 
         t = threading.Thread(target=flush, daemon=True)
+        self._thread = t
         t.start()
+
+    def stop(self):
+        self._stop_event.set()
+        if self._thread and self._thread is not threading.current_thread():
+            self._thread.join(timeout=1)
 
 
 # ---------------------------------------------------------------------------
@@ -267,23 +275,35 @@ class _VisorEventHandler(FileSystemEventHandler):
 # ---------------------------------------------------------------------------
 
 _observer: Optional[Observer] = None
+_event_handler: Optional[_VisorEventHandler] = None
+_watched_root: Optional[str] = None
 
 
 def start_watcher(workspace_root: str):
     """Start the background file watcher on the given workspace root."""
-    global _observer
+    global _observer, _event_handler, _watched_root
+    workspace_root = str(Path(workspace_root).resolve())
+    if _observer and _observer.is_alive() and _watched_root == workspace_root:
+        return
+    stop_watcher()
     _ensure_changelog(db_client.conn)
-    handler = _VisorEventHandler()
+    _event_handler = _VisorEventHandler()
     _observer = Observer()
-    _observer.schedule(handler, workspace_root, recursive=True)
+    _observer.schedule(_event_handler, workspace_root, recursive=True)
     _observer.daemon = True
     _observer.start()
+    _watched_root = workspace_root
     logger.info(f"File watcher started on: {workspace_root}")
 
 
 def stop_watcher():
-    global _observer
+    global _observer, _event_handler, _watched_root
     if _observer:
         _observer.stop()
         _observer.join()
         logger.info("File watcher stopped.")
+    if _event_handler:
+        _event_handler.stop()
+    _observer = None
+    _event_handler = None
+    _watched_root = None

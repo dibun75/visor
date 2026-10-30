@@ -10,7 +10,9 @@ from typing import List, Dict, Any, Optional
 
 EMBEDDING_DIM = 384  # Configurable to specific embedding size (e.g. all-MiniLM-L6-v2)
 
-VISOR_HOME = os.path.expanduser("~/.visor")
+VISOR_HOME = os.path.abspath(
+    os.path.expanduser(os.environ.get("VISOR_HOME", "~/.visor"))
+)
 
 
 def serialize_vec(vector: List[float]) -> bytes:
@@ -72,13 +74,25 @@ class VectorDBClient:
             ws_name = "test_ws"
             ws_root = "/test/root"
         else:
-            hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths()
+            explicit_root = os.environ.get("WORKSPACE_ROOT")
+            if explicit_root and os.path.isdir(explicit_root):
+                hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths(
+                    explicit_root
+                )
+            else:
+                hub_path = os.path.join(VISOR_HOME, "hub.db")
+                os.makedirs(VISOR_HOME, exist_ok=True)
+                spoke_path = ":memory:"
+                ws_hash = ""
+                ws_name = "unconfigured"
+                ws_root = ""
 
         self.hub_path = hub_path
         self.spoke_path = spoke_path
         self.workspace_hash = ws_hash
         self.workspace_name = ws_name
         self.workspace_root = ws_root
+        self.graph_revision = 0
 
         # Hub: global data (no sqlite-vec needed here — only vec_agent_memory uses it)
         self.hub_conn = _open_connection(hub_path, load_vec=True)
@@ -89,14 +103,26 @@ class VectorDBClient:
         self.conn = self.spoke_conn
 
         print(f"[VISOR] Hub DB: {hub_path}", file=sys.stderr, flush=True)
-        print(
-            f"[VISOR] Spoke DB: {spoke_path} (workspace={ws_name}, hash={ws_hash})",
-            file=sys.stderr,
-            flush=True,
-        )
+        if self.is_configured:
+            print(
+                f"[VISOR] Spoke DB: {spoke_path} (workspace={ws_name}, hash={ws_hash})",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            print(
+                "[VISOR] Workspace deferred until the first active MCP request.",
+                file=sys.stderr,
+                flush=True,
+            )
 
         self._migrate_hub()
         self._migrate_spoke()
+
+    @property
+    def is_configured(self) -> bool:
+        """Return whether the spoke is bound to a validated workspace."""
+        return bool(self.workspace_root and self.workspace_hash)
 
     def reinitialize(self, workspace_root: str):
         """Re-initialize with a new workspace root (e.g. after MCP roots/list).
@@ -108,26 +134,26 @@ class VectorDBClient:
         if workspace_root == self.workspace_root:
             return False  # Already pointing at this workspace
 
-        # Close old spoke connection
-        try:
-            self.spoke_conn.close()
-        except Exception:
-            pass
+        with self._lock:
+            try:
+                self.spoke_conn.close()
+            except Exception:
+                pass
 
-        # Recompute paths for new workspace
-        ws_hash = hashlib.sha256(workspace_root.encode("utf-8")).hexdigest()[:12]
-        ws_name = os.path.basename(workspace_root) or "unknown"
-        spoke_dir = os.path.join(VISOR_HOME, "workspaces", ws_hash)
-        spoke_path = os.path.join(spoke_dir, "graph.db")
-        os.makedirs(spoke_dir, exist_ok=True)
+            ws_hash = hashlib.sha256(workspace_root.encode("utf-8")).hexdigest()[:12]
+            ws_name = os.path.basename(workspace_root) or "unknown"
+            spoke_dir = os.path.join(VISOR_HOME, "workspaces", ws_hash)
+            spoke_path = os.path.join(spoke_dir, "graph.db")
+            os.makedirs(spoke_dir, exist_ok=True)
 
-        self.spoke_path = spoke_path
-        self.workspace_hash = ws_hash
-        self.workspace_name = ws_name
-        self.workspace_root = workspace_root
+            self.spoke_path = spoke_path
+            self.workspace_hash = ws_hash
+            self.workspace_name = ws_name
+            self.workspace_root = workspace_root
+            self.graph_revision += 1
 
-        self.spoke_conn = _open_connection(spoke_path, load_vec=True)
-        self.conn = self.spoke_conn
+            self.spoke_conn = _open_connection(spoke_path, load_vec=True)
+            self.conn = self.spoke_conn
 
         print(
             f"[VISOR] Workspace switched → {ws_name} ({ws_hash})",
@@ -247,6 +273,14 @@ class VectorDBClient:
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS file_changelog (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_path TEXT NOT NULL,
+                changed_at TEXT NOT NULL
+            )
+        """)
+
         self.spoke_conn.commit()
 
     # ──────────────────────────────────────────────
@@ -255,6 +289,8 @@ class VectorDBClient:
 
     def register_workspace(self) -> None:
         """Upsert the current workspace into the hub registry."""
+        if not self.is_configured:
+            raise RuntimeError("Cannot register a workspace before it is resolved.")
         cursor = self.hub_conn.cursor()
         cursor.execute(
             """
@@ -612,6 +648,7 @@ class VectorDBClient:
                         raise
                 try:
                     cursor.execute("COMMIT")
+                    self.graph_revision += 1
                 except Exception as e:
                     print(f"FAILED ON COMMIT: {e}", file=sys.stderr)
                     raise
@@ -631,6 +668,7 @@ class VectorDBClient:
                 (from_node, to_node, relation_type),
             )
             self.spoke_conn.commit()
+            self.graph_revision += 1
 
     def search_similar(
         self, vector: List[float], limit: int = 5

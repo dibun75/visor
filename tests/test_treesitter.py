@@ -1,7 +1,6 @@
 """Tests for the Tree-sitter AST parser across all supported languages."""
 
 import os
-import pytest
 from visor.parser.treesitter import ast_parser, _EXT_MAP
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")

@@ -45,7 +45,7 @@ MAX_CONTEXT_TOKENS = 8_000  # Conservative budget to avoid overflows
 # ---------------------------------------------------------------------------
 
 _ctx_graph_cache: nx.DiGraph | None = None
-_ctx_graph_edge_count: int = -1
+_ctx_graph_cache_key: tuple[str, int, int] | None = None
 
 
 def _load_edges_graph() -> nx.DiGraph:
@@ -60,14 +60,15 @@ def _load_edges_graph() -> nx.DiGraph:
 
 def _get_cached_edges_graph() -> nx.DiGraph:
     """Returns a cached edges graph, rebuilding only when edges change."""
-    global _ctx_graph_cache, _ctx_graph_edge_count
+    global _ctx_graph_cache, _ctx_graph_cache_key
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM edges")
     current_count = cursor.fetchone()[0]
-    if _ctx_graph_cache is None or current_count != _ctx_graph_edge_count:
+    cache_key = (db_client.workspace_hash, db_client.graph_revision, current_count)
+    if _ctx_graph_cache is None or cache_key != _ctx_graph_cache_key:
         _ctx_graph_cache = _load_edges_graph()
-        _ctx_graph_edge_count = current_count
+        _ctx_graph_cache_key = cache_key
     return _ctx_graph_cache
 
 

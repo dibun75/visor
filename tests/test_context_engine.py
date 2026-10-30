@@ -1,4 +1,11 @@
-from visor.tools.context_engine import _score_node, _estimate_tokens, _classify_intent, _generate_reasoning, INTENT_PROFILES
+from visor.tools.context_engine import (
+    _score_node,
+    _estimate_tokens,
+    _classify_intent,
+    _generate_reasoning,
+    INTENT_PROFILES,
+)
+
 
 def test_estimate_tokens():
     text = "def my_func(): pass"
@@ -6,11 +13,12 @@ def test_estimate_tokens():
     assert tokens == len(text) // 4
     assert _estimate_tokens("") == 1
 
+
 def test_score_node():
     mock_node = {
         "name": "AuthManager",
         "file_path": "src/auth.py",
-        "distance": 0.5  # 0.5 raw L2
+        "distance": 0.5,  # 0.5 raw L2
     }
     query_tokens = ["auth", "manager"]
     hop_map = {"src/auth.py": 0}  # 0 hops away
@@ -21,9 +29,9 @@ def test_score_node():
         anchor_embedding_distance=0.5,
         hop_map=hop_map,
         recency_map={"src/auth.py": 1.0},
-        weights=INTENT_PROFILES["DEFAULT"]
+        weights=INTENT_PROFILES["DEFAULT"],
     )
-    
+
     # Hand-verify the expected DEFAULT score:
     # EXACT_MATCH = 1.0 -> 1.0 * 1.0 = 1.0
     # SAME_FILE = 0.7 -> 1.0 * 0.7 = 0.7
@@ -31,8 +39,9 @@ def test_score_node():
     # DEPENDENCY = 0.3 -> dep: 1.0 / (1.0 + 0) = 1.0 -> 0.3 * 1.0 = 0.3
     # RECENCY = 0.2 -> recency: 1.0 -> 0.2 * 1.0 = 0.2
     # Total = 1.0 + 0.7 + 0.375 + 0.3 + 0.2 = 2.575
-    
+
     assert score == 2.575
+
 
 def test_classify_intent():
     assert _classify_intent("How do I fix this null pointer exception") == "BUG_FIX"
@@ -40,13 +49,10 @@ def test_classify_intent():
     assert _classify_intent("Please explain the architecture of the graph") == "EXPLAIN"
     assert _classify_intent("Add a new feature to the UI") == "DEFAULT"
 
+
 def test_skill_strategy_override():
     """Verify that skill scoring_bias overrides default weights."""
-    mock_node = {
-        "name": "DbClient",
-        "file_path": "src/db.py",
-        "distance": 0.4
-    }
+    mock_node = {"name": "DbClient", "file_path": "src/db.py", "distance": 0.4}
     # Simulate a skill with custom scoring bias
     custom_weights = dict(INTENT_PROFILES["BUG_FIX"])
     custom_weights["recency"] = 2.0  # Override recency to 2.0
@@ -58,7 +64,7 @@ def test_skill_strategy_override():
         anchor_embedding_distance=0.4,
         hop_map={"src/db.py": 0},
         recency_map={"src/db.py": 0.5},
-        weights=INTENT_PROFILES["BUG_FIX"]
+        weights=INTENT_PROFILES["BUG_FIX"],
     )
 
     score_skill, _ = _score_node(
@@ -68,11 +74,12 @@ def test_skill_strategy_override():
         anchor_embedding_distance=0.4,
         hop_map={"src/db.py": 0},
         recency_map={"src/db.py": 0.5},
-        weights=custom_weights
+        weights=custom_weights,
     )
 
     # The skill version with recency=2.0 vs default recency=1.0 should score higher
     assert score_skill > score_default
+
 
 def test_reasoning_generation():
     """Verify human-readable reasoning strings are generated."""
@@ -100,6 +107,7 @@ def test_reasoning_generation():
     reasons_minimal = _generate_reasoning(signals_minimal)
     assert len(reasons_minimal) == 1
     assert "Semantic similarity" in reasons_minimal[0]
+
 
 def test_token_metrics():
     """Verify token estimation math."""

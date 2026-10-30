@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { GraphCanvas } from './components/GraphCanvas';
 import { TelemetryHUD } from './components/TelemetryHUD';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import './vscode';
 
 function MainApp() {
-  const initialMode = (window as any).INITIAL_VIEW_MODE || 'sidebar';
+  const initialMode = window.INITIAL_VIEW_MODE || 'sidebar';
   const [viewMode, setViewMode] = useState<'sidebar' | 'panel'>(initialMode);
 
   useEffect(() => {

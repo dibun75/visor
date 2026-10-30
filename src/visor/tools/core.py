@@ -38,7 +38,7 @@ def track_telemetry(func):
 
 
 _graph_cache: nx.DiGraph | None = None
-_graph_edge_count: int = -1
+_graph_cache_key: tuple[str, int, int] | None = None
 
 
 def _build_nx_graph() -> nx.DiGraph:
@@ -69,14 +69,15 @@ def _build_nx_graph() -> nx.DiGraph:
 
 def _get_nx_graph() -> nx.DiGraph:
     """Returns a cached NetworkX graph, rebuilding only when edges change."""
-    global _graph_cache, _graph_edge_count
+    global _graph_cache, _graph_cache_key
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM edges")
     current_count = cursor.fetchone()[0]
-    if _graph_cache is None or current_count != _graph_edge_count:
+    cache_key = (db_client.workspace_hash, db_client.graph_revision, current_count)
+    if _graph_cache is None or cache_key != _graph_cache_key:
         _graph_cache = _build_nx_graph()
-        _graph_edge_count = current_count
+        _graph_cache_key = cache_key
     return _graph_cache
 
 

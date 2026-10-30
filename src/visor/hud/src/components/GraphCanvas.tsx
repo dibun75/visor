@@ -2,6 +2,7 @@ import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Float, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { getVsCode } from '../vscode';
 
 // ────────────────────────────────────────────────────
 // Types
@@ -506,7 +507,7 @@ const NodeCloud: React.FC<{
   const clusterIndex = useMemo(() => new Map<string, number>(), []);
   const positions = useMemo(
     () => computePositions(graphData.nodes, clusterIndex),
-    [graphData.nodes]
+    [graphData.nodes, clusterIndex]
   );
 
   // Build set of drifted file paths for quick lookup
@@ -611,9 +612,9 @@ const LoadingCloud: React.FC = () => {
     Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       position: new THREE.Vector3(
-        (Math.random() - 0.5) * 16,
-        (Math.random() - 0.5) * 16,
-        (Math.random() - 0.5) * 16
+        Math.sin(i * 2.17) * 8,
+        Math.cos(i * 1.37) * 8,
+        Math.sin(i * 0.73) * Math.cos(i * 1.91) * 8
       ),
     })),
   []);
@@ -818,12 +819,6 @@ const EdgeLegend: React.FC<{ hasFocusPanel: boolean }> = ({ hasFocusPanel }) => 
 // Main GraphCanvas component
 // ────────────────────────────────────────────────────
 
-const getVsCode = () => {
-  if (!(window as any).vscodeApiInstance && (window as any).acquireVsCodeApi) {
-    (window as any).vscodeApiInstance = (window as any).acquireVsCodeApi();
-  }
-  return (window as any).vscodeApiInstance || null;
-};
 
 export const GraphCanvas: React.FC = () => {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
@@ -837,29 +832,16 @@ export const GraphCanvas: React.FC = () => {
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
       if (event.data.command === 'graphData') {
-        try {
-          setGraphData(event.data.data);
-          setSyncStatus('LIVE');
-        } catch (err: any) {
-          console.error('[Err] graphData failed:', err.message);
-          setSyncStatus('ERROR');
-        }
+        setGraphData(event.data.data);
+        setSyncStatus('LIVE');
       } else if (event.data.command === 'contextResultData') {
-        try {
-          setContextResult(event.data.data);
-          if (event.data.data.context.length > 0) setViewMode('context');
-        } catch (err: any) {
-          console.error('[Err] contextResultData failed:', err.message);
-        }
+        setContextResult(event.data.data);
+        if (event.data.data.context.length > 0) setViewMode('context');
       } else if (event.data.command === 'agentFocusData') {
-        try {
-          setAgentFocus(event.data.data);
-          if (event.data.data && event.data.data.paths && event.data.data.paths.length > 0) setViewMode('context');
-        } catch (err) {}
+        setAgentFocus(event.data.data);
+        if (event.data.data?.paths?.length > 0) setViewMode('context');
       } else if (event.data.command === 'driftFilesData') {
-        try {
-          setDriftFiles(event.data.data || []);
-        } catch (err) {}
+        setDriftFiles(event.data.data || []);
       }
     };
 
@@ -881,7 +863,7 @@ export const GraphCanvas: React.FC = () => {
       clearInterval(interval);
       window.removeEventListener('message', messageHandler);
     };
-  }, []);
+  }, [vscode]);
 
   const hasContext = (contextResult !== null && contextResult.context.length > 0) || (agentFocus !== null && agentFocus.paths.length > 0);
 

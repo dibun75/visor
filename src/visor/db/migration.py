@@ -16,7 +16,9 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-VISOR_HOME = os.path.expanduser("~/.visor")
+VISOR_HOME = os.path.abspath(
+    os.path.expanduser(os.environ.get("VISOR_HOME", "~/.visor"))
+)
 
 # Known locations where old monolith DBs may exist
 _OLD_DB_PATTERNS = [

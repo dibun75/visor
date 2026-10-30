@@ -9,6 +9,8 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      VISOR_HOME: ${{ runner.temp }}/visor
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -16,15 +18,18 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --python 3.12
       - name: Lint
-        run: uv run ruff check src/visor/
+        run: uv run ruff check src/visor/ tests/
       - name: Format check
-        run: uv run ruff format --check src/visor/
+        run: uv run ruff format --check src/visor/ tests/
 
   test:
     runs-on: ubuntu-latest
+    env:
+      VISOR_HOME: ${{ runner.temp }}/visor
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
@@ -34,35 +39,65 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --python ${{ matrix.python-version }}
       - name: Run tests
         run: uv run pytest tests/ -v --tb=short
+      - name: MCP handshake smoke
+        if: matrix.python-version == '3.12'
+        run: uv run pytest tests/test_mcp_headless.py -v --tb=short
 
   build:
     runs-on: ubuntu-latest
     needs: [lint, test]
+    env:
+      VISOR_HOME: ${{ runner.temp }}/visor
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Set up Python
         run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --dev --python 3.12
       - name: Build package
         run: uv build
       - name: Verify CLI
-        run: |
-          uv run visor --version
+        run: uv run visor --version
 
   hud:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/visor/hud
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: src/visor/hud/package-lock.json
+      - name: Install HUD dependencies
+        run: npm ci
+      - name: Lint HUD
+        run: npm run lint
       - name: Build HUD
-        working-directory: ./src/visor/hud
-        run: |
-          npm install
-          npm run build
+        run: npm run build
+
+  extension:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/visor/extension
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: src/visor/extension/package-lock.json
+      - name: Install extension dependencies
+        run: npm ci
+      - name: Type-check extension
+        run: npm run check-types
