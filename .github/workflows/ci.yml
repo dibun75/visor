@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      VISOR_HOME: ${{ runner.temp }}/visor
+      VISOR_HOME: /tmp/visor
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -27,7 +27,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      VISOR_HOME: ${{ runner.temp }}/visor
+      VISOR_HOME: /tmp/visor
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test]
     env:
-      VISOR_HOME: ${{ runner.temp }}/visor
+      VISOR_HOME: /tmp/visor
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
