@@ -12,10 +12,10 @@
 Output docs/assets/terminal-demo.gif
 
 Set Shell "bash"
-Set FontSize 16
+Set FontSize 14
 Set Width 1200
-Set Height 600
-Set Padding 16
+Set Height 2000
+Set Padding 12
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 10ms
 Set Framerate 12
@@ -35,6 +35,9 @@ Type "uv run visor index"
 Enter
 Sleep 4s
 
-Type `uv run visor context "where is MCP workspace detection handled?"`
+Type "clear"
 Enter
-Sleep 6s
+
+Type `uv run visor context "resolve local workspace project root"`
+Enter
+Sleep 7s

@@ -1,5 +1,0 @@
-{
-  "illustrative": true,
-  "recorded_run": false,
-  "note": "An earlier revision of this file invented paths such as src/auth/jwt.py and token totals. That transcript was removed. Run demo/terminal_demo.tape, or the three uv run visor commands in demo/README.md, for output from this repository."
-}

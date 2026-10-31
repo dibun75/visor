@@ -5,7 +5,7 @@ Run these commands from a checkout. They are the same commands recorded by [`ter
 ```bash
 uv run visor doctor
 uv run visor index
-uv run visor context "where is MCP workspace detection handled?"
+uv run visor context "resolve local workspace project root"
 ```
 
 `doctor` reports whether the local index is ready and which retrieval mode is active. `index` builds or refreshes the local AST index. `context` prints selected symbols, file paths, and the reason strings for that query.
@@ -18,7 +18,7 @@ Other local commands, when you want them:
 uv run visor status
 uv run visor trace src/visor/server.py src/visor/workspace.py
 uv run visor drift
-uv run visor context "where is MCP workspace detection handled?" --json
+uv run visor context "resolve local workspace project root" --json
 ```
 
 `visor fix` and `visor explain` are thin wrappers around `visor context` with the `bug-fixer` and `architecture-explainer` skills. Their human-readable output includes a per-result size estimate. That estimate compares candidate file text with returned snippets. It is not a published token-reduction measurement.

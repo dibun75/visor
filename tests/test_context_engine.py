@@ -107,7 +107,76 @@ def test_reasoning_generation():
     }
     reasons_minimal = _generate_reasoning(signals_minimal)
     assert len(reasons_minimal) == 1
-    assert "Semantic similarity" in reasons_minimal[0]
+    assert reasons_minimal[0] == "Semantic similarity (score: 0.5)"
+
+
+def test_lexical_retrieval_is_not_described_as_semantic_similarity():
+    """A lexical hit must not turn a missing vector distance into similarity."""
+    weights = INTENT_PROFILES["DEFAULT"]
+    lexical = {
+        "name": "resolve_local_workspace",
+        "file_path": "src/visor/workspace.py",
+        "retrieval": "lexical",
+        "distance": 1.0,
+    }
+    other = {
+        "name": "unrelated_helper",
+        "file_path": "src/visor/other.py",
+        "retrieval": "lexical",
+        "distance": 1.0,
+    }
+    kwargs = {
+        "query_tokens": ["resolve", "local", "workspace"],
+        "anchor_file": "src/visor/workspace.py",
+        "anchor_embedding_distance": 0.0,
+        "hop_map": {"src/visor/workspace.py": 0, "src/visor/other.py": 2},
+        "recency_map": {},
+        "weights": weights,
+    }
+    lexical_score, lexical_signals = _score_node(node=lexical, **kwargs)
+    other_score, other_signals = _score_node(node=other, **kwargs)
+
+    assert lexical_signals["embedding"] == 0.0
+    assert other_signals["embedding"] == 0.0
+    assert lexical_score > other_score
+
+    # The old placeholder distance of 1.0 added the same embed offset to every
+    # lexical candidate, so dropping it does not change their order.
+    placeholder_offset = weights["embed"] * 0.5
+    assert round(lexical_score + placeholder_offset, 4) > round(
+        other_score + placeholder_offset, 4
+    )
+
+    reasons = _generate_reasoning(lexical_signals, retrieval="lexical")
+    assert "Matched query token in symbol name" in reasons
+    assert "Co-located in same file as top lexical hit" in reasons
+    assert all("Semantic similarity" not in reason for reason in reasons)
+    assert _generate_reasoning(
+        {"exact_match": 0, "proximity": 0, "embedding": 0, "dependency": 0, "recency": 0},
+        retrieval="lexical",
+    ) == ["Lexical match"]
+
+
+def test_semantic_distance_keeps_similarity_reasoning():
+    node = {
+        "name": "resolve_local_workspace",
+        "file_path": "src/visor/workspace.py",
+        "distance": 0.5,
+    }
+    score, signals = _score_node(
+        node=node,
+        query_tokens=["resolve"],
+        anchor_file="src/visor/other.py",
+        anchor_embedding_distance=0.5,
+        hop_map={},
+        recency_map={},
+        weights=INTENT_PROFILES["DEFAULT"],
+    )
+    assert signals["embedding"] == 0.375
+    assert score > 0
+    reasons = _generate_reasoning(signals, retrieval="semantic")
+    assert "Semantic similarity (score: 0.375)" in reasons
+    assert all("lexical" not in reason.lower() for reason in reasons)
 
 
 def test_token_metrics():

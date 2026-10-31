@@ -5,7 +5,7 @@ The primary demo is a real CLI session against this repository:
 ```bash
 uv run visor doctor
 uv run visor index
-uv run visor context "where is MCP workspace detection handled?"
+uv run visor context "resolve local workspace project root"
 ```
 
 ## Generate the GIF
@@ -19,7 +19,7 @@ vhs demo/terminal_demo.tape
 
 `demo/terminal_demo.tape` is the recording source. `demo/vhs_bashrc` wraps `uv run visor` so the GIF shows command output with home directories, usernames, and the workspace-hash directory replaced. The JSON and context lines still come from the CLI.
 
-Target frame: 1200×600. Target length: about 10–15 seconds when the index is already warm and the tree does not contain large ignored directories. Target GIF size: under 5 MB. If VHS writes a larger GIF, recompress the frames or lower `Set Framerate` in the tape and record again. Do not draw a substitute GIF by hand.
+Target frame: 1200×2000. The extra height, and a `clear` before `visor context`, keep the full context result on screen. Target length: about 10–15 seconds when the index is already warm and the tree does not contain large ignored directories. Target GIF size: under 5 MB. If VHS writes a larger GIF, recompress the frames or lower `Set Framerate` in the tape and record again. Do not draw a substitute GIF by hand.
 
 `visor index` lists files with `Path.rglob` before it drops `.venv`, `node_modules`, and the other ignored directories. On this checkout that walk was still inside `.venv` and `src/visor/hud/node_modules` after several minutes. For a short recording, use a clean worktree and point the tape at it. `VISOR_UV_PROJECT` makes `uv run` use this checkout's environment so the clean tree does not get a second virtualenv. The typed commands stay `uv run visor doctor`, `uv run visor index`, and `uv run visor context`.
 
@@ -38,10 +38,8 @@ Optional MP4, after a GIF exists:
 ffmpeg -i docs/assets/terminal-demo.gif -movflags +faststart -pix_fmt yuv420p docs/assets/terminal-demo.mp4
 ```
 
-Commit `docs/assets/terminal-demo.gif` only after reviewing it for unsanitized paths.
+Commit `docs/assets/terminal-demo.gif` only after reviewing it for unsanitized paths and for lexical reason text. The published GIF should not say "Semantic similarity" while `doctor` reports lexical mode.
 
-## What is not the terminal demo
+Published take: 1200×2000, 9.60 seconds, GIF 467,608 bytes, MP4 281,251 bytes. The context result starts with `resolve_mcp_roots`, `resolve_local_workspace`, `find_git_root`, and `is_project_dir` in `src/visor/workspace.py`, with lexical reasons rather than semantic similarity.
 
-`docs/assets/demo.gif` and `docs/assets/demo.mp4` are older HUD motion clips. `docs/assets/hud_overview.png` is an existing HUD still. None of those files was produced by `terminal_demo.tape`.
-
-`demo/demo_output.json` only records that an older fictional transcript was removed. It is not command output.
+The optional HUD still is [`docs/assets/hud_overview.png`](../docs/assets/hud_overview.png). It was not produced by this tape.

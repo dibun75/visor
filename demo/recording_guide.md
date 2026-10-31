@@ -16,7 +16,7 @@ VHS types and runs:
 ```bash
 uv run visor doctor
 uv run visor index
-uv run visor context "where is MCP workspace detection handled?"
+uv run visor context "resolve local workspace project root"
 ```
 
 `demo/vhs_bashrc` is the tape's shell rcfile. It pipes those three `uv run visor` invocations through `sed` so the frames omit home directories, the local username, and the workspace-hash directory. Review the GIF before committing it.
@@ -24,8 +24,10 @@ uv run visor context "where is MCP workspace detection handled?"
 ## Frame
 
 - About 10–15 seconds when the index is already warm
-- 1200×600
+- 1200×2000, so the context result fits without scrolling the leading symbols off the final frame
 - Optimized GIF under 5 MB when the generator is available
+
+The tape types `clear` before `visor context` for that same reason. The three product commands are unchanged.
 
 If the warm `visor index` or `visor context` run longer than that, keep the real timing in the published GIF or shorten only the `Sleep` lines that follow a finished command. Do not delete output frames to invent a faster run.
 
@@ -48,9 +50,5 @@ demo/vhs_shell.sh -c 'uv run visor doctor'
 ```bash
 bash --rcfile demo/vhs_bashrc -i -c 'uv run visor doctor'
 bash --rcfile demo/vhs_bashrc -i -c 'uv run visor index'
-bash --rcfile demo/vhs_bashrc -i -c 'uv run visor context "where is MCP workspace detection handled?"'
+bash --rcfile demo/vhs_bashrc -i -c 'uv run visor context "resolve local workspace project root"'
 ```
-
-## Older HUD clips
-
-`docs/assets/demo.gif` is a HUD animation of about 31 seconds and 13.5 MB. Leave it out of the README hero. The still to use for the optional HUD is `docs/assets/hud_overview.png`.

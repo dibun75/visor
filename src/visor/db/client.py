@@ -1127,7 +1127,6 @@ class VectorDBClient:
                 "docstring": row[4],
                 "start_line": row[5],
                 "end_line": row[6],
-                "distance": 1.0,
                 "retrieval": "lexical",
             }
             for row in cursor.fetchall()

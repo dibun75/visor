@@ -12,27 +12,17 @@ It works from the terminal, through the [Agent Skill](./skills/visor-context/SKI
 
 ## Terminal demo
 
-From a checkout of this repository, the reproducible demo runs:
+From a checkout of this repository:
 
 ```bash
 uv run visor doctor
 uv run visor index
-uv run visor context "where is MCP workspace detection handled?"
+uv run visor context "resolve local workspace project root"
 ```
-
-The recording source is [`demo/terminal_demo.tape`](./demo/terminal_demo.tape). It executes those commands and sanitizes home paths, usernames, and the workspace hash before they are shown.
 
 ![Terminal demo: doctor, index, and context on this repository](./docs/assets/terminal-demo.gif)
 
-The recording is 1200×600, about 15 seconds, and 346 KB. `doctor` in that take reports lexical mode. Later lines are the scorer's reasons for that response, and the Reduction figure is the CLI's size estimate for those snippets. Neither number is a benchmark. A 169 KB MP4 of the same take is at [`docs/assets/terminal-demo.mp4`](./docs/assets/terminal-demo.mp4).
-
-Regenerate it from the repository root:
-
-```bash
-vhs demo/terminal_demo.tape
-```
-
-See [`demo/README.md`](./demo/README.md) for the clean-worktree note. A checkout that contains `.venv` or `node_modules` can make `visor index` walk those trees before it ignores them.
+Recorded from [`demo/terminal_demo.tape`](./demo/terminal_demo.tape). The same take is also at [`docs/assets/terminal-demo.mp4`](./docs/assets/terminal-demo.mp4).
 
 ## Quick Start
 
@@ -179,8 +169,6 @@ Install **V.I.S.O.R. HUD** from the editor's extension view or [Open VSX](https:
   <img src="./docs/assets/hud_overview.png" alt="Optional V.I.S.O.R. HUD showing a dependency graph and telemetry panels" width="800"/>
   <p>Existing HUD capture retained as a secondary visual. It was not recaptured for this revision, so the node count and token panel are not a current measurement. The current HUD reads <code>get_telemetry</code>: indexed node count, a local byte counter displayed as tokens processed, drift when files changed in the last 120 seconds, and agent focus after <code>set_hud_focus</code>.</p>
 </div>
-
-`docs/assets/demo.gif` and `docs/assets/demo.mp4` are older HUD motion clips. They are not the terminal demo.
 
 ## Local-first and privacy
 
