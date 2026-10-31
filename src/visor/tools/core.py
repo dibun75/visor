@@ -6,7 +6,7 @@ import functools
 import networkx as nx
 
 from visor.db.client import db_client
-from visor.db.embeddings import embedder
+from visor.db.embeddings import embedder, semantic_enabled
 from visor.tools.context_engine import build_context as _build_context
 
 
@@ -239,9 +239,12 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @track_telemetry
     def search_codebase(query: str) -> str:
-        """Semantic vector search across CodeNodes. Returns list of nodes."""
-        vec = embedder.encode(query)
-        res = db_client.search_similar(vec, limit=5)
+        """Search CodeNodes using the configured lexical or semantic retrieval mode."""
+        res = (
+            db_client.search_similar(embedder.encode(query), limit=5)
+            if semantic_enabled()
+            else db_client.search_lexical(query, limit=5)
+        )
         return json.dumps(res)
 
     @mcp.tool()

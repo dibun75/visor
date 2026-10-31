@@ -22,6 +22,7 @@ def test_db(monkeypatch):
     with tempfile.TemporaryDirectory(prefix="visor-db-") as temp_dir:
         db_path = str(Path(temp_dir) / "graph.db")
 
+        monkeypatch.setenv("VISOR_RETRIEVAL_MODE", "semantic")
         VectorDBClient._instance = None
         client = VectorDBClient(db_path=db_path)
 

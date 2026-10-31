@@ -8,7 +8,7 @@ import threading
 import struct
 from typing import List, Dict, Any, Optional
 
-INDEX_SCHEMA_VERSION = 2
+INDEX_SCHEMA_VERSION = 3
 EMBEDDING_DIM = 384  # Configurable to specific embedding size (e.g. all-MiniLM-L6-v2)
 
 VISOR_HOME = os.path.abspath(
@@ -295,6 +295,20 @@ class VectorDBClient:
                 embedding float[{EMBEDDING_DIM}]
             )
         """)
+
+        cursor.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS fts_code_nodes USING fts5(
+                file_path, name, docstring
+            )
+        """)
+        fts_count = cursor.execute("SELECT COUNT(*) FROM fts_code_nodes").fetchone()[0]
+        node_count = cursor.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
+        if fts_count != node_count:
+            cursor.execute("DELETE FROM fts_code_nodes")
+            cursor.execute("""
+                INSERT INTO fts_code_nodes(rowid, file_path, name, docstring)
+                SELECT id, file_path, name, COALESCE(docstring, '') FROM code_nodes
+            """)
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS indexed_files (
@@ -595,6 +609,8 @@ class VectorDBClient:
         )
 
     def get_index_status(self) -> Dict[str, Any]:
+        from visor.db.embeddings import retrieval_mode
+
         metadata = dict(
             self.spoke_conn.execute("SELECT key, value FROM index_metadata").fetchall()
         )
@@ -606,15 +622,21 @@ class VectorDBClient:
         vectors = self.spoke_conn.execute(
             "SELECT COUNT(*) FROM vec_code_nodes"
         ).fetchone()[0]
+        fts_nodes = self.spoke_conn.execute("SELECT COUNT(*) FROM fts_code_nodes").fetchone()[0]
+        mode = retrieval_mode()
+        complete = nodes == fts_nodes and (mode == "lexical" or nodes == vectors)
         return {
             "version": version,
             "status": metadata.get("status", "requires_reindex"),
             "nodes": nodes,
             "vectors": vectors,
+            "fts_nodes": fts_nodes,
+            "retrieval_mode": mode,
             "ready": (
                 version == INDEX_SCHEMA_VERSION
                 and metadata.get("status") == "ready"
-                and nodes == vectors
+                and metadata.get("retrieval_mode") == mode
+                and complete
             ),
         }
 
@@ -622,20 +644,28 @@ class VectorDBClient:
         return not self.get_index_status()["ready"]
 
     def mark_indexing(self) -> None:
+        from visor.db.embeddings import retrieval_mode
+
         with self._lock:
             self._set_index_metadata("version", str(INDEX_SCHEMA_VERSION))
             self._set_index_metadata("status", "indexing")
+            self._set_index_metadata("retrieval_mode", retrieval_mode())
             self.spoke_conn.commit()
 
     def mark_index_ready(self) -> None:
+        from visor.db.embeddings import retrieval_mode
+
         with self._lock:
             status = self.get_index_status()
-            if status["nodes"] != status["vectors"]:
+            if status["nodes"] != status["fts_nodes"] or (
+                status["retrieval_mode"] == "semantic" and status["nodes"] != status["vectors"]
+            ):
                 raise RuntimeError(
-                    "Index cannot be marked ready: code node/vector counts differ."
+                    "Index cannot be marked ready: retrieval index counts differ."
                 )
             self._set_index_metadata("version", str(INDEX_SCHEMA_VERSION))
             self._set_index_metadata("status", "ready")
+            self._set_index_metadata("retrieval_mode", retrieval_mode())
             self.spoke_conn.commit()
 
     def get_indexed_file_hash(self, file_path: str) -> str | None:
@@ -647,6 +677,8 @@ class VectorDBClient:
 
     def is_file_index_current(self, file_path: str, file_hash: str) -> bool:
         """Return whether a hash hit also has complete, current vector data."""
+        from visor.db.embeddings import retrieval_mode
+
         row = self.spoke_conn.execute(
             "SELECT file_hash, index_version FROM indexed_files WHERE file_path = ?",
             (file_path,),
@@ -657,6 +689,13 @@ class VectorDBClient:
         node_count = self.spoke_conn.execute(
             "SELECT COUNT(*) FROM code_nodes WHERE file_path = ?", (file_path,)
         ).fetchone()[0]
+        fts_count = self.spoke_conn.execute(
+            """
+            SELECT COUNT(*) FROM code_nodes n JOIN fts_code_nodes f ON f.rowid = n.id
+            WHERE n.file_path = ?
+            """,
+            (file_path,),
+        ).fetchone()[0]
         vector_count = self.spoke_conn.execute(
             """
             SELECT COUNT(*)
@@ -666,7 +705,9 @@ class VectorDBClient:
             """,
             (file_path,),
         ).fetchone()[0]
-        return node_count == vector_count
+        return node_count == fts_count and (
+            retrieval_mode() == "lexical" or node_count == vector_count
+        )
 
     def replace_file_index(
         self,
@@ -692,6 +733,7 @@ class VectorDBClient:
                     cursor.execute(
                         "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
                     )
+                    cursor.execute("DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,))
                 cursor.execute(
                     "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
                 )
@@ -730,10 +772,16 @@ class VectorDBClient:
                             file_hash,
                         ),
                     )
+                    node_id = cursor.lastrowid
                     cursor.execute(
-                        "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
-                        (cursor.lastrowid, serialize_vec(node["vector"])),
+                        "INSERT INTO fts_code_nodes(rowid, file_path, name, docstring) VALUES (?, ?, ?, ?)",
+                        (node_id, file_path, node["name"], node["docstring"] or ""),
                     )
+                    if node.get("vector") is not None:
+                        cursor.execute(
+                            "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+                            (node_id, serialize_vec(node["vector"])),
+                        )
 
                 for edge in edges:
                     cursor.execute(
@@ -789,6 +837,7 @@ class VectorDBClient:
                     cursor.execute(
                         "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
                     )
+                    cursor.execute("DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,))
                 cursor.execute(
                     "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
                 )
@@ -1039,6 +1088,36 @@ class VectorDBClient:
                 "distance": r[7],
             }
             for r in cursor.fetchall()
+        ]
+
+    def search_lexical(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Search symbol names and docstrings with SQLite FTS5, offline."""
+        import re
+
+        terms = re.findall(r"[A-Za-z0-9_]+", query)
+        if not terms:
+            return []
+        fts_query = " OR ".join(f'"{term}"' for term in terms)
+        cursor = self.spoke_conn.cursor()
+        cursor.execute(
+            """
+            SELECT n.id, n.file_path, n.node_type, n.name, n.docstring,
+                   n.start_line, n.end_line, bm25(fts_code_nodes) AS rank
+            FROM fts_code_nodes
+            JOIN code_nodes n ON fts_code_nodes.rowid = n.id
+            WHERE fts_code_nodes MATCH ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (fts_query, limit),
+        )
+        return [
+            {
+                "id": row[0], "file_path": row[1], "node_type": row[2],
+                "name": row[3], "docstring": row[4], "start_line": row[5],
+                "end_line": row[6], "distance": 1.0, "retrieval": "lexical",
+            }
+            for row in cursor.fetchall()
         ]
 
     def get_recency_map(

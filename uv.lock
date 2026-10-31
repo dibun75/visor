@@ -2418,7 +2418,6 @@ dependencies = [
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pydantic" },
     { name = "python-dateutil" },
-    { name = "sentence-transformers" },
     { name = "sqlite-vec" },
     { name = "tree-sitter" },
     { name = "tree-sitter-c" },
@@ -2430,6 +2429,11 @@ dependencies = [
     { name = "tree-sitter-rust" },
     { name = "tree-sitter-typescript" },
     { name = "watchdog" },
+]
+
+[package.optional-dependencies]
+semantic = [
+    { name = "sentence-transformers" },
 ]
 
 [package.dev-dependencies]
@@ -2447,7 +2451,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.2.6" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
-    { name = "sentence-transformers", specifier = ">=5.4.0" },
+    { name = "sentence-transformers", marker = "extra == 'semantic'", specifier = ">=5.4.0" },
     { name = "sqlite-vec", specifier = ">=0.1.9" },
     { name = "tree-sitter", specifier = ">=0.25.2" },
     { name = "tree-sitter-c", specifier = ">=0.23.0" },
@@ -2460,6 +2464,7 @@ requires-dist = [
     { name = "tree-sitter-typescript", specifier = ">=0.23.2" },
     { name = "watchdog", specifier = ">=6.0.0" },
 ]
+provides-extras = ["semantic"]
 
 [package.metadata.requires-dev]
 dev = [
