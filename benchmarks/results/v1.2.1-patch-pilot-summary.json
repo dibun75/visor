@@ -1,0 +1,1177 @@
+{
+  "schema_version": 2,
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20261031,
+    "confidence": 0.95
+  },
+  "records": [
+    {
+      "source": "patch-discount-claude-code-native-r1.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 8.00799531606026,
+      "answer_characters": 379,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 54297,
+      "cache_creation_input_tokens": 5358,
+      "output_tokens": 543,
+      "cost_usd": 0.0323077
+    },
+    {
+      "source": "patch-discount-claude-code-native-r2.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 9.2939136660425,
+      "answer_characters": 681,
+      "evidence_hits": [
+        "app/discounts.py",
+        "apply_discount"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 54827,
+      "cache_creation_input_tokens": 4718,
+      "output_tokens": 663,
+      "cost_usd": 0.0310007
+    },
+    {
+      "source": "patch-discount-claude-code-native-r3.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 10.53474728402216,
+      "answer_characters": 845,
+      "evidence_hits": [
+        "app/discounts.py",
+        "apply_discount"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 53840,
+      "cache_creation_input_tokens": 5365,
+      "output_tokens": 758,
+      "cost_usd": 0.034440000000000005
+    },
+    {
+      "source": "patch-discount-claude-code-visor-r1.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 6.851402170024812,
+      "answer_characters": 352,
+      "evidence_hits": [
+        "app/discounts.py",
+        "apply_discount"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 42056,
+      "cache_creation_input_tokens": 4280,
+      "output_tokens": 417,
+      "cost_usd": 0.025507600000000002
+    },
+    {
+      "source": "patch-discount-claude-code-visor-r2.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 7.912413301994093,
+      "answer_characters": 372,
+      "evidence_hits": [
+        "app/discounts.py",
+        "apply_discount"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 42059,
+      "cache_creation_input_tokens": 4300,
+      "output_tokens": 425,
+      "cost_usd": 0.025667899999999997
+    },
+    {
+      "source": "patch-discount-claude-code-visor-r3.json",
+      "task": "patch-discount",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 8.497883736039512,
+      "answer_characters": 306,
+      "evidence_hits": [
+        "app/discounts.py",
+        "apply_discount"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 40857,
+      "cache_creation_input_tokens": 5993,
+      "output_tokens": 550,
+      "cost_usd": 0.0335697
+    },
+    {
+      "source": "patch-discount-codex-native-r1.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 35.17867579299491,
+      "answer_characters": 332,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 150199,
+      "cached_input_tokens": 139648,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1794,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-discount-codex-native-r2.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 37.52806032297667,
+      "answer_characters": 288,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 165949,
+      "cached_input_tokens": 159872,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1850,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-discount-codex-native-r3.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 26.540864872979,
+      "answer_characters": 273,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 117316,
+      "cached_input_tokens": 112256,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1308,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-discount-codex-visor-r1.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 37.18664314493071,
+      "answer_characters": 335,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 139940,
+      "cached_input_tokens": 133888,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1962,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-discount-codex-visor-r2.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 27.78703734697774,
+      "answer_characters": 458,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 138511,
+      "cached_input_tokens": 127488,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1767,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-discount-codex-visor-r3.json",
+      "task": "patch-discount",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 36.81248098809738,
+      "answer_characters": 360,
+      "evidence_hits": [
+        "app/discounts.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/discounts.py"
+      ],
+      "input_tokens": 138754,
+      "cached_input_tokens": 132608,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1751,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-claude-code-native-r1.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 9.32518901489675,
+      "answer_characters": 412,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 54140,
+      "cache_creation_input_tokens": 5315,
+      "output_tokens": 395,
+      "cost_usd": 0.03064
+    },
+    {
+      "source": "patch-paths-claude-code-native-r2.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 12.088906612014398,
+      "answer_characters": 653,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 10,
+      "cached_input_tokens": 69240,
+      "cache_creation_input_tokens": 5397,
+      "output_tokens": 584,
+      "cost_usd": 0.034372
+    },
+    {
+      "source": "patch-paths-claude-code-native-r3.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 7.939015800016932,
+      "answer_characters": 299,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 54676,
+      "cache_creation_input_tokens": 4625,
+      "output_tokens": 361,
+      "cost_usd": 0.027593600000000003
+    },
+    {
+      "source": "patch-paths-claude-code-visor-r1.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 12.15321362100076,
+      "answer_characters": 953,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 10,
+      "cached_input_tokens": 69085,
+      "cache_creation_input_tokens": 6714,
+      "output_tokens": 723,
+      "cost_usd": 0.04101450000000001
+    },
+    {
+      "source": "patch-paths-claude-code-visor-r2.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 8.050732894917019,
+      "answer_characters": 332,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 55583,
+      "cache_creation_input_tokens": 4586,
+      "output_tokens": 365,
+      "cost_usd": 0.027568299999999997
+    },
+    {
+      "source": "patch-paths-claude-code-visor-r3.json",
+      "task": "patch-paths",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 8.386501330998726,
+      "answer_characters": 452,
+      "evidence_hits": [
+        "app/paths.py",
+        "is_within"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 54809,
+      "cache_creation_input_tokens": 5539,
+      "output_tokens": 411,
+      "cost_usd": 0.031762900000000004
+    },
+    {
+      "source": "patch-paths-codex-native-r1.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 34.42558101611212,
+      "answer_characters": 323,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 184489,
+      "cached_input_tokens": 178176,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2190,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-codex-native-r2.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 32.38477301597595,
+      "answer_characters": 309,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 131656,
+      "cached_input_tokens": 124672,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1718,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-codex-native-r3.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 38.04364370100666,
+      "answer_characters": 467,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 181446,
+      "cached_input_tokens": 167680,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1805,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-codex-visor-r1.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 38.82327237701975,
+      "answer_characters": 323,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 186085,
+      "cached_input_tokens": 178432,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2149,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-codex-visor-r2.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 38.97811712999828,
+      "answer_characters": 376,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 168239,
+      "cached_input_tokens": 162176,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1910,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-paths-codex-visor-r3.json",
+      "task": "patch-paths",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 29.191741259070113,
+      "answer_characters": 355,
+      "evidence_hits": [
+        "app/paths.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/paths.py"
+      ],
+      "input_tokens": 119767,
+      "cached_input_tokens": 114304,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1454,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-claude-code-native-r1.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 6.725526364985853,
+      "answer_characters": 288,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 39749,
+      "cache_creation_input_tokens": 4277,
+      "output_tokens": 317,
+      "cost_usd": 0.0242649
+    },
+    {
+      "source": "patch-retry-claude-code-native-r2.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 6.522413293016143,
+      "answer_characters": 258,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 39747,
+      "cache_creation_input_tokens": 4043,
+      "output_tokens": 293,
+      "cost_usd": 0.023088700000000004
+    },
+    {
+      "source": "patch-retry-claude-code-native-r3.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 8.09075859200675,
+      "answer_characters": 361,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 8,
+      "cached_input_tokens": 53846,
+      "cache_creation_input_tokens": 5189,
+      "output_tokens": 375,
+      "cost_usd": 0.0299066
+    },
+    {
+      "source": "patch-retry-claude-code-visor-r1.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 8.001350210048258,
+      "answer_characters": 384,
+      "evidence_hits": [
+        "app/retry.py",
+        "retry_delays"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 43415,
+      "cache_creation_input_tokens": 4617,
+      "output_tokens": 620,
+      "cost_usd": 0.0290215
+    },
+    {
+      "source": "patch-retry-claude-code-visor-r2.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 7.6689357799477875,
+      "answer_characters": 491,
+      "evidence_hits": [
+        "app/retry.py",
+        "retry_delays"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 43169,
+      "cache_creation_input_tokens": 4312,
+      "output_tokens": 483,
+      "cost_usd": 0.0264069
+    },
+    {
+      "source": "patch-retry-claude-code-visor-r3.json",
+      "task": "patch-retry",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 8.536461483919993,
+      "answer_characters": 360,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 6,
+      "cached_input_tokens": 41612,
+      "cache_creation_input_tokens": 6370,
+      "output_tokens": 562,
+      "cost_usd": 0.0352732
+    },
+    {
+      "source": "patch-retry-codex-native-r1.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 95.30580007389653,
+      "answer_characters": 248,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 147932,
+      "cached_input_tokens": 142208,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1595,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-codex-native-r2.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 29.926458311034366,
+      "answer_characters": 238,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 134064,
+      "cached_input_tokens": 128256,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1646,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-codex-native-r3.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 33.29632162593771,
+      "answer_characters": 288,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 163601,
+      "cached_input_tokens": 154368,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1671,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-codex-visor-r1.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "exit_code": 0,
+      "duration_seconds": 31.615922078024596,
+      "answer_characters": 333,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 141580,
+      "cached_input_tokens": 135168,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1673,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-codex-visor-r2.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "exit_code": 0,
+      "duration_seconds": 29.723621979006566,
+      "answer_characters": 439,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 181926,
+      "cached_input_tokens": 165376,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1752,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "patch-retry-codex-visor-r3.json",
+      "task": "patch-retry",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "exit_code": 0,
+      "duration_seconds": 23.07411358493846,
+      "answer_characters": 284,
+      "evidence_hits": [
+        "app/retry.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/retry.py"
+      ],
+      "input_tokens": 108285,
+      "cached_input_tokens": 97024,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1347,
+      "cost_usd": 0.0
+    }
+  ],
+  "skipped_inputs": [],
+  "aggregate": {
+    "successful_records": 36,
+    "failed_records": 0,
+    "cells": {
+      "claude-code:native": {
+        "runs": 9,
+        "successful_runs": 9,
+        "median_duration_seconds": 8.09075859200675,
+        "median_evidence_recall": 1.0,
+        "patch_successes": 9,
+        "patch_evaluated_runs": 9,
+        "patch_success_rate": 1.0,
+        "input_tokens": 70,
+        "cached_input_tokens": 474362,
+        "cache_creation_input_tokens": 44287,
+        "output_tokens": 4289,
+        "cost_usd": 0.2676142
+      },
+      "claude-code:visor": {
+        "runs": 9,
+        "successful_runs": 9,
+        "median_duration_seconds": 8.050732894917019,
+        "median_evidence_recall": 1.0,
+        "patch_successes": 9,
+        "patch_evaluated_runs": 9,
+        "patch_success_rate": 1.0,
+        "input_tokens": 62,
+        "cached_input_tokens": 432645,
+        "cache_creation_input_tokens": 46711,
+        "output_tokens": 4556,
+        "cost_usd": 0.2757925
+      },
+      "codex:native": {
+        "runs": 9,
+        "successful_runs": 9,
+        "median_duration_seconds": 34.42558101611212,
+        "median_evidence_recall": 0.5,
+        "patch_successes": 9,
+        "patch_evaluated_runs": 9,
+        "patch_success_rate": 1.0,
+        "input_tokens": 1376652,
+        "cached_input_tokens": 1307136,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 15577,
+        "cost_usd": 0.0
+      },
+      "codex:visor": {
+        "runs": 9,
+        "successful_runs": 9,
+        "median_duration_seconds": 31.615922078024596,
+        "median_evidence_recall": 0.5,
+        "patch_successes": 9,
+        "patch_evaluated_runs": 9,
+        "patch_success_rate": 1.0,
+        "input_tokens": 1323087,
+        "cached_input_tokens": 1246464,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 15765,
+        "cost_usd": 0.0
+      }
+    },
+    "paired": {
+      "claude-code": {
+        "pairs": 9,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          0.0,
+          0.5
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          0.0,
+          100.0
+        ],
+        "median_input_tokens_delta": -2.0,
+        "input_tokens_delta_ci95": [
+          -2.0,
+          0.0
+        ],
+        "median_input_tokens_delta_percent": -19.999999999999996,
+        "input_tokens_delta_percent_ci95": [
+          -25.0,
+          0.0
+        ],
+        "median_cached_input_tokens_delta": -12234.0,
+        "cached_input_tokens_delta_ci95": [
+          -12983.0,
+          3666.0
+        ],
+        "median_cached_input_tokens_delta_percent": -19.724147891392263,
+        "cached_input_tokens_delta_percent_ci95": [
+          -23.287796158826858,
+          9.222873531409604
+        ],
+        "median_cache_creation_input_tokens_delta": 340.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          -811.0,
+          1181.0
+        ],
+        "median_cache_creation_input_tokens_delta_percent": 7.949497311199449,
+        "cache_creation_input_tokens_delta_percent_ci95": [
+          -15.026866777839542,
+          22.75968394681056
+        ],
+        "median_output_tokens_delta": 50.0,
+        "output_tokens_delta_ci95": [
+          -219.0,
+          303.0
+        ],
+        "median_output_tokens_delta_percent": 13.850415512465375,
+        "output_tokens_delta_percent_ci95": [
+          -35.89743589743589,
+          83.0379746835443
+        ],
+        "median_cost_usd_delta": 0.003318199999999997,
+        "cost_usd_delta_ci95": [
+          -0.0068001,
+          0.005366599999999999
+        ],
+        "median_cost_usd_delta_percent": 14.371532394634578,
+        "cost_usd_delta_percent_ci95": [
+          -19.794309321540794,
+          19.602800753351545
+        ],
+        "median_duration_delta_seconds": 0.44570289191324264,
+        "duration_delta_seconds_ci95": [
+          -2.036863547982648,
+          1.2758238450624049
+        ],
+        "median_duration_delta_percent": 5.508789897075594,
+        "duration_delta_percent_ci95": [
+          -19.334716752739933,
+          18.9698735210458
+        ],
+        "patch_pairs": 9,
+        "median_patch_success_delta": 0.0,
+        "patch_success_delta_ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "codex": {
+        "pairs": 9,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_input_tokens_delta": -6352.0,
+        "input_tokens_delta_ci95": [
+          -55316.0,
+          36583.0
+        ],
+        "median_input_tokens_delta_percent": -4.293864748668308,
+        "input_tokens_delta_percent_ci95": [
+          -33.81152926938099,
+          27.786808045208723
+        ],
+        "median_cached_input_tokens_delta": -5760.0,
+        "cached_input_tokens_delta_ci95": [
+          -53376.0,
+          37120.0
+        ],
+        "median_cached_input_tokens_delta_percent": -4.124656278643446,
+        "cached_input_tokens_delta_percent_ci95": [
+          -31.832061068702288,
+          28.942115768463083
+        ],
+        "median_cache_creation_input_tokens_delta": 0.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_output_tokens_delta": 78.0,
+        "output_tokens_delta_ci95": [
+          -324.0,
+          192.0
+        ],
+        "median_output_tokens_delta_percent": 4.89028213166145,
+        "output_tokens_delta_percent_ci95": [
+          -19.389587073608617,
+          11.175785797438875
+        ],
+        "median_cost_usd_delta": 0.0,
+        "cost_usd_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_duration_delta_seconds": -0.20283633202780038,
+        "duration_delta_seconds_ci95": [
+          -10.222208040999249,
+          6.5933441140223294
+        ],
+        "median_duration_delta_percent": -0.6777826160371703,
+        "duration_delta_percent_ci95": [
+          -30.70071269685294,
+          20.359395790020574
+        ],
+        "patch_pairs": 9,
+        "median_patch_success_delta": 0.0,
+        "patch_success_delta_ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "methodology": {
+    "date": "2026-10-31",
+    "pilot": "v1.2.1 patch correctness",
+    "fixture_revision": "36715f0ea3ae0d32694a42c275fe030dc29bf86c",
+    "fixture_parent_revision": "aa898b304916081417afe0e361dc7387e91e1988",
+    "tasks": [
+      "patch-discount",
+      "patch-retry",
+      "patch-paths"
+    ],
+    "task_count": 3,
+    "agents": [
+      "codex",
+      "claude-code"
+    ],
+    "conditions": [
+      "native",
+      "visor"
+    ],
+    "repeats": 3,
+    "paired_cells": 36,
+    "random_seed": 20261031,
+    "concurrency": 2,
+    "timeout_seconds": 600,
+    "bootstrap": {
+      "samples": 10000,
+      "seed": 20261031,
+      "confidence": 0.95
+    },
+    "agents_recorded": {
+      "codex": {
+        "model": "gpt-5.6-sol",
+        "client_version": "0.152.0"
+      },
+      "claude-code": {
+        "canonical_model": "claude-sonnet-5-5",
+        "command_model_flag": "sonnet",
+        "client_version": "2.1.316"
+      }
+    },
+    "evaluators": {
+      "patch-discount": [
+        "python",
+        "checks/check_discounts.py"
+      ],
+      "patch-retry": [
+        "python",
+        "checks/check_retry.py"
+      ],
+      "patch-paths": [
+        "python",
+        "checks/check_paths.py"
+      ]
+    },
+    "context_policy": "V.I.S.O.R. context was supplied as leads and the prompt required verification against the repository before editing.",
+    "rescore": {
+      "cells": [
+        "patch-discount-claude-code-native-r2",
+        "patch-discount-claude-code-native-r3",
+        "patch-discount-codex-visor-r2",
+        "patch-paths-claude-code-native-r2",
+        "patch-paths-claude-code-visor-r1",
+        "patch-paths-codex-native-r3",
+        "patch-retry-codex-visor-r2"
+      ],
+      "reason": "Those seven cells were first evaluated before the check scripts put the repository root on sys.path, so `import app` failed. The preserved worktrees were re-evaluated with the workspace on PYTHONPATH. The agents were not rerun. Later cells checked out the corrected fixture revision."
+    },
+    "limitations": [
+      "Small controlled pilot: 3 tasks, 3 repeats, 2 agents, 2 conditions.",
+      "Not a universal token-reduction result.",
+      "Patch success, tokens, and runtime depend on the task, agent, model, cache behavior, and supplied context.",
+      "Codex and Claude Code report token fields differently. Claude input_tokens is the uncached remainder; cache-read and cache-creation tokens are separate. Codex cost is not reported and remains zero.",
+      "Deltas are V.I.S.O.R. minus native on matched task and repeat pairs. Negative means V.I.S.O.R. used fewer tokens or less time.",
+      "Every cell used a separate detached worktree. Evaluators ran after the agent.",
+      "Raw provider stdout and stderr are not published."
+    ]
+  }
+}
