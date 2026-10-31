@@ -2,7 +2,7 @@
   "name": "visor-hud",
   "displayName": "V.I.S.O.R. HUD",
   "publisher": "dibun75",
-  "description": "Visual Intelligence System for Orchestrated Reasoning - WebGPU Developer HUD",
+  "description": "Optional WebGPU HUD for the local V.I.S.O.R. context engine. Shows the dependency graph, indexed node count, drift, and agent focus. The CLI and MCP server work without it.",
   "version": "1.2.0",
   "icon": "assets/hero.png",
   "repository": {
@@ -14,8 +14,24 @@
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Visualization"
   ],
+  "keywords": [
+    "mcp",
+    "codex",
+    "claude-code",
+    "ai",
+    "codebase",
+    "dependency-graph",
+    "code-visualization",
+    "context-engineering",
+    "local-first",
+    "webgpu"
+  ],
+  "galleryBanner": {
+    "color": "#070b14",
+    "theme": "dark"
+  },
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
