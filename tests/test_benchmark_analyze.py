@@ -95,11 +95,13 @@ def test_analyzer_extracts_provider_usage_and_pairs_results(tmp_path: Path) -> N
     assert report["skipped_inputs"] == ["plan.json"]
     assert report["aggregate"]["cells"]["codex:native"]["input_tokens"] == 100
     assert report["aggregate"]["cells"]["claude-code:native"]["cost_usd"] == 0.02
-    assert report["aggregate"]["paired"]["codex"] == {
-        "pairs": 1,
-        "median_duration_delta_seconds": -5.0,
-        "median_evidence_recall_delta": 0.0,
-    }
+    codex_pair = report["aggregate"]["paired"]["codex"]
+    assert codex_pair["pairs"] == 1
+    assert codex_pair["median_duration_delta_seconds"] == -5.0
+    assert codex_pair["duration_delta_seconds_ci95"] == [-5.0, -5.0]
+    assert codex_pair["median_evidence_recall_delta"] == 0.0
+    assert codex_pair["median_input_tokens_delta"] == 0.0
+    assert codex_pair["input_tokens_delta_ci95"] == [0.0, 0.0]
     codex = next(
         row
         for row in report["records"]
@@ -126,3 +128,63 @@ def test_aggregate_excludes_failed_records() -> None:
     assert summary["successful_records"] == 0
     assert summary["failed_records"] == 1
     assert summary["cells"] == {}
+
+
+def test_refresh_summary_adds_intervals_without_raw_logs(tmp_path: Path) -> None:
+    summary = {
+        "schema_version": 1,
+        "records": [
+            {
+                "source": "p01-codex-native-r1.json",
+                "task": "p01",
+                "agent": "codex",
+                "condition": "native",
+                "run_id": "r1",
+                "exit_code": 0,
+                "duration_seconds": 20,
+                "evidence_recall": 1.0,
+                "input_tokens": 100,
+                "cached_input_tokens": 5,
+                "output_tokens": 10,
+                "cost_usd": 0.0,
+            },
+            {
+                "source": "p01-codex-visor-r1.json",
+                "task": "p01",
+                "agent": "codex",
+                "condition": "visor",
+                "run_id": "r1",
+                "exit_code": 0,
+                "duration_seconds": 15,
+                "evidence_recall": 1.0,
+                "input_tokens": 80,
+                "cached_input_tokens": 4,
+                "output_tokens": 8,
+                "cost_usd": 0.0,
+            },
+        ],
+    }
+    source = tmp_path / "summary.json"
+    source.write_text(json.dumps(summary), encoding="utf-8")
+    output = tmp_path / "refreshed.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ANALYZER),
+            "--refresh-summary",
+            str(source),
+            "--output",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["records"] == summary["records"]
+    assert report["aggregate"]["paired"]["codex"]["median_input_tokens_delta"] == -20
+    assert report["aggregate"]["paired"]["codex"]["input_tokens_delta_ci95"] == [
+        -20,
+        -20,
+    ]
+    assert "stdout" not in json.dumps(report["records"])
