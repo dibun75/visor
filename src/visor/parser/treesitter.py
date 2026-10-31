@@ -59,7 +59,11 @@ _QUERIES = {
     _LANG_PYTHON: {
         "function": "(function_definition name: (identifier) @name) @node",
         "class": "(class_definition name: (identifier) @name) @node",
-        "import": "(import_from module_name: (dotted_name) @module) @node",
+        "import": """
+            (import_statement name: (dotted_name) @module) @node
+            (import_from_statement
+                module_name: [(dotted_name) (relative_import)] @module) @node
+        """,
     },
     _LANG_TYPESCRIPT: {
         "function": "(function_declaration name: (identifier) @name) @node",
@@ -89,17 +93,17 @@ _QUERIES = {
     _LANG_JAVA: {
         "function": "(method_declaration name: (identifier) @name) @node",
         "class": "(class_declaration name: (identifier) @name) @node",
-        "import": "(import_declaration) @node",
+        "import": "(import_declaration (scoped_identifier) @module) @node",
     },
     _LANG_C: {
         "function": "(function_definition declarator: (function_declarator declarator: (identifier) @name)) @node",
         "class": "(struct_specifier name: (type_identifier) @name) @node",
-        "import": "(preproc_include path: (string_literal) @module) @node",
+        "import": "(preproc_include path: [(string_literal) (system_lib_string)] @module) @node",
     },
     _LANG_CPP: {
         "function": "(function_definition declarator: (function_declarator declarator: (identifier) @name)) @node",
         "class": "(class_specifier name: (type_identifier) @name) @node",
-        "import": "(preproc_include path: (string_literal) @module) @node",
+        "import": "(preproc_include path: [(string_literal) (system_lib_string)] @module) @node",
     },
 }
 

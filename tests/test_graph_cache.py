@@ -4,8 +4,9 @@ import visor.tools.context_engine as context_engine
 def test_graph_cache_rebuilds_for_new_workspace_with_same_edge_count(test_db):
     test_db.workspace_hash = "workspace-a"
     test_db.spoke_conn.execute(
-        "INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)",
-        ("alpha", "beta", "imports"),
+        "INSERT INTO edges (from_node, to_node, relation_type, resolution) "
+        "VALUES (?, ?, ?, ?)",
+        ("alpha", "beta", "IMPORTS", "internal"),
     )
     test_db.spoke_conn.commit()
 
@@ -14,8 +15,9 @@ def test_graph_cache_rebuilds_for_new_workspace_with_same_edge_count(test_db):
 
     test_db.spoke_conn.execute("DELETE FROM edges")
     test_db.spoke_conn.execute(
-        "INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)",
-        ("gamma", "delta", "imports"),
+        "INSERT INTO edges (from_node, to_node, relation_type, resolution) "
+        "VALUES (?, ?, ?, ?)",
+        ("gamma", "delta", "IMPORTS", "internal"),
     )
     test_db.spoke_conn.commit()
     test_db.workspace_hash = "workspace-b"

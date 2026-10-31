@@ -76,3 +76,37 @@ def test_get_dependency_chain(test_db, mcp_tools):
     assert res["symbol"] == "A"
     assert "B" in res["dependency_chain"]
     assert "C" in res["dependency_chain"]
+
+
+def test_graph_tools_use_verified_import_direction(test_db, mcp_tools):
+    for path in ("app.py", "service.py", "model.py"):
+        test_db.upsert_node(path, "function", path, "", [0.1] * 384)
+
+    test_db.upsert_edge("app.py", "service.py", "IMPORTS")
+    test_db.upsert_edge("service.py", "model.py", "IMPORTS")
+
+    route = json.loads(mcp_tools["trace_route"]("app.py", "model.py"))
+    impact = json.loads(mcp_tools["impact_analysis"]("model.py"))
+    architecture = json.loads(mcp_tools["get_architecture_map"]())
+
+    assert route["path"] == ["app.py", "service.py", "model.py"]
+    assert set(impact["blast_radius"]) == {"app.py", "service.py"}
+
+    paths_by_id = {node["id"]: node["file_path"] for node in architecture["nodes"]}
+    architecture_edges = {
+        (paths_by_id[edge["source"]], paths_by_id[edge["target"]])
+        for edge in architecture["edges"]
+    }
+    assert ("app.py", "service.py") in architecture_edges
+    assert ("service.py", "model.py") in architecture_edges
+
+
+def test_dependency_chain_accepts_exact_file_path(test_db, mcp_tools):
+    test_db.upsert_node("app.py", "function", "run", "", [0.1] * 384)
+    test_db.upsert_node("util.py", "function", "helper", "", [0.1] * 384)
+    test_db.upsert_edge("app.py", "util.py", "IMPORTS")
+
+    result = json.loads(mcp_tools["get_dependency_chain"]("app.py"))
+
+    assert result["source_file"] == "app.py"
+    assert result["dependency_chain"] == ["util.py"]

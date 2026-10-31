@@ -15,12 +15,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Set
 
-from watchdog.events import FileModifiedEvent, FileSystemEventHandler
+from watchdog.events import (
+    FileCreatedEvent,
+    FileDeletedEvent,
+    FileModifiedEvent,
+    FileMovedEvent,
+    FileSystemEventHandler,
+)
 from watchdog.observers import Observer
 
 from visor.db.client import db_client
 from visor.db.embeddings import embedder
 from visor.parser.treesitter import ast_parser, _EXT_MAP
+
+from visor.parser.dependencies import canonical_file, normalize_edges
 
 logger = logging.getLogger(__name__)
 
@@ -58,67 +66,54 @@ def _log_file_change(conn: sqlite3.Connection, file_path: str):
 
 
 def index_file(file_path: str, skip_changelog: bool = False):
-    """Parse a file and batch-upsert all its AST nodes into the vector DB.
-
-    Uses ``batch_upsert_nodes`` to flush all nodes in a single SQLite
-    transaction, which is significantly faster than node-by-node commits.
-
-    Args:
-        file_path:      Path to the source file to index.
-        skip_changelog: If True, do NOT write to file_changelog.
-                        Used during boot-time workspace scans to avoid
-                        triggering false drift alerts on every restart.
-    """
+    """Atomically replace one file's symbols, vectors, and dependency edges."""
+    file_path = canonical_file(file_path)
     result = ast_parser.parse_file(file_path)
     if result.error:
-        logger.warning(f"Parse error for {file_path}: {result.error}")
-        return
+        raise RuntimeError(f"Parse error for {file_path}: {result.error}")
 
-    # Cache check — skip if file content is unchanged
-    cursor = db_client.conn.cursor()
-    cursor.execute(
-        "SELECT file_hash FROM code_nodes WHERE file_path=? LIMIT 1", (file_path,)
-    )
-    row = cursor.fetchone()
-    if row and row[0] == result.file_hash:
+    if db_client.is_file_index_current(file_path, result.file_hash):
         if not skip_changelog:
             _log_file_change(db_client.conn, file_path)
-        logger.debug(f"Cache hit — skipping {file_path}")
+        logger.debug("Cache hit — skipping %s", file_path)
         return
 
-    if not result.nodes:
-        return
-
-    # Build batch payload: encode embeddings for all nodes
-    batch = []
+    nodes = []
     for node in result.nodes:
-        vec = embedder.encode(node.docstring if node.docstring else node.name)
-        batch.append(
+        vector = embedder.encode(node.docstring if node.docstring else node.name)
+        nodes.append(
             {
-                "file_path": node.file_path,
                 "node_type": node.node_type,
                 "name": node.name,
                 "docstring": node.docstring,
-                "vector": vec,
+                "vector": vector,
                 "start_line": node.start_line,
                 "end_line": node.end_line,
-                "file_hash": result.file_hash,
             }
         )
 
-    # Single-transaction batch write
-    db_client.batch_upsert_nodes(batch)
-
-    # Edge writes (separate — edges table has no vec table to batch)
-    for edge in result.edges:
-        db_client.upsert_edge(
-            from_node=edge["from"], to_node=edge["to"], relation_type=edge["type"]
-        )
+    workspace_root = db_client.workspace_root or str(Path(file_path).parent)
+    edges = normalize_edges(
+        source_file=file_path,
+        parser_edges=result.edges,
+        workspace_root=workspace_root,
+        db_client=db_client,
+    )
+    db_client.replace_file_index(
+        file_path=file_path,
+        file_hash=result.file_hash,
+        nodes=nodes,
+        edges=edges,
+    )
+    db_client.resolve_call_edges()
 
     if not skip_changelog:
         _log_file_change(db_client.conn, file_path)
     logger.info(
-        f"Indexed {len(result.nodes)} nodes & {len(result.edges)} edges from {file_path}"
+        "Indexed %s nodes and %s normalized edges from %s",
+        len(nodes),
+        len(edges),
+        file_path,
     )
 
 
@@ -145,6 +140,7 @@ def index_workspace(root: str, open_files: Optional[list] = None):
         open_files: Optional list of currently-open file paths to index first.
     """
     _ensure_changelog(db_client.conn)
+    db_client.mark_indexing()
 
     # Prune stale changelog entries
     db_client.conn.execute(
@@ -183,6 +179,7 @@ def index_workspace(root: str, open_files: Optional[list] = None):
 
     # Phase 2: index the rest in parallel
     rest = [f for f in sorted_files if _priority(f) == 2]
+    failures = []
     if rest:
         with ThreadPoolExecutor(max_workers=INDEX_WORKERS) as pool:
             futures = {pool.submit(index_file, str(f), True): f for f in rest}
@@ -193,34 +190,35 @@ def index_workspace(root: str, open_files: Optional[list] = None):
                     future.result()
                 except Exception as exc:
                     logger.warning(f"Index error for {futures[future]}: {exc}")
+                    failures.append((futures[future], exc))
                 if done % 50 == 0 or done == total:
                     logger.info(f"Workspace scan progress: {done}/{total}")
 
-    logger.info("Workspace scan complete.")
+    if failures:
+        raise RuntimeError(
+            f"Workspace indexing failed for {len(failures)} file(s); "
+            "the previous ready index remains unavailable until a complete scan succeeds."
+        )
 
-    # Phase 3: Remove stale nodes for files that no longer exist on disk
-    indexed_paths = {str(p) for p in sorted_files}
-    cursor = db_client.conn.cursor()
-    cursor.execute("SELECT DISTINCT file_path FROM code_nodes")
-    db_paths = {row[0] for row in cursor.fetchall()}
+    indexed_paths = {canonical_file(path) for path in sorted_files}
+    db_paths = {
+        row[0]
+        for row in db_client.conn.execute(
+            "SELECT file_path FROM indexed_files"
+        ).fetchall()
+    }
     stale = db_paths - indexed_paths
+    for path in stale:
+        db_client.delete_file_index(path)
     if stale:
-        for path in stale:
-            # Collect node names before deleting them
-            names = [
-                r[0]
-                for r in cursor.execute(
-                    "SELECT name FROM code_nodes WHERE file_path = ?", (path,)
-                ).fetchall()
-            ]
-            for name in names:
-                cursor.execute(
-                    "DELETE FROM edges WHERE from_node = ? OR to_node = ?", (name, name)
-                )
-            cursor.execute("DELETE FROM code_nodes WHERE file_path = ?", (path,))
-        db_client.conn.commit()
-        db_client.graph_revision += 1
-        logger.info(f"Purged {len(stale)} stale file(s) from graph database.")
+        logger.info("Purged %s stale file(s) from graph database.", len(stale))
+
+    resolved_calls = db_client.resolve_call_edges()
+    if resolved_calls:
+        logger.info("Resolved %s internal call edge(s).", resolved_calls)
+
+    db_client.mark_index_ready()
+    logger.info("Workspace scan complete and index integrity validated.")
 
 
 # ---------------------------------------------------------------------------
@@ -239,10 +237,35 @@ class _VisorEventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if isinstance(event, FileModifiedEvent):
-            path = event.src_path
+            path = canonical_file(event.src_path)
             if Path(path).suffix.lower() in SUPPORTED_EXTS:
                 with self._lock:
                     self._pending[path] = time.monotonic()
+
+    def on_created(self, event):
+        if isinstance(event, FileCreatedEvent):
+            path = canonical_file(event.src_path)
+            if Path(path).suffix.lower() in SUPPORTED_EXTS:
+                with self._lock:
+                    self._pending[path] = time.monotonic()
+
+    def on_deleted(self, event):
+        if isinstance(event, FileDeletedEvent):
+            path = canonical_file(event.src_path)
+            if Path(path).suffix.lower() in SUPPORTED_EXTS:
+                db_client.delete_file_index(path)
+                _log_file_change(db_client.conn, path)
+
+    def on_moved(self, event):
+        if isinstance(event, FileMovedEvent):
+            source = canonical_file(event.src_path)
+            destination = canonical_file(event.dest_path)
+            if Path(source).suffix.lower() in SUPPORTED_EXTS:
+                db_client.delete_file_index(source)
+                _log_file_change(db_client.conn, source)
+            if Path(destination).suffix.lower() in SUPPORTED_EXTS:
+                with self._lock:
+                    self._pending[destination] = time.monotonic()
 
     def _start_debounce_thread(self):
         def flush():
@@ -250,19 +273,22 @@ class _VisorEventHandler(FileSystemEventHandler):
                 now = time.monotonic()
                 with self._lock:
                     ready = [
-                        p
-                        for p, t in self._pending.items()
-                        if now - t >= DEBOUNCE_SECONDS
+                        path
+                        for path, changed_at in self._pending.items()
+                        if now - changed_at >= DEBOUNCE_SECONDS
                     ]
-                    for p in ready:
-                        del self._pending[p]
-                for p in ready:
-                    logger.info(f"[watcher] Re-indexing changed file: {p}")
-                    index_file(p)
+                    for path in ready:
+                        del self._pending[path]
+                for path in ready:
+                    logger.info("[watcher] Re-indexing changed file: %s", path)
+                    try:
+                        index_file(path)
+                    except Exception:
+                        logger.exception("[watcher] Failed to re-index %s", path)
 
-        t = threading.Thread(target=flush, daemon=True)
-        self._thread = t
-        t.start()
+        thread = threading.Thread(target=flush, daemon=True)
+        self._thread = thread
+        thread.start()
 
     def stop(self):
         self._stop_event.set()

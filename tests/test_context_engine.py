@@ -1,6 +1,7 @@
 from visor.tools.context_engine import (
     _score_node,
     _estimate_tokens,
+    _read_snippet,
     _classify_intent,
     _generate_reasoning,
     INTENT_PROFILES,
@@ -113,4 +114,28 @@ def test_token_metrics():
     """Verify token estimation math."""
     text = "a" * 400  # 400 chars → 100 tokens
     assert _estimate_tokens(text) == 100
+
+
+def test_read_snippet_uses_one_based_inclusive_lines(tmp_path):
+    source = tmp_path / "sample.py"
+    source.write_text("first\nsecond\nthird\nlast\n", encoding="utf-8")
+
+    assert _read_snippet(str(source), 1, 1) == "first\n"
+    assert _read_snippet(str(source), 2, 3) == "second\nthird\n"
+    assert _read_snippet(str(source), 4, 4) == "last\n"
+    assert _read_snippet(str(source), 0, 1) == ""
+
+
+def test_read_snippet_preserves_unicode_and_truncates_boundaries(tmp_path):
+    source = tmp_path / "unicode.py"
+    source.write_text(
+        "α\nβ\nγ\nδ\nε\nζ\n",
+        encoding="utf-8",
+    )
+
+    snippet = _read_snippet(str(source), 1, 6, max_lines=4)
+
+    assert snippet.startswith("α\nβ\n")
+    assert "2 lines truncated" in snippet
+    assert snippet.endswith("ε\nζ\n")
     assert _estimate_tokens("ab") == 1  # Minimum 1

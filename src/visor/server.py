@@ -34,11 +34,13 @@ class WorkspaceManager:
         db_client.reinitialize(workspace)
         db_client.register_workspace()
 
-        node_count = db_client.conn.execute(
-            "SELECT COUNT(*) FROM code_nodes"
-        ).fetchone()[0]
-        if node_count == 0:
-            logger.info("[VISOR] Empty database for %s — indexing.", workspace)
+        index_status = db_client.get_index_status()
+        if db_client.index_needs_rebuild():
+            logger.info(
+                "[VISOR] Index unavailable for %s (%s) — rebuilding.",
+                workspace,
+                index_status,
+            )
             threading.Thread(
                 target=_background_index,
                 args=(workspace,),
@@ -47,8 +49,8 @@ class WorkspaceManager:
             ).start()
         else:
             logger.info(
-                "[VISOR] Database already populated (%s nodes). Skipping re-index.",
-                node_count,
+                "[VISOR] Ready index found (%s nodes). Skipping re-index.",
+                index_status["nodes"],
             )
 
         try:
