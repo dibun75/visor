@@ -152,7 +152,13 @@ def test_lexical_retrieval_is_not_described_as_semantic_similarity():
     assert "Co-located in same file as top lexical hit" in reasons
     assert all("Semantic similarity" not in reason for reason in reasons)
     assert _generate_reasoning(
-        {"exact_match": 0, "proximity": 0, "embedding": 0, "dependency": 0, "recency": 0},
+        {
+            "exact_match": 0,
+            "proximity": 0,
+            "embedding": 0,
+            "dependency": 0,
+            "recency": 0,
+        },
         retrieval="lexical",
     ) == ["Lexical match"]
 

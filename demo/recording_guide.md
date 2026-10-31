@@ -11,23 +11,23 @@ uv run visor index
 vhs demo/terminal_demo.tape
 ```
 
-VHS types and runs:
+VHS types and runs `visor doctor` and `visor index` in full. The context line in the tape is:
 
 ```bash
-uv run visor doctor
-uv run visor index
-uv run visor context "resolve local workspace project root"
+uv run visor context "resolve local workspace project root" | sed -n '1,42p'
 ```
+
+That `sed` pipe is only for the recording. It displays the first lines of the real CLI output so they stay readable in the frame. The normal CLI command, without `sed`, returns the complete result.
 
 `demo/vhs_bashrc` is the tape's shell rcfile. It pipes those three `uv run visor` invocations through `sed` so the frames omit home directories, the local username, and the workspace-hash directory. Review the GIF before committing it.
 
 ## Frame
 
 - About 10–15 seconds when the index is already warm
-- 1200×2000, so the context result fits without scrolling the leading symbols off the final frame
+- 1200×800, font size 16
 - Optimized GIF under 5 MB when the generator is available
 
-The tape types `clear` before `visor context` for that same reason. The three product commands are unchanged.
+The tape types `clear` before the context command so the first lines start at the top of the frame.
 
 If the warm `visor index` or `visor context` run longer than that, keep the real timing in the published GIF or shorten only the `Sleep` lines that follow a finished command. Do not delete output frames to invent a faster run.
 

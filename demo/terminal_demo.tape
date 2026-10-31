@@ -7,15 +7,16 @@
 #
 # A cold `visor index` of this repository can take longer than the 10–15s
 # target. Index once before recording so the taped `visor index` refreshes
-# an existing local index. Do not trim or retype the output.
+# an existing local index. Do not retype the output. The context line pipes
+# through sed so the frame shows the first lines of the real result.
 
 Output docs/assets/terminal-demo.gif
 
 Set Shell "bash"
-Set FontSize 14
+Set FontSize 16
 Set Width 1200
-Set Height 2000
-Set Padding 12
+Set Height 800
+Set Padding 16
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 10ms
 Set Framerate 12
@@ -38,6 +39,6 @@ Sleep 4s
 Type "clear"
 Enter
 
-Type `uv run visor context "resolve local workspace project root"`
+Type `uv run visor context "resolve local workspace project root" | sed -n '1,42p'`
 Enter
-Sleep 7s
+Sleep 5s
