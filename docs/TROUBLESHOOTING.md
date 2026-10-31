@@ -58,7 +58,7 @@ uv run src/visor/server.py
 
 ### "Model download stuck"
 
-**Cause:** First boot downloads `all-MiniLM-L6-v2` (~80MB) from HuggingFace.
+**Cause:** Semantic mode, or a tool that calls the embedder such as `store_memory`, downloads `all-MiniLM-L6-v2` from Hugging Face on first use. Lexical `visor index` and `visor context` do not.
 
 **Fix:**
 - Check network connectivity

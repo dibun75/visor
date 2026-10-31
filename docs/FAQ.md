@@ -4,44 +4,41 @@
 
 ### What is V.I.S.O.R.?
 
-V.I.S.O.R. (**V**isual **I**ntelligence **S**ystem for **O**rchestrated **R**easoning) is a local-first MCP server that gives AI coding agents precise, ranked codebase context instead of letting them blindly search through files.
+V.I.S.O.R. (**V**isual **I**ntelligence **S**ystem for **O**rchestrated **R**easoning) is a local-first context engine for Codex, Claude Code, and other terminal coding agents. It builds an AST-backed index and dependency graph, then returns focused context with the files, symbols, and reasons for each selection. It complements ordinary repository search.
 
 ---
 
-### How is this different from just using embeddings?
+### How does retrieval work?
 
-Embeddings only measure semantic similarity — "does this code look like it's about authentication?" V.I.S.O.R. combines **5 signals**:
+Lexical retrieval is the default. It searches symbol names and docstrings with SQLite FTS5 and does not download a model.
 
-1. **Embedding similarity** — semantic relevance (like pure embedding search)
-2. **Exact symbol match** — direct name matches in function/class names
-3. **Co-location** — proximity to the top semantic hit
-4. **Dependency graph** — architectural connections between files
-5. **Recency** — recently modified files are more likely relevant to active bugs
-
-Pure embedding search gives you semantically similar code. V.I.S.O.R. gives you **architecturally relevant** code.
+The context scorer can combine the retrieval hit with symbol-name overlap, same-file proximity, dependency distance, and file recency. Semantic similarity is used when retrieval mode is `semantic`. That mode is optional and requires the `semantic` extra.
 
 ---
 
 ### Does V.I.S.O.R. replace my AI agent?
 
-No. V.I.S.O.R. is a **co-processor** for your AI agent. It doesn't generate code — it helps your existing AI (Antigravity, Claude, GPT-4, Gemini) make better decisions by giving it the right context. Think of it as giving your AI a map instead of making it wander.
+No. V.I.S.O.R. does not generate code. Codex, Claude Code, and other configured clients still inspect the repository and apply edits. The Agent Skill tells the agent to treat V.I.S.O.R. results as leads and verify them.
 
 ---
 
 ### What IDEs are supported?
 
-| IDE | Support Level | Method |
-|-----|--------------|--------|
-| Google Antigravity | ✅ Full (MCP + HUD) | MCP config + VSIX extension |
-| VS Code | ✅ Full (MCP + HUD) | MCP config + VSIX extension |
-| Cursor | ✅ MCP tools | MCP config |
-| Claude Code | ✅ MCP tools | MCP config |
+| Client | Method |
+|-----|--------|
+| Codex CLI | `codex mcp add visor -- uvx visor-mcp` |
+| Claude Code | `claude mcp add visor -- uvx visor-mcp` |
+| Cursor | `~/.cursor/mcp.json` |
+| Claude Desktop | `claude_desktop_config.json` |
+| VS Code | `.vscode/mcp.json`, optional HUD extension |
+| Antigravity | The VS Code MCP file above, optional HUD extension |
+| Terminal | `visor doctor`, `visor index`, `visor context` |
 
 ---
 
 ### What languages can V.I.S.O.R. index?
 
-Currently: **Python**, **TypeScript**, **JavaScript**, **TSX**, **Go**, **Rust**, **Java**, **C**, and **C++** (9 languages).
+Eight languages: **Python**, **TypeScript**, **JavaScript**, **Go**, **Rust**, **Java**, **C**, and **C++**. `.tsx` uses the TypeScript parser's TSX variant. It is not a separate language.
 
 V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straightforward (~15 lines of code) — see [CONTRIBUTING.md](../CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
@@ -49,29 +46,15 @@ V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straight
 
 ### Is my code sent to any server?
 
-**No.** V.I.S.O.R. is entirely local-first:
-- Code is indexed into a SQLite database on your machine
-- Embeddings are generated locally using `all-MiniLM-L6-v2`
-- Communication with your IDE happens over stdio (no network ports)
-- No data ever leaves your machine
+The index and graph stay in local SQLite databases under `~/.visor/`. Lexical retrieval works offline. Semantic mode is optional and may download `all-MiniLM-L6-v2` on first use.
+
+V.I.S.O.R. does not upload the repository to a hosted V.I.S.O.R. service. The MCP server uses stdio. Snippets you pass to Codex, Claude Code, or another configured agent are subject to that provider's policies. The optional HUD can open a local dev-server or SSH forward port; that is separate from the MCP server.
 
 ---
 
-### How much does it reduce token usage?
+### What do the token fields mean?
 
-V.I.S.O.R. reports an estimated context-size comparison for an individual result. It is not a universal token-reduction measurement; outcomes depend on:
-- Codebase size
-- Query specificity
-- Active skill strategy
-
-Every response includes exact metrics:
-```json
-{
-  "estimated_tokens_without": 11400,
-  "estimated_tokens_with": 2180,
-  "reduction_percent": 80.9
-}
-```
+`build_context` estimates the size of the full candidate files and the size of the snippets it returns, then stores both on that response. The fields are `estimated_tokens_without`, `estimated_tokens_with`, and `reduction_percent`. They describe one response. They are not a measurement of agent token use, and this repository does not publish a universal reduction figure.
 
 ---
 
@@ -88,17 +71,18 @@ V.I.S.O.R. ships with 4 built-in skills: `bug-fixer`, `architecture-explainer`, 
 
 ### Do I need the VS Code extension, or just the MCP server?
 
-The **MCP server** is the core product — it provides all 16 tools to your AI agent. The VS Code extension is optional and adds:
-- 3D WebGPU visualization of your codebase architecture
-- Real-time telemetry (Agent Context Burn, Graph Scale, Drift Alerts)
-- Skill management UI
+The MCP server is the core. It registers 17 tools, including `health_check`. `get_visor_skill` is an MCP prompt. The VS Code extension is optional and adds:
 
-You can use V.I.S.O.R. purely via MCP config + CLI without the extension.
+- a WebGPU view of the indexed graph
+- telemetry from `get_telemetry` (node count, local payload-byte counter, drift)
+- agent focus when `set_hud_focus` has been called
+
+The CLI and MCP server work without the extension.
 
 ---
 
-### How fast is indexing?
+### How does indexing behave?
 
-- **First index**: 5-15 seconds for a medium codebase (~500 files)
-- **Subsequent changes**: Incremental — only re-indexes files with changed SHA-256 hashes
-- **Model download**: First boot downloads `all-MiniLM-L6-v2` (~80MB), cached locally after that
+`visor index` walks supported source files and skips unchanged SHA-256 hashes on later runs. This repository does not publish a timing for that walk.
+
+Lexical indexing does not download a model. The optional semantic extra downloads `all-MiniLM-L6-v2` when that mode is first used.

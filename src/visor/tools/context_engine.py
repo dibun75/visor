@@ -143,20 +143,28 @@ def _classify_intent(query: str) -> str:
     return "DEFAULT"
 
 
-def _generate_reasoning(signals: Dict[str, float]) -> List[str]:
+def _generate_reasoning(
+    signals: Dict[str, float], retrieval: str = "semantic"
+) -> List[str]:
     """Generate human-readable reasoning for why a node was selected."""
+    lexical = retrieval == "lexical"
     reasons = []
     if signals.get("exact_match", 0) > 0:
         reasons.append("Matched query token in symbol name")
     if signals.get("proximity", 0) > 0:
-        reasons.append("Co-located in same file as top semantic hit")
+        if lexical:
+            reasons.append("Co-located in same file as top lexical hit")
+        else:
+            reasons.append("Co-located in same file as top semantic hit")
     if signals.get("dependency", 0) > 0:
         reasons.append("Reachable via dependency chain")
     if signals.get("recency", 0) > 0:
         reasons.append("Recently modified file (boosted)")
-    if signals.get("embedding", 0) > 0:
+    if not lexical and signals.get("embedding", 0) > 0:
         reasons.append(f"Semantic similarity (score: {signals['embedding']})")
-    return reasons if reasons else ["Baseline semantic match"]
+    if reasons:
+        return reasons
+    return ["Lexical match"] if lexical else ["Baseline semantic match"]
 
 
 def _score_node(
@@ -183,10 +191,15 @@ def _score_node(
 
     same_file = 1.0 if node["file_path"] == anchor_file else 0.0
 
-    # Embedding: distance is already normalised [0, 2] for L2 with unit vectors.
-    # We invert it so closer = higher score; clamp to [0, 1].
-    raw_dist = node.get("distance", 1.0)
-    embedding_sim = max(0.0, 1.0 - (raw_dist / 2.0))
+    # Semantic distance is an L2 distance on unit vectors, range [0, 2].
+    # Invert it so closer = higher score. Lexical hits have no vector distance;
+    # a missing or placeholder distance must not become an embedding score.
+    # Dropping that constant offset does not reorder lexical candidates.
+    if node.get("retrieval") == "lexical":
+        embedding_sim = 0.0
+    else:
+        raw_dist = node.get("distance", 1.0)
+        embedding_sim = max(0.0, 1.0 - (raw_dist / 2.0))
 
     # Dependency: BFS hop count from anchor file to this node's file.
     hops = hop_map.get(node["file_path"], None)
@@ -283,9 +296,9 @@ def build_context(
             "truncated": False,
         }
 
-    # 3. Anchor context — top semantic hit
+    # 3. Anchor context — first retrieved hit
     anchor_file = candidates[0]["file_path"]
-    anchor_dist = candidates[0]["distance"]
+    anchor_dist = candidates[0].get("distance", 0.0)
 
     # 4. Compute hop map from anchor file using BFS (max depth 5)
     G = _get_cached_edges_graph()
@@ -329,7 +342,9 @@ def build_context(
         scored.append({**node, "relevance_score": round(score, 4)})
         node_id = str(node.get("id", "unknown"))
         debug_scores[node_id] = signals
-        debug_reasoning[node_id] = _generate_reasoning(signals)
+        debug_reasoning[node_id] = _generate_reasoning(
+            signals, retrieval=node.get("retrieval") or retrieval_mode()
+        )
 
     # 9. Sort descending by relevance
     scored.sort(key=lambda n: n["relevance_score"], reverse=True)

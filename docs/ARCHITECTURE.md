@@ -21,7 +21,7 @@
 
 ## System Overview
 
-V.I.S.O.R. is a **local-first MCP (Model Context Protocol) server** that acts as a semantic knowledge graph for AI coding agents. It indexes your codebase via Tree-sitter AST parsing, stores node embeddings in a local SQLite vector database, and serves precise, ranked context to AI agents on demand — eliminating "orientation waste" where agents blindly grep through irrelevant files.
+V.I.S.O.R. is a local-first MCP server and terminal context engine for coding agents. It indexes a repository with Tree-sitter, stores the graph in local SQLite, and returns ranked context with file, symbol, and reason fields. Lexical retrieval is the default. Semantic embeddings are an optional mode. Agents can still search the working tree directly.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -302,7 +302,7 @@ visor/
 │   ├── treesitter.py       # ASTParser: extracts nodes + edges + file hash per file
 │   └── watcher.py          # Watchdog: debounced file watcher + index_workspace boot scan
 └── tools/
-    ├── core.py             # All MCP tool registrations (16 tools) + telemetry decorator
+    ├── core.py             # 16 MCP tools in register_tools(), plus health_check in server.py
     └── context_engine.py   # Context Intelligence Engine: skill-aware scoring + reasoning + metrics
 ```
 
@@ -310,11 +310,11 @@ visor/
 
 ## Embedding Pipeline
 
-V.I.S.O.R. uses `sentence-transformers/all-MiniLM-L6-v2` for semantic embeddings.
+Semantic retrieval uses `sentence-transformers/all-MiniLM-L6-v2`. Lexical mode does not load it.
 
 - **Dimensions**: 384
 - **Normalization**: `normalize_embeddings=True` → dot product == cosine similarity
-- **Lazy loading**: Model is only instantiated on first use to keep startup instant
+- **Lazy loading**: The model is constructed on the first semantic encode, which may download weights
 - **Caching**: `file_hash` prevents re-embedding unchanged files
 - **Storage**: Embeddings stored as `float[384]` blobs via `sqlite-vec` virtual table
 
@@ -394,7 +394,7 @@ The HUD telemetry panel shows:
 - **No network proxy**: V.I.S.O.R. does not intercept your IDE's outbound AI requests.
 - **No OAuth access**: Your Google or GitHub tokens are never touched.
 - **stdio-only**: The MCP server communicates exclusively over stdin/stdout — no open ports.
-- **Local-only data**: `~/.visor/` never leaves your machine.
+- **Local index**: `~/.visor/` is not uploaded by V.I.S.O.R. to a hosted V.I.S.O.R. service. Retrieved snippets still go to the configured coding agent under that provider's policies. Semantic mode may download `all-MiniLM-L6-v2`.
 
 ---
 

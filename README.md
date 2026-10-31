@@ -1,72 +1,48 @@
 <div align="center">
-  <img src="./docs/assets/icon.png" alt="V.I.S.O.R. Logo" width="120"/>
+  <img src="./docs/assets/icon.png" alt="V.I.S.O.R. logo" width="120"/>
   <h1>V.I.S.O.R.</h1>
+  <p><strong>Local-first context retrieval for Codex, Claude Code, and terminal coding agents.</strong></p>
 </div>
-
-> **Your AI coding assistant wastes time reading the wrong files. V.I.S.O.R. fixes that.**
 
 [![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml)
 
-**Visual Intelligence System for Orchestrated Reasoning**
+V.I.S.O.R. is a local-first context engine for Codex, Claude Code, and other coding agents. It builds an AST-backed repository index and dependency graph, then returns focused code context with the files, symbols, and reasons behind each selection.
 
-V.I.S.O.R. is a **smart helper for your AI coding assistant**. It reads your code, understands how files are connected, and gives your AI exactly the right context — so it spends less time searching and more time solving.
+It works from the terminal, through the [Agent Skill](./skills/visor-context/SKILL.md), or over MCP. Lexical retrieval is the default and runs offline. Semantic retrieval is optional. A VS Code / Open VSX HUD is optional and is not required for the CLI or MCP server.
 
-It works with **Antigravity, VS Code, Cursor, Claude Code, and Windsurf**.
+## Terminal demo
 
-<div align="center">
-  <img src="./docs/assets/hud_overview.png" alt="V.I.S.O.R HUD — 3D codebase visualization in your IDE" width="800"/>
-</div>
-
-<div align="center">
-  <h3>🎬 See it in action</h3>
-</div>
-
-<div align="center">
-  <img src="https://github.com/dibun75/visor/raw/main/docs/assets/demo.gif" alt="V.I.S.O.R HUD in action" width="800"/>
-</div>
-
----
-
-## 💬 What Can You Do With It?
-
-Just talk to your AI agent like normal. V.I.S.O.R. works behind the scenes to find the right code automatically.
-
-### Find a bug
-> "Find the code related to the login crash"
-
-Without V.I.S.O.R., your AI reads 20+ files blindly. With V.I.S.O.R., it gets the 3–5 most relevant files instantly.
-
-### Understand your code
-> "Explain how authentication works in this project"
-
-V.I.S.O.R. traces the full auth flow across files — showing your AI exactly which functions call which, and in what order.
-
-### Refactor safely
-> "What files would break if I change the database client?"
-
-V.I.S.O.R. runs an **impact analysis** and shows every file that depends on the one you're changing.
-
-### Check for stale context
-> "Are the files you read earlier still up to date?"
-
-V.I.S.O.R. checks file hashes and warns your AI if something changed since it last looked.
-
----
-
-## 🚀 Install (2 minutes)
-
-### Step 1: Install and configure deliberately
-
-Install the CLI, then review and add the displayed MCP entry to the client
-configuration you choose. V.I.S.O.R. does not edit IDE configuration files
-automatically.
+From a checkout of this repository:
 
 ```bash
-uvx --from visor-mcp visor --help
-uvx --from visor-mcp visor init  # prints a configuration entry; it does not write one
+uv run visor doctor
+uv run visor index
+uv run visor context "resolve local workspace project root"
 ```
 
-Codex CLI and Claude Code can register the local stdio server directly:
+![Terminal demo: doctor, index, and context on this repository](./docs/assets/terminal-demo.gif)
+
+Recorded from [`demo/terminal_demo.tape`](./demo/terminal_demo.tape). The same take is also at [`docs/assets/terminal-demo.mp4`](./docs/assets/terminal-demo.mp4).
+
+## Quick Start
+
+Prerequisite: [`uv`](https://docs.astral.sh/uv/getting-started/installation/). `uvx` installs `visor-mcp` into a temporary environment.
+
+```bash
+# Check local/headless compatibility
+uvx --from visor-mcp visor doctor
+
+# Index the current repository
+uvx --from visor-mcp visor index
+
+# Retrieve focused context
+uvx --from visor-mcp visor context \
+  "where is workspace detection handled?"
+```
+
+`visor init` prints an MCP configuration entry for review. It does not edit IDE files.
+
+Register the stdio server with Codex or Claude Code:
 
 ```bash
 codex mcp add visor -- uvx visor-mcp
@@ -74,9 +50,10 @@ claude mcp add visor -- uvx visor-mcp
 ```
 
 <details>
-<summary><b>Prefer manual installation? Click here for raw configs</b></summary>
+<summary><b>Manual Cursor, VS Code, and Claude Desktop configuration</b></summary>
 
 **Cursor** (`~/.cursor/mcp.json`):
+
 ```json
 {
   "mcpServers": {
@@ -88,7 +65,8 @@ claude mcp add visor -- uvx visor-mcp
 }
 ```
 
-**VS Code / Antigravity** (`.vscode/mcp.json`):
+**VS Code** (`.vscode/mcp.json`). The same file is the setup documented here for Antigravity:
+
 ```json
 {
   "servers": {
@@ -101,6 +79,7 @@ claude mcp add visor -- uvx visor-mcp
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
@@ -114,47 +93,99 @@ claude mcp add visor -- uvx visor-mcp
 
 </details>
 
-> **Prerequisite:** You need [`uv`](https://docs.astral.sh/uv/getting-started/installation/) installed. `uvx` (included with `uv`) handles virtual environments and dependencies automatically — no manual setup needed.
+## Agent Skill
 
-### Step 2 (Optional): Install the 3D HUD Extension
+The Skill tells an agent to request V.I.S.O.R. context, treat the files, symbols, and reasons as leads, and verify those leads in the repository. Installing it does not guarantee that every client will select it automatically.
 
-Search for **"V.I.S.O.R. HUD"** in your editor's extension panel, or install from [Open VSX](https://open-vsx.org/extension/dibun75/visor-hud). This gives you a live 3D visualization of your codebase graph right in the sidebar.
+- Skill source: [`skills/visor-context/SKILL.md`](./skills/visor-context/SKILL.md)
+- Install notes for Codex, Claude Code, and other clients: [`docs/AGENT_SKILL.md`](./docs/AGENT_SKILL.md)
 
----
+## Supported integrations
 
-## 🤔 Evaluate It in Your Workflow
+| Client | How it connects |
+| --- | --- |
+| Codex CLI | `codex mcp add visor -- uvx visor-mcp` |
+| Claude Code | `claude mcp add visor -- uvx visor-mcp` |
+| Cursor | `~/.cursor/mcp.json` |
+| Claude Desktop | `claude_desktop_config.json` |
+| VS Code | `.vscode/mcp.json`, plus the optional [HUD](https://open-vsx.org/extension/dibun75/visor-hud) |
+| Antigravity | The VS Code MCP file above, plus the optional HUD |
+| Terminal | `visor doctor`, `visor index`, `visor context` |
 
-V.I.S.O.R. provides an AST-backed index, dependency graph, and focused context retrieval. Its effect on task success, latency, and context size depends on the repository, agent, model, and prompt. Use the reproducible paired-agent protocol in [`benchmarks/`](./benchmarks/) before making performance claims.
+Any other MCP client can launch the same stdio command: `uvx visor-mcp`.
 
----
+## Diagnostic benchmark
 
-## ✨ Key Features
+The v1.2.0 diagnostic pilot is a paired comparison of native agent navigation and the same tasks with V.I.S.O.R. context. Figures below are taken from [`benchmarks/results/v1.2.0-diagnostic-pilot-summary.json`](./benchmarks/results/v1.2.0-diagnostic-pilot-summary.json).
 
-### 🧠 Smart Context Engine
-The heart of V.I.S.O.R. When your AI asks "find code related to X", it doesn't just search by text — it **thinks**:
+| Fact | Value |
+| --- | --- |
+| Successful records | 144 |
+| Failed records | 0 |
+| Tasks | 12 diagnostic navigation tasks |
+| Repeats | 3 |
+| Native/V.I.S.O.R. pairs per agent | 36 |
+| Codex median paired duration delta | −4.17 seconds |
+| Claude Code median paired duration delta | −3.63 seconds |
+| Median evidence recall | 100% in both native and V.I.S.O.R. conditions |
 
-- **Understands your question** — Detects if you're fixing a bug, exploring, or refactoring, and adjusts accordingly
-- **Scores code 5 different ways** — Combines meaning similarity, name matching, file proximity, code connections, and how recently the file was changed
-- **Explains its choices** — Every code snippet includes a plain-English reason for why it was picked
-- **Saves tokens** — Reports estimated context sizes for the current retrieval result
+Limitations:
 
-### ⚡ Built-in Skills
-Pre-built strategies that change how V.I.S.O.R. finds code. Think of them as "modes":
+- These are repository navigation and evidence-recall tasks.
+- They do not measure patch correctness, refactoring quality, or task success.
+- Timing is machine-, model-, provider-, and plan-dependent.
+- Evidence recall is a heuristic, not human correctness review.
+- These results are not proof that V.I.S.O.R. makes coding agents universally faster or better.
 
-| Skill | What it does |
-|---|---|
-| `bug-fixer` | Focuses on recently changed files and dependency chains |
-| `architecture-explainer` | Casts a wide net to help explain how things connect |
-| `refactor-assistant` | Traces all dependencies so you know what might break |
-| `performance-optimizer` | Finds hotspots by prioritizing recently modified code |
+Protocol: [`benchmarks/README.md`](./benchmarks/README.md). Published-result notes: [`benchmarks/results/README.md`](./benchmarks/results/README.md).
 
-You can also create your own custom skills.
+## Why V.I.S.O.R.
 
-### 🔍 Code Understanding
-V.I.S.O.R. reads your code structure (classes, functions, imports) in **9 languages**:
+V.I.S.O.R. complements normal repository inspection, including an agent's own search. It adds a persistent local index the agent can query.
 
-| Language | File Types |
-|----------|-----------|
+| Property | What the implementation provides |
+| --- | --- |
+| Persistent local index | Project graph stored under `~/.visor/` |
+| AST symbol extraction | Tree-sitter classes, functions, and imports |
+| Dependency graph | Import edges used by trace, impact, and context scoring |
+| Terminal interface | `visor doctor`, `index`, `status`, `context`, `fix`, `explain`, `trace`, `drift` |
+| MCP integration | 17 stdio tools, including `build_context` and `health_check` |
+| Agent Skill | [`skills/visor-context/SKILL.md`](./skills/visor-context/SKILL.md) directs verification of leads |
+| Drift detection | Hash comparison and recent file-changelog warnings |
+| Optional visual HUD | VS Code / Open VSX extension; CLI and MCP work without it |
+| Offline lexical retrieval | Default mode. No model download on the lexical path |
+
+`build_context` classifies a query into an intent profile, can apply a built-in skill (`bug-fixer`, `architecture-explainer`, `refactor-assistant`, `performance-optimizer`), and returns a reason string for each selected node. Those reasons explain the score. They do not establish that the selection is sufficient for a code change.
+
+Each context response also includes an internal size estimate: tokens for the full text of candidate files compared with tokens for the returned snippets. That estimate is not a measured change in agent token use.
+
+## Optional visual HUD
+
+The HUD is a VS Code extension that draws the indexed graph and shows local telemetry. The MCP server and CLI do not need it.
+
+Install **V.I.S.O.R. HUD** from the editor's extension view or [Open VSX](https://open-vsx.org/extension/dibun75/visor-hud). Extension notes: [`src/visor/extension/README.md`](./src/visor/extension/README.md).
+
+<div align="center">
+  <img src="./docs/assets/hud_overview.png" alt="Optional V.I.S.O.R. HUD showing a dependency graph and telemetry panels" width="800"/>
+  <p>Existing HUD capture retained as a secondary visual. It was not recaptured for this revision, so the node count and token panel are not a current measurement. The current HUD reads <code>get_telemetry</code>: indexed node count, a local byte counter displayed as tokens processed, drift when files changed in the last 120 seconds, and agent focus after <code>set_hud_focus</code>.</p>
+</div>
+
+## Local-first and privacy
+
+- The index and dependency graph are stored locally, under `~/.visor/`.
+- Lexical retrieval works offline and does not download a model.
+- Semantic mode is optional (`visor --retrieval-mode semantic` or `VISOR_RETRIEVAL_MODE=semantic`) and uses `all-MiniLM-L6-v2`, which may be downloaded on first use.
+- V.I.S.O.R. itself does not require uploading the whole repository to a hosted V.I.S.O.R. service. The MCP server speaks stdio.
+- Retrieved snippets are still passed to whichever coding agent the user has configured, subject to that provider's policies.
+
+`store_memory` embeds the stored text with the semantic model. Lexical indexing does not.
+
+## Languages
+
+Tree-sitter parsing covers eight languages. TSX uses the TypeScript grammar's TSX variant. It is not a ninth language.
+
+| Language | Extensions |
+| --- | --- |
 | Python | `.py` |
 | TypeScript | `.ts`, `.tsx` |
 | JavaScript | `.js`, `.jsx` |
@@ -164,127 +195,68 @@ V.I.S.O.R. reads your code structure (classes, functions, imports) in **9 langua
 | C | `.c`, `.h` |
 | C++ | `.cpp`, `.cc`, `.cxx`, `.hpp` |
 
-> **Want more?** Adding a new language is ~15 lines of code. See [CONTRIBUTING.md](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
+Adding a language is a small parser change. See [CONTRIBUTING.md](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
-### 📊 3D HUD (VS Code / Antigravity)
-A real-time interactive graph of your codebase — right in your editor sidebar. Shows:
-- Your code as connected nodes you can explore
-- Live stats: how many tokens your AI is using, how many files are indexed
-- Drift alerts when files change under your AI
-
-### ⚠️ Drift Detection
-Knows when your AI is looking at outdated code. Compares file hashes and warns before your AI makes decisions on stale information.
-
----
-
-## 📦 Example: Finding a Bug
+## CLI
 
 ```bash
-$ visor fix "authentication crash"
+visor doctor
+visor index
+visor status
+visor init
+visor context "how is auth handled"
+visor fix "login crash on null user"
+visor explain "database client"
+visor trace src/visor/server.py src/visor/workspace.py
+visor drift
 ```
 
-```
-============================================================
-  V.I.S.O.R. Context Intelligence Engine
-============================================================
-  Query:  authentication crash
-  Intent: BUG_FIX
-  Skill:  bug-fixer
-────────────────────────────────────────────────────────────
-  Tokens without V.I.S.O.R.: 11,400
-  Tokens with V.I.S.O.R.:    2,180
-  Reduction:                  80.9%
-────────────────────────────────────────────────────────────
-  Selected 4 nodes (truncated=False):
+`fix` and `explain` call `build_context` with `bug-fixer` and `architecture-explainer`. Terminal details: [`docs/TERMINAL.md`](./docs/TERMINAL.md).
 
-  [2.85]  src/auth/jwt.py:verify_token
-          → Matched query token in symbol name
-          → Co-located in same file as top semantic hit
-          → Recently modified file (boosted)
+## MCP tools
 
-  [2.12]  src/auth/middleware.py:auth_guard
-          → Reachable via dependency chain
-          → Semantic similarity (score: 0.375)
-
-============================================================
-```
-
-**What happened:** This example illustrates the shape of a focused context response; its token estimates are not benchmark results.
-
----
-
-## 🛠️ CLI Commands
-
-You can also use V.I.S.O.R. from the terminal:
-
-```bash
-visor fix "login crash on null user"         # Find bug-related code
-visor explain "database client"              # Understand how a module works
-visor context "how is auth handled"          # General code search
-visor trace src/auth.py src/db/client.py     # Show how two files are connected
-visor drift                                  # Check for changed files
-```
-
----
-
-## 🛠️ MCP Tools (for AI Agents)
-
-V.I.S.O.R. gives your AI agent **17 tools** across 5 categories. Your AI uses these automatically — you don't need to call them manually.
+The server registers 17 tools in `src/visor/tools/core.py` and `src/visor/server.py`. `get_visor_skill` is an MCP prompt, not one of those tools. Clients do not have to call any of them automatically.
 
 | Category | Tools |
-|----------|-------|
-| 🧠 **Intelligence** | `build_context` — the main tool that finds and ranks relevant code |
-| 🔍 **Search** | `search_codebase`, `get_symbol_context`, `get_file_context` |
-| 🗺️ **Graph** | `get_dependency_chain`, `impact_analysis`, `trace_route`, `dead_code_detection` |
-| ⚠️ **Drift** | `get_drift_report` |
-| 🧩 **Memory & Skills** | `store_memory`, `add_custom_skill`, `list_custom_skills`, `delete_custom_skill` |
-| 📊 **HUD** | `get_architecture_map`, `get_telemetry`, `set_hud_focus` |
+| --- | --- |
+| Intelligence | `build_context` |
+| Search | `search_codebase`, `get_symbol_context`, `get_file_context` |
+| Graph | `get_dependency_chain`, `impact_analysis`, `trace_route`, `dead_code_detection` |
+| Drift | `get_drift_report` |
+| Memory and skills | `store_memory`, `list_custom_skills`, `add_custom_skill`, `delete_custom_skill` |
+| HUD | `get_architecture_map`, `get_telemetry`, `set_hud_focus` |
+| Server | `health_check` |
 
-See [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) for the full API reference.
+Reference: [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md).
 
----
+## Documentation
 
-## 📚 Documentation
+| Document | Contents |
+| --- | --- |
+| [`docs/TERMINAL.md`](./docs/TERMINAL.md) | Offline lexical workflow and semantic opt-in |
+| [`docs/AGENT_SKILL.md`](./docs/AGENT_SKILL.md) | Skill installation notes |
+| [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Tool reference |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Local index, graph, and retrieval design |
+| [`docs/FAQ.md`](./docs/FAQ.md) | Common questions |
+| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Setup failures |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Development setup and new languages |
+| [`SECURITY.md`](./SECURITY.md) | Supported versions and private vulnerability reports |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Release notes |
 
-| Document | What's Inside |
-|----------|--------------|
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | How V.I.S.O.R. works under the hood |
-| [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) | Complete reference for all 17 tools |
-| [`docs/FAQ.md`](./docs/FAQ.md) | Common questions answered |
-| [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Fixing common problems |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to add languages, tools, and skills |
-| [`SECURITY.md`](./SECURITY.md) | Supported versions and private vulnerability reporting |
-| [`CHANGELOG.md`](./CHANGELOG.md) | What changed in each version |
+## Community
 
----
+- [Report a bug](https://github.com/dibun75/visor/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/dibun75/visor/issues/new?template=feature_request.yml)
+- [Contributing](./CONTRIBUTING.md)
+- [Security reports](./SECURITY.md)
 
-## 🤝 Contributing
-
-V.I.S.O.R. welcomes contributions! The easiest way to start is by [adding a new language](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution) — it's ~15 lines and a great first issue.
+A code of conduct is not in the tree. Adding one needs an owner-designated enforcement contact. No contact is designated for that purpose today.
 
 ```bash
 git clone https://github.com/dibun75/visor.git
 cd visor && uv sync --dev
 uv run pytest tests/ -v
 ```
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
-
----
-
-## 🌐 Works With
-
-| IDE | Support | How to Set Up |
-|------|---------|--------------|
-| Codex CLI | ✅ Full | `codex mcp add visor -- uvx visor-mcp` |
-| Claude Code | ✅ Full | `claude mcp add visor -- uvx visor-mcp` |
-| Cursor | ✅ Full | `~/.cursor/mcp.json` |
-| Claude Desktop | ✅ Full | `claude_desktop_config.json` |
-| VS Code | ✅ Full | `.vscode/mcp.json` + [HUD Extension](https://open-vsx.org/extension/dibun75/visor-hud) |
-| Antigravity | ✅ Full | `.vscode/mcp.json` + [HUD Extension](https://open-vsx.org/extension/dibun75/visor-hud) |
-| Windsurf | ✅ Full | Plugin raw config |
-
----
 
 ## License
 

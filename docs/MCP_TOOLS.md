@@ -11,7 +11,7 @@ This document is the authoritative API reference for all tools exposed by the V.
 | Tool | Category | Description |
 |------|----------|-------------|
 | [`build_context`](#build_context) | 🧠 Intelligence | Ranked, compressed context with skill-aware scoring, reasoning, and metrics |
-| [`search_codebase`](#search_codebase) | 🔍 Search | Semantic vector search across all indexed nodes |
+| [`search_codebase`](#search_codebase) | 🔍 Search | Lexical FTS by default; semantic search when that mode is enabled |
 | [`get_symbol_context`](#get_symbol_context) | 🔍 Search | Find all definitions of a symbol with line ranges |
 | [`get_file_context`](#get_file_context) | 🔍 Search | Full AST symbol listing for a specific file |
 | [`get_dependency_chain`](#get_dependency_chain) | 🗺️ Graph | Transitive import chain from a symbol's source file |
@@ -23,7 +23,7 @@ This document is the authoritative API reference for all tools exposed by the V.
 | [`get_telemetry`](#get_telemetry) | 📊 HUD | Live telemetry: node count, context burn, drift alert |
 | [`set_hud_focus`](#set_hud_focus) | 📊 HUD | Highlight files on the 3D graph to show agent attention |
 | [`store_memory`](#store_memory) | 🧩 Memory | Persist a conversation turn with semantic embedding |
-| [`get_visor_skill`](#get_visor_skill) | 🧩 Skills | Fetch a custom skill instruction pack by name |
+| [`get_visor_skill`](#get_visor_skill) | 🧩 Prompt | MCP prompt, not a tool: fetch a skill instruction pack by name |
 | [`list_custom_skills`](#list_custom_skills) | 🧩 Skills | List all available custom skills with strategies |
 | [`add_custom_skill`](#add_custom_skill) | 🧩 Skills | Create a new custom skill with optional strategy |
 | [`delete_custom_skill`](#delete_custom_skill) | 🧩 Skills | Remove a custom skill by ID |
@@ -58,7 +58,7 @@ The **Context Intelligence Engine**. Builds a ranked, token-budget-aware context
 | `query` | string | ✅ | Natural language description of the task or question |
 | `skill` | string | ❌ | Skill name to apply strategy overrides (e.g. `"bug-fixer"`) |
 
-**Returns**: JSON object
+**Returns**: JSON object. The sample shows the field shape. Paths, scores, and token estimates are placeholders, not a recorded run from this repository.
 
 ```json
 {
@@ -97,9 +97,9 @@ The **Context Intelligence Engine**. Builds a ranked, token-budget-aware context
     }
   },
   "metrics": {
-    "estimated_tokens_without": 11400,
-    "estimated_tokens_with": 2180,
-    "reduction_percent": 80.9
+    "estimated_tokens_without": 0,
+    "estimated_tokens_with": 0,
+    "reduction_percent": 0
   },
   "prompt_ready": "// src/auth/jwt.py:15-34 (verify_token)\ndef verify_token(token: str) -> dict:\n    ...",
   "query": "authentication crash",
@@ -125,7 +125,7 @@ Where weights are determined by the active intent profile (DEFAULT / BUG_FIX / R
 
 ### `search_codebase`
 
-Pure semantic vector search across all indexed code nodes.
+Searches indexed nodes with the active retrieval mode. The default is SQLite FTS5 over symbol names and docstrings. Semantic mode uses the optional embedding model and returns vector distances.
 
 **Parameters**:
 
@@ -133,7 +133,7 @@ Pure semantic vector search across all indexed code nodes.
 |------|------|----------|-------------|
 | `query` | string | ✅ | Natural language or code snippet to search for |
 
-**Returns**: JSON array of up to 5 matching nodes with cosine distance scores.
+**Returns**: JSON array of up to 5 matching nodes. Lexical hits include `"retrieval": "lexical"`. Semantic hits include a vector distance.
 
 ---
 
@@ -312,7 +312,7 @@ Controls the V.I.S.O.R. Developer HUD to visually highlight files the AI agent i
 
 ### `store_memory`
 
-Persists a conversation turn with a semantic embedding for future recall.
+Persists a conversation turn. The implementation calls the semantic embedder, so this tool needs the optional semantic dependency even when retrieval mode is lexical.
 
 **Parameters**:
 
