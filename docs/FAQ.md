@@ -59,7 +59,7 @@ V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straight
 
 ### How much does it reduce token usage?
 
-In typical codebases, V.I.S.O.R. achieves **70-85% token reduction** compared to naive full-file reads. The exact number depends on:
+V.I.S.O.R. reports an estimated context-size comparison for an individual result. It is not a universal token-reduction measurement; outcomes depend on:
 - Codebase size
 - Query specificity
 - Active skill strategy

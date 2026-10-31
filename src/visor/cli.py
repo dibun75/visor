@@ -237,55 +237,10 @@ def cmd_init(args):
     if visor_bin:
         mcp_entry = {"command": "visor-mcp", "args": [], "env": {}}
 
-    # Detect IDE configs
-    ide_configs = [
-        ("Antigravity", os.path.expanduser("~/.gemini/antigravity/mcp_config.json")),
-        ("Cursor", os.path.expanduser("~/.cursor/mcp.json")),
-    ]
-
-    config_written = False
-    for ide_name, config_path in ide_configs:
-        if os.path.exists(os.path.dirname(config_path)):
-            # Read existing config or create new
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    try:
-                        config = json.load(f)
-                    except json.JSONDecodeError:
-                        config = {}
-            else:
-                config = {}
-
-            if "mcpServers" not in config:
-                config["mcpServers"] = {}
-
-            if "visor" in config["mcpServers"]:
-                print(f"  ✓ {ide_name}: V.I.S.O.R. already configured at {config_path}")
-                config_written = True
-                continue
-
-            config["mcpServers"]["visor"] = mcp_entry
-
-            with open(config_path, "w") as f:
-                json.dump(config, f, indent=2)
-
-            print(f"  ✓ {ide_name}: Config written to {config_path}")
-            config_written = True
-
-    if not config_written:
-        # Fallback: print the config for manual setup
-        print("  No supported IDE detected. Add this to your MCP config:\n")
-        print(json.dumps({"visor": mcp_entry}, indent=2))
-        print()
-
-    print(f"\n{'=' * 60}")
-    print("  V.I.S.O.R. is ready!")
-    print(f"{'=' * 60}")
-    print("  Next steps:")
-    print("    1. Restart your IDE / AI session")
-    print("    2. Your AI agent now has access to 16 V.I.S.O.R. tools")
-    print("    3. Try: ask your agent to 'use build_context to find auth code'")
-    print(f"{'=' * 60}\n")
+    print("V.I.S.O.R. does not modify IDE configuration automatically.\n")
+    print("Review and add this entry to your MCP configuration:\n")
+    print(json.dumps({"visor": mcp_entry}, indent=2))
+    print("\nThen restart the client and run `visor index` in the project.")
 
 
 def main():
@@ -311,7 +266,7 @@ def main():
     p_doctor.set_defaults(func=cmd_doctor)
 
     # visor init
-    p_init = sub.add_parser("init", help="Auto-configure V.I.S.O.R. for your IDE")
+    p_init = sub.add_parser("init", help="Print a V.I.S.O.R. MCP configuration entry")
     p_init.set_defaults(func=cmd_init)
 
     # visor context
