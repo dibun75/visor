@@ -622,7 +622,9 @@ class VectorDBClient:
         vectors = self.spoke_conn.execute(
             "SELECT COUNT(*) FROM vec_code_nodes"
         ).fetchone()[0]
-        fts_nodes = self.spoke_conn.execute("SELECT COUNT(*) FROM fts_code_nodes").fetchone()[0]
+        fts_nodes = self.spoke_conn.execute(
+            "SELECT COUNT(*) FROM fts_code_nodes"
+        ).fetchone()[0]
         mode = retrieval_mode()
         complete = nodes == fts_nodes and (mode == "lexical" or nodes == vectors)
         return {
@@ -658,7 +660,8 @@ class VectorDBClient:
         with self._lock:
             status = self.get_index_status()
             if status["nodes"] != status["fts_nodes"] or (
-                status["retrieval_mode"] == "semantic" and status["nodes"] != status["vectors"]
+                status["retrieval_mode"] == "semantic"
+                and status["nodes"] != status["vectors"]
             ):
                 raise RuntimeError(
                     "Index cannot be marked ready: retrieval index counts differ."
@@ -733,7 +736,9 @@ class VectorDBClient:
                     cursor.execute(
                         "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
                     )
-                    cursor.execute("DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,))
+                    cursor.execute(
+                        "DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,)
+                    )
                 cursor.execute(
                     "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
                 )
@@ -837,7 +842,9 @@ class VectorDBClient:
                     cursor.execute(
                         "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
                     )
-                    cursor.execute("DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,))
+                    cursor.execute(
+                        "DELETE FROM fts_code_nodes WHERE rowid = ?", (node_id,)
+                    )
                 cursor.execute(
                     "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
                 )
@@ -1113,9 +1120,15 @@ class VectorDBClient:
         )
         return [
             {
-                "id": row[0], "file_path": row[1], "node_type": row[2],
-                "name": row[3], "docstring": row[4], "start_line": row[5],
-                "end_line": row[6], "distance": 1.0, "retrieval": "lexical",
+                "id": row[0],
+                "file_path": row[1],
+                "node_type": row[2],
+                "name": row[3],
+                "docstring": row[4],
+                "start_line": row[5],
+                "end_line": row[6],
+                "distance": 1.0,
+                "retrieval": "lexical",
             }
             for row in cursor.fetchall()
         ]

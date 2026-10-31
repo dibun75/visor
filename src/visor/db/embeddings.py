@@ -23,8 +23,7 @@ def retrieval_mode() -> str:
     mode = os.environ.get("VISOR_RETRIEVAL_MODE", "lexical").strip().lower()
     if mode not in RETRIEVAL_MODES:
         raise ValueError(
-            "VISOR_RETRIEVAL_MODE must be 'lexical' or 'semantic', "
-            f"not {mode!r}."
+            f"VISOR_RETRIEVAL_MODE must be 'lexical' or 'semantic', not {mode!r}."
         )
     return mode
 

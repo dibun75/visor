@@ -21,7 +21,9 @@ def _init_workspace(args=None):
 
     if args and getattr(args, "retrieval_mode", None):
         os.environ["VISOR_RETRIEVAL_MODE"] = args.retrieval_mode
-    workspace = resolve_local_workspace(explicit=getattr(args, "workspace", None) if args else None)
+    workspace = resolve_local_workspace(
+        explicit=getattr(args, "workspace", None) if args else None
+    )
     os.environ["WORKSPACE_ROOT"] = workspace
     from visor.db.client import db_client
 
@@ -50,13 +52,18 @@ def cmd_doctor(args):
     from visor.db.embeddings import semantic_dependencies_available, retrieval_mode
 
     status = db_client.get_index_status()
-    print(json.dumps({
-        "workspace": db_client.workspace_root,
-        "index_ready": status["ready"],
-        "retrieval_mode": retrieval_mode(),
-        "semantic_dependencies_available": semantic_dependencies_available(),
-        "recommendation": None if status["ready"] else "Run `visor index`.",
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "workspace": db_client.workspace_root,
+                "index_ready": status["ready"],
+                "retrieval_mode": retrieval_mode(),
+                "semantic_dependencies_available": semantic_dependencies_available(),
+                "recommendation": None if status["ready"] else "Run `visor index`.",
+            },
+            indent=2,
+        )
+    )
 
 
 def _format_output(data: dict, human: bool = True) -> str:
@@ -110,9 +117,7 @@ def _format_output(data: dict, human: bool = True) -> str:
     else:
         lines.append("  No relevant context found.")
         lines.append("  → V.I.S.O.R. needs to index your workspace first.")
-        lines.append(
-            "  → Run `visor index` from the project root."
-        )
+        lines.append("  → Run `visor index` from the project root.")
 
     # Recommended next tools
     rec = data.get("recommended_next", [])
@@ -254,7 +259,9 @@ def main():
         "--version", "-v", action="version", version=f"V.I.S.O.R. {__version__}"
     )
     parser.add_argument("--workspace", help="Project root (default: resolved from cwd)")
-    parser.add_argument("--retrieval-mode", choices=("lexical", "semantic"), help="Retrieval backend")
+    parser.add_argument(
+        "--retrieval-mode", choices=("lexical", "semantic"), help="Retrieval backend"
+    )
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
     # terminal-first workflow

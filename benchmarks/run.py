@@ -31,7 +31,9 @@ def main() -> int:
     parser.add_argument("--agent", choices=("codex", "claude-code"), required=True)
     parser.add_argument("--condition", choices=("native", "visor"), required=True)
     parser.add_argument("--workspace", type=Path, required=True)
-    parser.add_argument("--command", required=True, help="Template using {prompt} and {workspace}")
+    parser.add_argument(
+        "--command", required=True, help="Template using {prompt} and {workspace}"
+    )
     parser.add_argument("--model", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
@@ -57,15 +59,21 @@ def main() -> int:
     else:
         started = time.monotonic()
         completed = subprocess.run(
-            command, shell=True, cwd=workspace, text=True, capture_output=True,
+            command,
+            shell=True,
+            cwd=workspace,
+            text=True,
+            capture_output=True,
             env={**os.environ, "VISOR_BENCHMARK_CONDITION": args.condition},
         )
-        record.update({
-            "exit_code": completed.returncode,
-            "duration_seconds": time.monotonic() - started,
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
-        })
+        record.update(
+            {
+                "exit_code": completed.returncode,
+                "duration_seconds": time.monotonic() - started,
+                "stdout": completed.stdout,
+                "stderr": completed.stderr,
+            }
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     return 0 if args.dry_run or record["exit_code"] == 0 else record["exit_code"]
