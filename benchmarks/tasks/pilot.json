@@ -1,17 +1,90 @@
 {
-  "version": 1,
+  "version": 2,
+  "repository": "https://github.com/dibun75/visor",
   "tasks": [
-    {"id": "p01", "category": "repository-exploration", "prompt": "Locate the workspace resolution path and explain its precedence.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p02", "category": "repository-exploration", "prompt": "Identify the code index lifecycle and its integrity checks.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p03", "category": "dependency-analysis", "prompt": "Explain how parser import targets become canonical file dependency edges, including unresolved and external imports.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p04", "category": "index-integrity", "prompt": "Trace transactional re-indexing when a source file changes or is deleted, including stale symbols, vectors, and edges.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p05", "category": "dependency-analysis", "prompt": "Trace graph cache invalidation when switching between workspaces with identical edge counts.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p06", "category": "repository-exploration", "prompt": "Identify initialization and migration readiness checks that make fresh and legacy indexes queryable.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p07", "category": "test-analysis", "prompt": "Locate regression coverage for workspace resolution edge cases and identify any untested precedence branch.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p08", "category": "configuration-analysis", "prompt": "Trace validation and fallback behavior for malformed retrieval configuration.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p09", "category": "dependency-analysis", "prompt": "Trace the impact of changing a parser output field.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p10", "category": "dependency-analysis", "prompt": "Find callers affected by a database schema migration.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p11", "category": "headless", "prompt": "Verify behavior with no IDE and no MCP client roots.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
-    {"id": "p12", "category": "headless", "prompt": "Verify an explicit workspace overrides advertised MCP roots.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"}
+    {
+      "id": "p01",
+      "category": "repository-exploration",
+      "prompt": "Locate the workspace resolution path and explain its precedence.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/workspace.py", "src/visor/server.py", "resolve_local_workspace", "resolve_mcp_roots"]
+    },
+    {
+      "id": "p02",
+      "category": "repository-exploration",
+      "prompt": "Identify the code index lifecycle and its integrity checks.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/parser/watcher.py", "src/visor/db/client.py", "get_index_status", "index_needs_rebuild"]
+    },
+    {
+      "id": "p03",
+      "category": "dependency-analysis",
+      "prompt": "Explain how parser import targets become canonical file dependency edges, including unresolved and external imports.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/parser/dependencies.py", "resolve_import_target", "normalize_edges", "resolution"]
+    },
+    {
+      "id": "p04",
+      "category": "index-integrity",
+      "prompt": "Trace transactional re-indexing when a source file changes or is deleted, including stale symbols, vectors, and edges.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/parser/watcher.py", "src/visor/db/client.py", "replace_file_index", "delete_file_index"]
+    },
+    {
+      "id": "p05",
+      "category": "dependency-analysis",
+      "prompt": "Trace graph cache invalidation when switching between workspaces with identical edge counts.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/tools/context_engine.py", "src/visor/tools/core.py", "workspace_hash", "graph_revision"]
+    },
+    {
+      "id": "p06",
+      "category": "repository-exploration",
+      "prompt": "Identify initialization and migration readiness checks that make fresh and legacy indexes queryable.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/db/client.py", "src/visor/db/migration.py", "_migrate_spoke", "index_needs_rebuild"]
+    },
+    {
+      "id": "p07",
+      "category": "test-analysis",
+      "prompt": "Locate regression coverage for workspace resolution edge cases and identify any untested precedence branch.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["tests/test_workspace.py", "tests/test_mcp_headless.py", "test_local_workspace_precedence", "test_explicit_workspace"]
+    },
+    {
+      "id": "p08",
+      "category": "configuration-analysis",
+      "prompt": "Trace validation and fallback behavior for malformed retrieval configuration.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/db/embeddings.py", "VISOR_RETRIEVAL_MODE", "retrieval_mode", "SemanticDependenciesUnavailable"]
+    },
+    {
+      "id": "p09",
+      "category": "dependency-analysis",
+      "prompt": "Trace the impact of changing a parser output field.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/parser/treesitter.py", "src/visor/parser/watcher.py", "ParseResult", "parse_file"]
+    },
+    {
+      "id": "p10",
+      "category": "dependency-analysis",
+      "prompt": "Find callers affected by a database schema migration.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/db/client.py", "src/visor/db/migration.py", "_migrate_hub", "_migrate_spoke"]
+    },
+    {
+      "id": "p11",
+      "category": "headless",
+      "prompt": "Verify behavior with no IDE and no MCP client roots.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/server.py", "src/visor/workspace.py", "tests/test_mcp_headless.py", "ensure_for_request"]
+    },
+    {
+      "id": "p12",
+      "category": "headless",
+      "prompt": "Verify an explicit workspace overrides advertised MCP roots.",
+      "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553",
+      "evidence": ["src/visor/server.py", "src/visor/workspace.py", "tests/test_mcp_headless.py", "WORKSPACE_ROOT"]
+    }
   ]
 }
