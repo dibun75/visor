@@ -4,9 +4,7 @@ from visor.db.embeddings import retrieval_mode
 from visor.parser import watcher
 
 
-def test_lexical_indexing_never_loads_embedding_model(
-    tmp_path, test_db, monkeypatch
-):
+def test_lexical_indexing_never_loads_embedding_model(tmp_path, test_db, monkeypatch):
     source = tmp_path / "service.py"
     source.write_text(
         "def resolve_workspace():\n    return 'ready'\n", encoding="utf-8"
@@ -32,7 +30,9 @@ def test_lexical_indexing_never_loads_embedding_model(
 def test_semantic_mode_requires_explicit_dependency(monkeypatch):
     from visor.db.embeddings import EmbeddingUnavailableError, SemanticEmbedder
 
-    monkeypatch.setattr("visor.db.embeddings.semantic_dependencies_available", lambda: False)
+    monkeypatch.setattr(
+        "visor.db.embeddings.semantic_dependencies_available", lambda: False
+    )
     SemanticEmbedder._instance = None
     with pytest.raises(EmbeddingUnavailableError):
         SemanticEmbedder().encode("search")
