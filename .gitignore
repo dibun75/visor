@@ -33,6 +33,7 @@ tmp/
 
 # Scratch / debug files
 test_*.py
+!tests/test_*.py
 test_*.js
 test_*.html
 test_*.mjs

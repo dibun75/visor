@@ -1,9 +1,9 @@
+import argparse
+import asyncio
 import json
 import logging
 import os
 import threading
-from contextlib import asynccontextmanager
-from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
 
@@ -11,13 +11,89 @@ from visor.db.client import db_client
 from visor.db.migration import migrate_old_dbs
 from visor.parser.watcher import start_watcher, stop_watcher, index_workspace
 from visor.tools.core import register_tools
+from visor.workspace import (
+    resolve_local_workspace,
+    resolve_mcp_roots,
+    validate_workspace,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+
+class WorkspaceManager:
+    """Bind the shared database and watcher to one validated project root."""
+
+    def __init__(self) -> None:
+        self._lock = asyncio.Lock()
+
+    def configure(self, workspace: str) -> None:
+        workspace = validate_workspace(workspace, "Resolved")
+        stop_watcher()
+        db_client.reinitialize(workspace)
+        db_client.register_workspace()
+
+        index_status = db_client.get_index_status()
+        if db_client.index_needs_rebuild():
+            logger.info(
+                "[VISOR] Index unavailable for %s (%s) — rebuilding.",
+                workspace,
+                index_status,
+            )
+            threading.Thread(
+                target=_background_index,
+                args=(workspace,),
+                daemon=True,
+                name="visor-indexer",
+            ).start()
+        else:
+            logger.info(
+                "[VISOR] Ready index found (%s nodes). Skipping re-index.",
+                index_status["nodes"],
+            )
+
+        try:
+            start_watcher(workspace)
+        except Exception as exc:
+            logger.warning("[VISOR] File watcher failed for %s: %s", workspace, exc)
+
+    async def ensure_for_request(self, context) -> None:
+        if db_client.is_configured:
+            return
+
+        async with self._lock:
+            if db_client.is_configured:
+                return
+
+            workspace = None
+            try:
+                roots_result = await context.session.list_roots()
+                workspace = resolve_mcp_roots(roots_result.roots)
+                logger.info("[VISOR] MCP roots resolved workspace: %s", workspace)
+            except Exception as exc:
+                logger.info("[VISOR] MCP roots unavailable: %s", exc)
+
+            if workspace is None:
+                workspace = resolve_local_workspace()
+
+            self.configure(workspace)
+
+
+workspace_manager = WorkspaceManager()
+
+
+class WorkspaceFastMCP(FastMCP):
+    """FastMCP server that resolves workspace roots inside active requests."""
+
+    async def call_tool(self, name, arguments):
+        context = self.get_context()
+        await workspace_manager.ensure_for_request(context)
+        return await super().call_tool(name, arguments)
+
+
 # Initialize FastMCP Server
-mcp = FastMCP("VISOR")
+mcp = WorkspaceFastMCP("VISOR")
 
 register_tools(mcp)
 
@@ -460,7 +536,12 @@ _DEFAULT_SKILLS = [
         "strategy": json.dumps(
             {
                 "intent_override": "FAULT_TRACE",
-                "scoring_bias": {"dep": 2.0, "recency": 1.8, "embed": 1.0, "exact": 1.2},
+                "scoring_bias": {
+                    "dep": 2.0,
+                    "recency": 1.8,
+                    "embed": 1.0,
+                    "exact": 1.2,
+                },
                 "tool_priority": [
                     "trace_route",
                     "get_dependency_chain",
@@ -518,104 +599,6 @@ def _seed_default_skills():
             logger.info(f"Seeded built-in skill: {skill['name']}")
 
 
-_WORKSPACE_FROM_ENV = os.environ.get("WORKSPACE_ROOT")
-
-# Project markers that indicate a directory is a real project root
-_PROJECT_MARKERS = {
-    ".git",
-    "pyproject.toml",
-    "package.json",
-    "Cargo.toml",
-    "go.mod",
-    "pom.xml",
-    ".sln",
-}
-
-
-def _is_project_dir(path: str) -> bool:
-    """Check if a directory looks like a real project (has common project markers)."""
-    return any(
-        os.path.exists(os.path.join(path, marker)) for marker in _PROJECT_MARKERS
-    )
-
-
-def _detect_workspace() -> str:
-    """Best-effort workspace detection without MCP roots.
-
-    Priority: WORKSPACE_ROOT env > cwd (if project dir) > "." (deferred).
-    """
-    if _WORKSPACE_FROM_ENV:
-        return _WORKSPACE_FROM_ENV
-
-    cwd = os.path.abspath(os.path.realpath(os.getcwd()))
-    if _is_project_dir(cwd):
-        return cwd
-
-    # cwd is not a project (probably home dir) — return it but flag for deferred resolution
-    return cwd
-
-
-@asynccontextmanager
-async def _lifespan(server: FastMCP):
-    """Lifecycle hook: after MCP handshake, query client for workspace roots."""
-    workspace = _detect_workspace()
-    needs_roots = not _WORKSPACE_FROM_ENV and not _is_project_dir(workspace)
-
-    if needs_roots:
-        logger.info(
-            "[VISOR] No WORKSPACE_ROOT set and cwd is not a project — will query MCP roots after handshake."
-        )
-
-    yield  # MCP handshake completes here
-
-    # After handshake, try to get workspace roots from the MCP client
-    if needs_roots:
-        try:
-            ctx = server.get_context()
-            roots_result = await ctx.session.list_roots()
-            if roots_result and roots_result.roots:
-                root_uri = str(roots_result.roots[0].uri)
-                # Convert file:///path/to/dir → /path/to/dir
-                if root_uri.startswith("file://"):
-                    root_path = urlparse(root_uri).path
-                else:
-                    root_path = root_uri
-
-                root_path = os.path.abspath(root_path)
-                if os.path.isdir(root_path) and root_path != db_client.workspace_root:
-                    logger.info(f"[VISOR] MCP roots detected workspace: {root_path}")
-                    switched = db_client.reinitialize(root_path)
-                    if switched:
-                        db_client.register_workspace()
-                        # Re-index the correct workspace
-                        node_count = db_client.conn.execute(
-                            "SELECT COUNT(*) FROM code_nodes"
-                        ).fetchone()[0]
-                        if node_count == 0:
-                            logger.info(
-                                "[VISOR] Empty database for new workspace — indexing..."
-                            )
-                            index_thread = threading.Thread(
-                                target=_background_index,
-                                args=(root_path,),
-                                daemon=True,
-                                name="visor-indexer",
-                            )
-                            index_thread.start()
-                        try:
-                            start_watcher(root_path)
-                        except Exception as e:
-                            logger.warning(
-                                f"[VISOR] File watcher failed for {root_path}: {e}"
-                            )
-        except Exception as e:
-            logger.warning(f"[VISOR] Could not query MCP roots: {e}")
-
-
-# Apply lifespan to the MCP server
-mcp.settings.lifespan = _lifespan
-
-
 def _background_index(workspace: str) -> None:
     """Run the progressive workspace scan in a daemon thread.
 
@@ -629,56 +612,42 @@ def _background_index(workspace: str) -> None:
         logger.error(f"Background indexing failed: {exc}")
 
 
-def main():
+def main(argv=None):
     """CLI entrypoint to start the MCP daemon using stdio transport."""
-    workspace = _detect_workspace()
-    logger.info(f"Starting V.I.S.O.R. MCP Server (workspace={workspace})")
+    parser = argparse.ArgumentParser(description="V.I.S.O.R. MCP server")
+    parser.add_argument(
+        "--workspace",
+        help="Explicit project root (overrides WORKSPACE_ROOT and MCP roots).",
+    )
+    args = parser.parse_args(argv)
 
-    # Auto-migrate old monolith DBs on first boot
+    logger.info("Starting V.I.S.O.R. MCP Server")
+
     migrated = migrate_old_dbs(db_client.hub_conn)
     if migrated:
         logger.info(f"[VISOR] Migrated {migrated} old database(s) to hub-and-spoke.")
 
-    # Register this workspace in the global hub
-    db_client.register_workspace()
-    logger.info(
-        f"[VISOR] Registered workspace: {db_client.workspace_name} ({db_client.workspace_hash})"
-    )
-
-    # Seed built-in skill strategies (into global hub)
     _seed_default_skills()
 
-    logger.info(f"[VISOR] Hub DB: {db_client.hub_path}")
-    logger.info(f"[VISOR] Spoke DB: {db_client.spoke_path}")
-
-    # Log persisted data on startup for verification
-    cursor = db_client.conn.cursor()
-    node_count = cursor.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
-    edge_count = cursor.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
-    logger.info(f"[VISOR] Startup DB check — Nodes: {node_count}, Edges: {edge_count}")
-
-    # Only full re-index if the DB is empty AND we have a real project dir
-    if node_count == 0 and _is_project_dir(workspace):
-        logger.info("[VISOR] Empty database detected — running full workspace index.")
-        index_thread = threading.Thread(
-            target=_background_index,
-            args=(workspace,),
-            daemon=True,
-            name="visor-indexer",
+    startup_workspace = None
+    if args.workspace:
+        startup_workspace = validate_workspace(args.workspace, "Explicit")
+    elif os.environ.get("WORKSPACE_ROOT"):
+        startup_workspace = validate_workspace(
+            os.environ["WORKSPACE_ROOT"], "WORKSPACE_ROOT"
         )
-        index_thread.start()
-    elif node_count == 0:
-        logger.info(
-            "[VISOR] Empty database but cwd is not a project — deferring index until MCP roots are available."
-        )
+
+    if startup_workspace:
+        logger.info("[VISOR] Startup workspace: %s", startup_workspace)
+        workspace_manager.configure(startup_workspace)
     else:
         logger.info(
-            f"[VISOR] Database already populated ({node_count} nodes). Skipping re-index."
+            "[VISOR] Workspace deferred until an active MCP request provides roots."
         )
 
+    logger.info(f"[VISOR] Hub DB: {db_client.hub_path}")
+
     try:
-        if _is_project_dir(workspace):
-            start_watcher(workspace)
         mcp.run(transport="stdio")
     finally:
         stop_watcher()

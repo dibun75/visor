@@ -8,9 +8,12 @@ import threading
 import struct
 from typing import List, Dict, Any, Optional
 
+INDEX_SCHEMA_VERSION = 2
 EMBEDDING_DIM = 384  # Configurable to specific embedding size (e.g. all-MiniLM-L6-v2)
 
-VISOR_HOME = os.path.expanduser("~/.visor")
+VISOR_HOME = os.path.abspath(
+    os.path.expanduser(os.environ.get("VISOR_HOME", "~/.visor"))
+)
 
 
 def serialize_vec(vector: List[float]) -> bytes:
@@ -72,13 +75,25 @@ class VectorDBClient:
             ws_name = "test_ws"
             ws_root = "/test/root"
         else:
-            hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths()
+            explicit_root = os.environ.get("WORKSPACE_ROOT")
+            if explicit_root and os.path.isdir(explicit_root):
+                hub_path, spoke_path, ws_hash, ws_name, ws_root = _resolve_paths(
+                    explicit_root
+                )
+            else:
+                hub_path = os.path.join(VISOR_HOME, "hub.db")
+                os.makedirs(VISOR_HOME, exist_ok=True)
+                spoke_path = ":memory:"
+                ws_hash = ""
+                ws_name = "unconfigured"
+                ws_root = ""
 
         self.hub_path = hub_path
         self.spoke_path = spoke_path
         self.workspace_hash = ws_hash
         self.workspace_name = ws_name
         self.workspace_root = ws_root
+        self.graph_revision = 0
 
         # Hub: global data (no sqlite-vec needed here — only vec_agent_memory uses it)
         self.hub_conn = _open_connection(hub_path, load_vec=True)
@@ -89,14 +104,26 @@ class VectorDBClient:
         self.conn = self.spoke_conn
 
         print(f"[VISOR] Hub DB: {hub_path}", file=sys.stderr, flush=True)
-        print(
-            f"[VISOR] Spoke DB: {spoke_path} (workspace={ws_name}, hash={ws_hash})",
-            file=sys.stderr,
-            flush=True,
-        )
+        if self.is_configured:
+            print(
+                f"[VISOR] Spoke DB: {spoke_path} (workspace={ws_name}, hash={ws_hash})",
+                file=sys.stderr,
+                flush=True,
+            )
+        else:
+            print(
+                "[VISOR] Workspace deferred until the first active MCP request.",
+                file=sys.stderr,
+                flush=True,
+            )
 
         self._migrate_hub()
         self._migrate_spoke()
+
+    @property
+    def is_configured(self) -> bool:
+        """Return whether the spoke is bound to a validated workspace."""
+        return bool(self.workspace_root and self.workspace_hash)
 
     def reinitialize(self, workspace_root: str):
         """Re-initialize with a new workspace root (e.g. after MCP roots/list).
@@ -108,26 +135,26 @@ class VectorDBClient:
         if workspace_root == self.workspace_root:
             return False  # Already pointing at this workspace
 
-        # Close old spoke connection
-        try:
-            self.spoke_conn.close()
-        except Exception:
-            pass
+        with self._lock:
+            try:
+                self.spoke_conn.close()
+            except Exception:
+                pass
 
-        # Recompute paths for new workspace
-        ws_hash = hashlib.sha256(workspace_root.encode("utf-8")).hexdigest()[:12]
-        ws_name = os.path.basename(workspace_root) or "unknown"
-        spoke_dir = os.path.join(VISOR_HOME, "workspaces", ws_hash)
-        spoke_path = os.path.join(spoke_dir, "graph.db")
-        os.makedirs(spoke_dir, exist_ok=True)
+            ws_hash = hashlib.sha256(workspace_root.encode("utf-8")).hexdigest()[:12]
+            ws_name = os.path.basename(workspace_root) or "unknown"
+            spoke_dir = os.path.join(VISOR_HOME, "workspaces", ws_hash)
+            spoke_path = os.path.join(spoke_dir, "graph.db")
+            os.makedirs(spoke_dir, exist_ok=True)
 
-        self.spoke_path = spoke_path
-        self.workspace_hash = ws_hash
-        self.workspace_name = ws_name
-        self.workspace_root = workspace_root
+            self.spoke_path = spoke_path
+            self.workspace_hash = ws_hash
+            self.workspace_name = ws_name
+            self.workspace_root = workspace_root
+            self.graph_revision += 1
 
-        self.spoke_conn = _open_connection(spoke_path, load_vec=True)
-        self.conn = self.spoke_conn
+            self.spoke_conn = _open_connection(spoke_path, load_vec=True)
+            self.conn = self.spoke_conn
 
         print(
             f"[VISOR] Workspace switched → {ws_name} ({ws_hash})",
@@ -229,7 +256,37 @@ class VectorDBClient:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 from_node TEXT NOT NULL,
                 to_node TEXT NOT NULL,
-                relation_type TEXT NOT NULL
+                relation_type TEXT NOT NULL,
+                raw_target TEXT NOT NULL DEFAULT '',
+                target_symbol TEXT NOT NULL DEFAULT '',
+                resolution TEXT NOT NULL DEFAULT 'legacy'
+            )
+        """)
+
+        edge_columns = {
+            row[1] for row in cursor.execute("PRAGMA table_info(edges)").fetchall()
+        }
+        for column, definition in (
+            ("raw_target", "TEXT NOT NULL DEFAULT ''"),
+            ("target_symbol", "TEXT NOT NULL DEFAULT ''"),
+            ("resolution", "TEXT NOT NULL DEFAULT 'legacy'"),
+        ):
+            if column not in edge_columns:
+                cursor.execute(f"ALTER TABLE edges ADD COLUMN {column} {definition}")
+
+        cursor.execute("""
+            DELETE FROM edges
+            WHERE id NOT IN (
+                SELECT MIN(id) FROM edges
+                GROUP BY from_node, to_node, relation_type,
+                         raw_target, target_symbol, resolution
+            )
+        """)
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_identity
+            ON edges (
+                from_node, to_node, relation_type,
+                raw_target, target_symbol, resolution
             )
         """)
 
@@ -239,11 +296,50 @@ class VectorDBClient:
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS indexed_files (
+                file_path TEXT PRIMARY KEY,
+                file_hash TEXT NOT NULL,
+                index_version INTEGER NOT NULL,
+                indexed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS index_metadata (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+
+        existing_version = cursor.execute(
+            "SELECT value FROM index_metadata WHERE key = 'version'"
+        ).fetchone()
+        if existing_version is None:
+            node_count = cursor.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
+            status = "empty" if node_count == 0 else "requires_reindex"
+            cursor.execute(
+                "INSERT INTO index_metadata(key, value) VALUES ('version', ?)",
+                (str(INDEX_SCHEMA_VERSION),),
+            )
+            cursor.execute(
+                "INSERT INTO index_metadata(key, value) VALUES ('status', ?)",
+                (status,),
+            )
+
         # UI State for bidirectional HUD control
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS ui_state (
                 key TEXT PRIMARY KEY,
                 json_value TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS file_changelog (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_path TEXT NOT NULL,
+                changed_at TEXT NOT NULL
             )
         """)
 
@@ -255,6 +351,8 @@ class VectorDBClient:
 
     def register_workspace(self) -> None:
         """Upsert the current workspace into the hub registry."""
+        if not self.is_configured:
+            raise RuntimeError("Cannot register a workspace before it is resolved.")
         cursor = self.hub_conn.cursor()
         cursor.execute(
             """
@@ -487,6 +585,271 @@ class VectorDBClient:
     # Spoke methods: code nodes & edges
     # ──────────────────────────────────────────────
 
+    def _set_index_metadata(self, key: str, value: str) -> None:
+        self.spoke_conn.execute(
+            """
+            INSERT INTO index_metadata(key, value) VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (key, value),
+        )
+
+    def get_index_status(self) -> Dict[str, Any]:
+        metadata = dict(
+            self.spoke_conn.execute("SELECT key, value FROM index_metadata").fetchall()
+        )
+        nodes = self.spoke_conn.execute("SELECT COUNT(*) FROM code_nodes").fetchone()[0]
+        try:
+            version = int(metadata.get("version", "0"))
+        except (TypeError, ValueError):
+            version = 0
+        vectors = self.spoke_conn.execute(
+            "SELECT COUNT(*) FROM vec_code_nodes"
+        ).fetchone()[0]
+        return {
+            "version": version,
+            "status": metadata.get("status", "requires_reindex"),
+            "nodes": nodes,
+            "vectors": vectors,
+            "ready": (
+                version == INDEX_SCHEMA_VERSION
+                and metadata.get("status") == "ready"
+                and nodes == vectors
+            ),
+        }
+
+    def index_needs_rebuild(self) -> bool:
+        return not self.get_index_status()["ready"]
+
+    def mark_indexing(self) -> None:
+        with self._lock:
+            self._set_index_metadata("version", str(INDEX_SCHEMA_VERSION))
+            self._set_index_metadata("status", "indexing")
+            self.spoke_conn.commit()
+
+    def mark_index_ready(self) -> None:
+        with self._lock:
+            status = self.get_index_status()
+            if status["nodes"] != status["vectors"]:
+                raise RuntimeError(
+                    "Index cannot be marked ready: code node/vector counts differ."
+                )
+            self._set_index_metadata("version", str(INDEX_SCHEMA_VERSION))
+            self._set_index_metadata("status", "ready")
+            self.spoke_conn.commit()
+
+    def get_indexed_file_hash(self, file_path: str) -> str | None:
+        row = self.spoke_conn.execute(
+            "SELECT file_hash FROM indexed_files WHERE file_path = ?",
+            (file_path,),
+        ).fetchone()
+        return row[0] if row else None
+
+    def is_file_index_current(self, file_path: str, file_hash: str) -> bool:
+        """Return whether a hash hit also has complete, current vector data."""
+        row = self.spoke_conn.execute(
+            "SELECT file_hash, index_version FROM indexed_files WHERE file_path = ?",
+            (file_path,),
+        ).fetchone()
+        if row != (file_hash, INDEX_SCHEMA_VERSION):
+            return False
+
+        node_count = self.spoke_conn.execute(
+            "SELECT COUNT(*) FROM code_nodes WHERE file_path = ?", (file_path,)
+        ).fetchone()[0]
+        vector_count = self.spoke_conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM code_nodes n
+            JOIN vec_code_nodes v ON v.rowid = n.id
+            WHERE n.file_path = ?
+            """,
+            (file_path,),
+        ).fetchone()[0]
+        return node_count == vector_count
+
+    def replace_file_index(
+        self,
+        *,
+        file_path: str,
+        file_hash: str,
+        nodes: List[dict],
+        edges: List[dict],
+    ) -> None:
+        """Atomically replace every source-index record originating from one file."""
+        with self._lock:
+            cursor = self.spoke_conn.cursor()
+            try:
+                cursor.execute("BEGIN IMMEDIATE")
+                node_ids = [
+                    row[0]
+                    for row in cursor.execute(
+                        "SELECT id FROM code_nodes WHERE file_path = ?",
+                        (file_path,),
+                    ).fetchall()
+                ]
+                for node_id in node_ids:
+                    cursor.execute(
+                        "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
+                    )
+                cursor.execute(
+                    "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
+                )
+                cursor.execute("DELETE FROM edges WHERE from_node = ?", (file_path,))
+                # Calls are best-effort symbol metadata. Revalidate every incoming
+                # call when a target file's symbol set changes.
+                cursor.execute(
+                    """
+                    UPDATE OR IGNORE edges
+                    SET to_node = target_symbol, resolution = 'unresolved'
+                    WHERE to_node = ? AND relation_type = 'CALLS'
+                      AND resolution = 'internal'
+                    """,
+                    (file_path,),
+                )
+                cursor.execute(
+                    "DELETE FROM edges WHERE to_node = ? AND relation_type = 'CALLS' "
+                    "AND resolution = 'internal'",
+                    (file_path,),
+                )
+                for node in nodes:
+                    cursor.execute(
+                        """
+                        INSERT INTO code_nodes (
+                            file_path, node_type, name, docstring,
+                            start_line, end_line, file_hash
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            file_path,
+                            node["node_type"],
+                            node["name"],
+                            node["docstring"],
+                            node["start_line"],
+                            node["end_line"],
+                            file_hash,
+                        ),
+                    )
+                    cursor.execute(
+                        "INSERT INTO vec_code_nodes(rowid, embedding) VALUES (?, ?)",
+                        (cursor.lastrowid, serialize_vec(node["vector"])),
+                    )
+
+                for edge in edges:
+                    cursor.execute(
+                        """
+                        INSERT OR IGNORE INTO edges (
+                            from_node, to_node, relation_type,
+                            raw_target, target_symbol, resolution
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            file_path,
+                            edge["to"],
+                            edge["type"],
+                            edge.get("raw_target", ""),
+                            edge.get("target_symbol", ""),
+                            edge.get("resolution", "unresolved"),
+                        ),
+                    )
+
+                cursor.execute(
+                    """
+                    INSERT INTO indexed_files (
+                        file_path, file_hash, index_version, indexed_at
+                    ) VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(file_path) DO UPDATE SET
+                        index_version = excluded.index_version,
+                        file_hash = excluded.file_hash,
+                        indexed_at = CURRENT_TIMESTAMP
+                    """,
+                    (file_path, file_hash, INDEX_SCHEMA_VERSION),
+                )
+                cursor.execute("COMMIT")
+                self.graph_revision += 1
+            except Exception:
+                if self.spoke_conn.in_transaction:
+                    cursor.execute("ROLLBACK")
+                raise
+
+    def delete_file_index(self, file_path: str) -> None:
+        """Atomically remove nodes, vectors, and all internal graph references."""
+        with self._lock:
+            cursor = self.spoke_conn.cursor()
+            try:
+                cursor.execute("BEGIN IMMEDIATE")
+                node_ids = [
+                    row[0]
+                    for row in cursor.execute(
+                        "SELECT id FROM code_nodes WHERE file_path = ?",
+                        (file_path,),
+                    ).fetchall()
+                ]
+                for node_id in node_ids:
+                    cursor.execute(
+                        "DELETE FROM vec_code_nodes WHERE rowid = ?", (node_id,)
+                    )
+                cursor.execute(
+                    "DELETE FROM code_nodes WHERE file_path = ?", (file_path,)
+                )
+                cursor.execute(
+                    """
+                    DELETE FROM edges
+                    WHERE from_node = ?
+                       OR (to_node = ? AND resolution = 'internal')
+                    """,
+                    (file_path, file_path),
+                )
+                cursor.execute(
+                    "DELETE FROM indexed_files WHERE file_path = ?", (file_path,)
+                )
+                cursor.execute("COMMIT")
+                self.graph_revision += 1
+            except Exception:
+                if self.spoke_conn.in_transaction:
+                    cursor.execute("ROLLBACK")
+                raise
+
+    def resolve_call_edges(self) -> int:
+        """Resolve unambiguous symbol calls after all workspace files are indexed."""
+        resolved = 0
+        with self._lock:
+            cursor = self.spoke_conn.cursor()
+            rows = cursor.execute(
+                """
+                SELECT id, from_node, target_symbol
+                FROM edges
+                WHERE relation_type = 'CALLS' AND resolution = 'unresolved'
+                """
+            ).fetchall()
+            for edge_id, source_file, symbol in rows:
+                matches = cursor.execute(
+                    """
+                    SELECT DISTINCT file_path FROM code_nodes
+                    WHERE name = ? AND file_path != ?
+                    """,
+                    (symbol, source_file),
+                ).fetchall()
+                targets = sorted({match[0] for match in matches})
+                if len(targets) != 1:
+                    continue
+                cursor.execute(
+                    """
+                    UPDATE OR IGNORE edges
+                    SET to_node = ?, resolution = 'internal'
+                    WHERE id = ?
+                    """,
+                    (targets[0], edge_id),
+                )
+                if cursor.rowcount:
+                    resolved += 1
+                else:
+                    cursor.execute("DELETE FROM edges WHERE id = ?", (edge_id,))
+            if resolved:
+                self.spoke_conn.commit()
+                self.graph_revision += 1
+        return resolved
+
     def upsert_node(
         self,
         file_path: str,
@@ -612,25 +975,46 @@ class VectorDBClient:
                         raise
                 try:
                     cursor.execute("COMMIT")
+                    self.graph_revision += 1
                 except Exception as e:
                     print(f"FAILED ON COMMIT: {e}", file=sys.stderr)
                     raise
             except Exception:
-                cursor.execute("ROLLBACK")
+                if self.spoke_conn.in_transaction:
+                    cursor.execute("ROLLBACK")
                 raise
 
-    def upsert_edge(self, from_node: str, to_node: str, relation_type: str):
+    def upsert_edge(
+        self,
+        from_node: str,
+        to_node: str,
+        relation_type: str,
+        *,
+        raw_target: str = "",
+        target_symbol: str = "",
+        resolution: str = "internal",
+    ):
         cursor = self.spoke_conn.cursor()
         cursor.execute(
-            "SELECT id FROM edges WHERE from_node=? AND to_node=? AND relation_type=?",
-            (from_node, to_node, relation_type),
+            "SELECT id FROM edges WHERE from_node=? AND to_node=? AND relation_type=? "
+            "AND raw_target=? AND target_symbol=? AND resolution=?",
+            (from_node, to_node, relation_type, raw_target, target_symbol, resolution),
         )
         if not cursor.fetchone():
             cursor.execute(
-                "INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)",
-                (from_node, to_node, relation_type),
+                "INSERT INTO edges (from_node, to_node, relation_type, raw_target, "
+                "target_symbol, resolution) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    from_node,
+                    to_node,
+                    relation_type,
+                    raw_target,
+                    target_symbol,
+                    resolution,
+                ),
             )
             self.spoke_conn.commit()
+            self.graph_revision += 1
 
     def search_similar(
         self, vector: List[float], limit: int = 5

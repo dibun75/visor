@@ -16,7 +16,9 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-VISOR_HOME = os.path.expanduser("~/.visor")
+VISOR_HOME = os.path.abspath(
+    os.path.expanduser(os.environ.get("VISOR_HOME", "~/.visor"))
+)
 
 # Known locations where old monolith DBs may exist
 _OLD_DB_PATTERNS = [
@@ -265,7 +267,7 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
     sqlite_vec.load(spoke_conn)
     spoke_conn.enable_load_extension(False)
 
-    from visor.db.client import EMBEDDING_DIM
+    from visor.db.client import EMBEDDING_DIM, INDEX_SCHEMA_VERSION
 
     # Create spoke tables
     spoke_conn.execute("""
@@ -278,7 +280,10 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
     spoke_conn.execute("""
         CREATE TABLE IF NOT EXISTS edges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            from_node TEXT NOT NULL, to_node TEXT NOT NULL, relation_type TEXT NOT NULL
+            from_node TEXT NOT NULL, to_node TEXT NOT NULL, relation_type TEXT NOT NULL,
+            raw_target TEXT NOT NULL DEFAULT '',
+            target_symbol TEXT NOT NULL DEFAULT '',
+            resolution TEXT NOT NULL DEFAULT 'legacy'
         )
     """)
     spoke_conn.execute(f"""
@@ -288,6 +293,27 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
     """)
     spoke_conn.execute("""
         CREATE TABLE IF NOT EXISTS ui_state (key TEXT PRIMARY KEY, json_value TEXT NOT NULL)
+    """)
+    spoke_conn.execute("""
+        CREATE TABLE IF NOT EXISTS indexed_files (
+            file_path TEXT PRIMARY KEY,
+            file_hash TEXT NOT NULL,
+            index_version INTEGER NOT NULL,
+            indexed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    spoke_conn.execute("""
+        CREATE TABLE IF NOT EXISTS index_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    spoke_conn.execute("""
+        CREATE TABLE IF NOT EXISTS file_changelog (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_path TEXT NOT NULL,
+            changed_at TEXT NOT NULL
+        )
     """)
 
     # Copy code_nodes (without vectors — re-index will rebuild)
@@ -310,10 +336,31 @@ def _migrate_spoke_data(old_conn: sqlite3.Connection, spoke_path: str):
         ).fetchall()
         if rows:
             spoke_conn.executemany(
-                "INSERT INTO edges (from_node, to_node, relation_type) VALUES (?, ?, ?)",
-                rows,
+                "INSERT INTO edges (from_node, to_node, relation_type, raw_target, resolution) "
+                "VALUES (?, ?, ?, ?, 'legacy')",
+                [(row[0], row[1], row[2], row[1]) for row in rows],
             )
             logger.info(f"[VISOR]   → Migrated {len(rows)} edges to spoke")
+
+    spoke_conn.execute("""
+        DELETE FROM edges
+        WHERE id NOT IN (
+            SELECT MIN(id) FROM edges
+            GROUP BY from_node, to_node, relation_type,
+                     raw_target, target_symbol, resolution
+        )
+    """)
+    spoke_conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_edges_identity
+        ON edges (
+            from_node, to_node, relation_type,
+            raw_target, target_symbol, resolution
+        )
+    """)
+    spoke_conn.executemany(
+        "INSERT INTO index_metadata(key, value) VALUES (?, ?)",
+        [("version", str(INDEX_SCHEMA_VERSION)), ("status", "requires_reindex")],
+    )
 
     spoke_conn.commit()
     spoke_conn.close()

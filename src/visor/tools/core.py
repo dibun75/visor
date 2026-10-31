@@ -38,11 +38,11 @@ def track_telemetry(func):
 
 
 _graph_cache: nx.DiGraph | None = None
-_graph_edge_count: int = -1
+_graph_cache_key: tuple[str, int, int] | None = None
 
 
 def _build_nx_graph() -> nx.DiGraph:
-    """Builds a directed graph of the codebase pulling from the actual edges table."""
+    """Build a file graph from verified, workspace-internal import edges."""
     G = nx.DiGraph()
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
@@ -56,8 +56,10 @@ def _build_nx_graph() -> nx.DiGraph:
     for f in files:
         G.add_node(f)
 
-    # Read edges from database
-    cursor.execute("SELECT from_node, to_node, relation_type FROM edges")
+    cursor.execute(
+        "SELECT from_node, to_node, relation_type FROM edges "
+        "WHERE relation_type = 'IMPORTS' AND resolution = 'internal'"
+    )
     db_edges = cursor.fetchall()
 
     for from_n, to_n, rel_type in db_edges:
@@ -69,14 +71,18 @@ def _build_nx_graph() -> nx.DiGraph:
 
 def _get_nx_graph() -> nx.DiGraph:
     """Returns a cached NetworkX graph, rebuilding only when edges change."""
-    global _graph_cache, _graph_edge_count
+    global _graph_cache, _graph_cache_key
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM edges")
+    cursor.execute(
+        "SELECT COUNT(*) FROM edges "
+        "WHERE relation_type = 'IMPORTS' AND resolution = 'internal'"
+    )
     current_count = cursor.fetchone()[0]
-    if _graph_cache is None or current_count != _graph_edge_count:
+    cache_key = (db_client.workspace_hash, db_client.graph_revision, current_count)
+    if _graph_cache is None or cache_key != _graph_cache_key:
         _graph_cache = _build_nx_graph()
-        _graph_edge_count = current_count
+        _graph_cache_key = cache_key
     return _graph_cache
 
 
@@ -205,9 +211,8 @@ def register_tools(mcp: FastMCP):
         path_to_id = {n["file_path"]: n["id"] for n in nodes}
 
         cursor.execute("""
-            SELECT e.from_node, cn.file_path, e.relation_type 
-            FROM edges e
-            JOIN code_nodes cn ON e.to_node = cn.name COLLATE NOCASE
+            SELECT from_node, to_node, relation_type FROM edges
+            WHERE relation_type = 'IMPORTS' AND resolution = 'internal'
             LIMIT 500
         """)
         db_edges = cursor.fetchall()
@@ -225,7 +230,7 @@ def register_tools(mcp: FastMCP):
                         {
                             "source": src_id,
                             "target": tgt_id,
-                            "type": rel_type,  # "IMPORTS" | "CALLS"
+                            "type": rel_type,
                         }
                     )
 
@@ -385,16 +390,17 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @track_telemetry
     def impact_analysis(file_path: str) -> str:
-        """Fetch downstream dependent files impacted by a change using BFS (max depth 5)."""
+        """Find files that transitively import the changed file (max depth 5)."""
         G = _get_nx_graph()
         if not G.has_node(file_path):
             return json.dumps(
                 {"error": f"Node {file_path} not found in architecture graph."}
             )
 
-        # BFS up to depth 5
-        edges = nx.bfs_edges(G, source=file_path, depth_limit=5)
-        impacted_nodes = [v for u, v in edges]
+        # Import edges point importer → dependency, so impact follows the reverse graph.
+        reverse_graph = G.reverse(copy=False)
+        edges = nx.bfs_edges(reverse_graph, source=file_path, depth_limit=5)
+        impacted_nodes = [dependent for _, dependent in edges]
         return json.dumps(
             {"target": file_path, "blast_radius": list(set(impacted_nodes))}
         )
@@ -402,7 +408,7 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @track_telemetry
     def trace_route(source: str, target: str) -> str:
-        """Trace a path from a source node to a target node."""
+        """Trace verified import relationships from a source file to a dependency."""
         G = _get_nx_graph()
         if not G.has_node(source) or not G.has_node(target):
             return json.dumps({"error": "Source or Target node not found."})
@@ -418,7 +424,7 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @track_telemetry
     def dead_code_detection() -> str:
-        """Finds nodes with an in-degree of 0 (no incoming callers)."""
+        """Find files no indexed file imports; this is not call-graph dead code."""
         G = _get_nx_graph()
         dead_nodes = [n for n, d in G.in_degree() if d == 0]
         return json.dumps({"isolated_nodes": dead_nodes})
@@ -474,10 +480,15 @@ def register_tools(mcp: FastMCP):
         db_client.conn.commit()
         cursor = db_client.conn.cursor()
         cursor.execute(
-            "SELECT file_path FROM code_nodes WHERE name LIKE ? LIMIT 1",
-            (f"%{symbol}%",),
+            "SELECT DISTINCT file_path FROM code_nodes WHERE file_path = ?", (symbol,)
         )
         row = cursor.fetchone()
+        if not row:
+            cursor.execute(
+                "SELECT file_path FROM code_nodes WHERE name LIKE ? LIMIT 1",
+                (f"%{symbol}%",),
+            )
+            row = cursor.fetchone()
         if not row:
             return json.dumps(
                 {

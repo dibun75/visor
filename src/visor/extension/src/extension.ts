@@ -101,9 +101,10 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
         outputChannel.appendLine(`[VISOR] Found local server.py in workspace: ${localServerPath}`);
         args = ['--directory', workspaceFolder, 'run', '-q', localServerPath];
     } else {
-        outputChannel.appendLine(`[VISOR] No local server.py found. Trying global 'visor-mcp' tool...`);
-        // Use uv to run the globally installed visor-mcp or fetch it
-        args = ['tool', 'run', 'visor-mcp'];
+        const msg = 'No V.I.S.O.R. server found. Install visor-mcp explicitly or configure visor.serverPath.';
+        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
+        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
+        throw new Error(msg);
     }
 
     // Pre-flight: verify uv can run
@@ -289,18 +290,6 @@ class VisorSidebarProvider implements vscode.WebviewViewProvider {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    try {
-        cp.execSync('uv --version', { stdio: 'ignore' });
-    } catch {
-        vscode.window.showInformationMessage('Installing uv for V.I.S.O.R...');
-        try {
-            cp.execSync('curl -LsSf https://astral.sh/uv/install.sh | sh', { stdio: 'inherit' });
-        } catch (e) {
-            vscode.window.showErrorMessage('Failed to install uv...');
-            return;
-        }
-    }
-
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 
     // Register Sidebar Provider

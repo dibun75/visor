@@ -45,14 +45,17 @@ MAX_CONTEXT_TOKENS = 8_000  # Conservative budget to avoid overflows
 # ---------------------------------------------------------------------------
 
 _ctx_graph_cache: nx.DiGraph | None = None
-_ctx_graph_edge_count: int = -1
+_ctx_graph_cache_key: tuple[str, int, int] | None = None
 
 
 def _load_edges_graph() -> nx.DiGraph:
     """Load edges from the DB into a lightweight DiGraph for hop-distance queries."""
     G = nx.DiGraph()
     cursor = db_client.conn.cursor()
-    cursor.execute("SELECT from_node, to_node FROM edges")
+    cursor.execute(
+        "SELECT from_node, to_node FROM edges "
+        "WHERE relation_type = 'IMPORTS' AND resolution = 'internal'"
+    )
     for from_n, to_n in cursor.fetchall():
         G.add_edge(from_n, to_n)
     return G
@@ -60,14 +63,18 @@ def _load_edges_graph() -> nx.DiGraph:
 
 def _get_cached_edges_graph() -> nx.DiGraph:
     """Returns a cached edges graph, rebuilding only when edges change."""
-    global _ctx_graph_cache, _ctx_graph_edge_count
+    global _ctx_graph_cache, _ctx_graph_cache_key
     db_client.conn.commit()
     cursor = db_client.conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM edges")
+    cursor.execute(
+        "SELECT COUNT(*) FROM edges "
+        "WHERE relation_type = 'IMPORTS' AND resolution = 'internal'"
+    )
     current_count = cursor.fetchone()[0]
-    if _ctx_graph_cache is None or current_count != _ctx_graph_edge_count:
+    cache_key = (db_client.workspace_hash, db_client.graph_revision, current_count)
+    if _ctx_graph_cache is None or cache_key != _ctx_graph_cache_key:
         _ctx_graph_cache = _load_edges_graph()
-        _ctx_graph_edge_count = current_count
+        _ctx_graph_cache_key = cache_key
     return _ctx_graph_cache
 
 
@@ -86,8 +93,10 @@ def _read_snippet(
         with open(file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
-        # Note: start_line / end_line are 0-indexed from Tree-sitter in the DB.
-        target_lines = lines[start_line:end_line]
+        # Tree-sitter locations are persisted as 1-based, inclusive line numbers.
+        if start_line < 1 or end_line < start_line:
+            return ""
+        target_lines = lines[start_line - 1 : end_line]
         if len(target_lines) > max_lines:
             # Keep first N/2 and last N/2 lines
             half = max_lines // 2

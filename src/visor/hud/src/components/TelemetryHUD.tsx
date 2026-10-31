@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity, Database, ShieldAlert, Cpu, Maximize, Settings2, Plus, Trash2, X, Search, Zap, Brain } from 'lucide-react';
+import { getVsCode } from '../vscode';
 
 interface TelemetryHUDProps {
     viewMode: 'sidebar' | 'panel';
 }
 
-const getVsCode = () => {
-    if (!(window as any).vscodeApiInstance && (window as any).acquireVsCodeApi) {
-        (window as any).vscodeApiInstance = (window as any).acquireVsCodeApi();
-    }
-    return (window as any).vscodeApiInstance || null;
-};
-
 interface ContextResult {
-    context: any[];
-    debug: { intent: string; skill: string | null; scores: Record<string, any>; reasoning: Record<string, string[]> };
+    context: unknown[];
+    debug: { intent: string; skill: string | null; scores: Record<string, unknown>; reasoning: Record<string, string[]> };
     metrics: { estimated_tokens_without: number; estimated_tokens_with: number; reduction_percent: number };
     query: string;
     total_tokens: number;
+}
+
+interface CustomSkill {
+    id: number;
+    name: string;
+    description: string;
 }
 
 export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
@@ -30,7 +30,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
     });
     
     const [showSkillModal, setShowSkillModal] = useState(false);
-    const [skills, setSkills] = useState<any[]>([]);
+    const [skills, setSkills] = useState<CustomSkill[]>([]);
     const [newSkillName, setNewSkillName] = useState("");
     const [newSkillDesc, setNewSkillDesc] = useState("");
     const [newSkillContent, setNewSkillContent] = useState("");
@@ -78,7 +78,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             clearInterval(interval);
             window.removeEventListener('message', messageHandler);
         };
-    }, []);
+    }, [vscode]);
 
     const openFullGraph = () => {
         if (vscode) {
@@ -86,7 +86,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
         }
     };
 
-    const fetchSkills = () => vscode?.postMessage({ command: 'fetchSkills' });
+    const fetchSkills = useCallback(() => vscode?.postMessage({ command: 'fetchSkills' }), [vscode]);
     const addSkill = () => {
         if (!newSkillName || !newSkillContent) return;
         vscode?.postMessage({ command: 'addCustomSkill', payload: { name: newSkillName, description: newSkillDesc, content: newSkillContent } });
@@ -100,12 +100,12 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
 
     useEffect(() => {
         if (showSkillModal) fetchSkills();
-    }, [showSkillModal]);
+    }, [showSkillModal, fetchSkills]);
 
     const runQuery = () => {
         if (!queryInput.trim()) return;
         setIsQuerying(true);
-        const payload: any = { query: queryInput };
+        const payload: { query: string; skill?: string } = { query: queryInput };
         if (selectedSkill) payload.skill = selectedSkill;
         vscode?.postMessage({ command: 'fetchContextResult', payload });
     };
