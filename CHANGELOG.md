@@ -2,6 +2,28 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.2.0] — 2026-10-31
+
+### Terminal-first and offline retrieval
+
+- Added `visor index`, `visor status`, and `visor doctor` for explicit headless workflows.
+- Made SQLite FTS lexical retrieval the offline default; semantic embeddings are now an optional extra.
+- Hardened workspace detection and index integrity across CLI and MCP use.
+- Changed `visor init` to print configuration for review instead of editing IDE files.
+
+### Agent integration and evaluation
+
+- Added a portable `visor-context` Agent Skill with Codex, Claude Code, and generic-agent guidance.
+- Added a reproducible paired-agent benchmark harness and 12-task pilot manifest.
+- Removed unsupported performance claims until paired benchmark evidence is available.
+
+### Packaging note
+
+This release contains no benchmark-performance claim. The paired-agent harness
+is included so results can be gathered and reviewed separately.
+
+---
+
 ## [1.1.1] — 2026-04-21
 
 ### 🔄 Workflow-Aware Graph Strategies (4 new, 29 total)

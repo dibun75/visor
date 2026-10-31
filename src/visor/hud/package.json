@@ -33,5 +33,8 @@
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4",
     "vite-plugin-singlefile": "^2.3.2"
+  },
+  "overrides": {
+    "minimatch": "^11.0.3"
   }
 }
