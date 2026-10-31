@@ -1,119 +1,54 @@
-# V.I.S.O.R. Demo Recording Guide
+# Recording the terminal demo
 
-> Step-by-step instructions for creating a terminal demo GIF/video.
+Record the CLI, not the 3D graph. The source of truth is [`terminal_demo.tape`](./terminal_demo.tape).
 
----
+## Command
 
-## Tools Needed
-
-- [**asciinema**](https://asciinema.org/) — terminal recorder
-- [**agg**](https://github.com/asciinema/agg) — convert to GIF
-- Or **VHS** from Charm: `go install github.com/charmbracelet/vhs@latest`
-
----
-
-## Option A: asciinema + agg (Recommended)
-
-### 1. Install
+From the repository root, with [VHS](https://github.com/charmbracelet/vhs) installed:
 
 ```bash
-pip install asciinema
-# For GIF conversion:
-cargo install agg  # or download binary from GitHub
+uv run visor index
+vhs demo/terminal_demo.tape
 ```
 
-### 2. Record
+VHS types and runs `visor doctor` and `visor index` in full. The context line in the tape is:
 
 ```bash
-asciinema rec demo.cast -c "bash demo/record_session.sh"
+uv run visor context "resolve local workspace project root" | sed -n '1,42p'
 ```
 
-### 3. Convert to GIF
+That `sed` pipe is only for the recording. It displays the first lines of the real CLI output so they stay readable in the frame. The normal CLI command, without `sed`, returns the complete result.
+
+`demo/vhs_bashrc` is the tape's shell rcfile. It pipes those three `uv run visor` invocations through `sed` so the frames omit home directories, the local username, and the workspace-hash directory. Review the GIF before committing it.
+
+## Frame
+
+- About 10–15 seconds when the index is already warm
+- 1200×800, font size 16
+- Optimized GIF under 5 MB when the generator is available
+
+The tape types `clear` before the context command so the first lines start at the top of the frame.
+
+If the warm `visor index` or `visor context` run longer than that, keep the real timing in the published GIF or shorten only the `Sleep` lines that follow a finished command. Do not delete output frames to invent a faster run.
+
+## MP4
 
 ```bash
-agg demo.cast demo.gif --font-size 16 --cols 100 --rows 30
+ffmpeg -i docs/assets/terminal-demo.gif -movflags +faststart -pix_fmt yuv420p docs/assets/terminal-demo.mp4
 ```
 
----
+## If VHS is not installed
 
-## Option B: VHS Tape (Auto-animated)
-
-Create `demo/demo.tape`:
-
-```tape
-Output demo.gif
-Set FontSize 16
-Set Width 1200
-Set Height 600
-Set Theme "Catppuccin Mocha"
-
-Type "uv run visor fix 'login crash on null user'"
-Enter
-Sleep 3s
-
-Type "uv run visor explain 'database client'"
-Enter
-Sleep 3s
-
-Type "uv run visor trace src/auth/jwt.py src/db/client.py"
-Enter
-Sleep 2s
-```
-
-Run: `vhs demo/demo.tape`
-
----
-
-## Recording Script
-
-Save as `demo/record_session.sh`:
+Do not draw or hand-type a GIF. Commit the tape and document the command above. A text transcript, if you need one, must be a sanitized copy of command output:
 
 ```bash
-#!/bin/bash
-echo ""
-echo "  🔍 Finding context for a bug..."
-echo ""
-sleep 1
-
-uv run visor fix "login crash on null user"
-sleep 2
-
-echo ""
-echo "  🧠 Explaining a module..."
-echo ""
-sleep 1
-
-uv run visor explain "database client"
-sleep 2
-
-echo ""
-echo "  🗺️  Tracing request path..."
-echo ""
-sleep 1
-
-uv run visor trace src/api/routes.py src/db/client.py
-sleep 2
-
-echo ""
-echo "  ✅ Done. V.I.S.O.R. — precise context, every time."
-echo ""
+demo/vhs_shell.sh -c 'uv run visor doctor'
 ```
 
----
+`demo/vhs_shell.sh` loads the same rcfile for a local interactive shell. The tape itself sets `Shell "bash"` and sources `demo/vhs_bashrc`, because VHS 0.10 rejects a shell command that includes arguments. A one-shot transcript:
 
-## Key Frames to Capture
-
-1. **The hook** — `visor fix "login crash"` typed and executed
-2. **Token reduction** — the metrics line showing 80% reduction
-3. **Reasoning** — the "→ Matched query token..." explanations
-4. **Speed** — instant single-call response vs multi-grep
-5. **Skill badge** — "Intent: BUG_FIX | Skill: bug-fixer"
-
----
-
-## Formatting Tips
-
-- Use a dark terminal theme (Catppuccin Mocha, Dracula, or Tokyo Night)
-- Set terminal width to 100+ columns
-- Use a monospace font at 16px+
-- Record at 1200×600 minimum for clarity on GitHub
+```bash
+bash --rcfile demo/vhs_bashrc -i -c 'uv run visor doctor'
+bash --rcfile demo/vhs_bashrc -i -c 'uv run visor index'
+bash --rcfile demo/vhs_bashrc -i -c 'uv run visor context "resolve local workspace project root"'
+```

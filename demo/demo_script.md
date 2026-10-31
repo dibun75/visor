@@ -1,97 +1,36 @@
-# V.I.S.O.R. Demo Script
+# Terminal demo script
 
-> Reproduce this demo in under 60 seconds to show clear value.
-
-## Setup
+Run these commands from a checkout. They are the same commands recorded by [`terminal_demo.tape`](./terminal_demo.tape).
 
 ```bash
-git clone https://github.com/dibun75/visor.git
-cd visor && uv sync
+uv run visor doctor
+uv run visor index
+uv run visor context "resolve local workspace project root"
 ```
 
----
+`doctor` reports whether the local index is ready and which retrieval mode is active. `index` builds or refreshes the local AST index. `context` prints selected symbols, file paths, and the reason strings for that query.
 
-## Demo 1: Fix a Bug
+A cold index can take longer than the short GIF target. For the recording, index once beforehand so the taped `visor index` refreshes an existing index. Keep the command output. Do not substitute a typed transcript.
+
+Other local commands, when you want them:
 
 ```bash
-uv run visor fix "login crash on null user"
-```
-
-**Expected output:**
-
-```
-============================================================
-  V.I.S.O.R. Context Intelligence Engine
-============================================================
-  Query:  login crash on null user
-  Intent: BUG_FIX
-  Skill:  bug-fixer
-────────────────────────────────────────────────────────────
-  Tokens without V.I.S.O.R.: 11,400
-  Tokens with V.I.S.O.R.:    2,180
-  Reduction:                  80.9%
-────────────────────────────────────────────────────────────
-  Selected 4 nodes (truncated=False):
-
-  [2.8500]  src/auth/jwt.py:verify_token
-            → Matched query token in symbol name
-            → Co-located in same file as top semantic hit
-            → Recently modified file (boosted)
-
-  [2.1200]  src/auth/middleware.py:auth_guard
-            → Reachable via dependency chain
-            → Semantic similarity (score: 0.375)
-
-  [1.4500]  src/models/user.py:User
-            → Matched query token in symbol name
-            → Semantic similarity (score: 0.42)
-
-  [0.8700]  src/db/session.py:get_session
-            → Reachable via dependency chain
-
-============================================================
-```
-
----
-
-## Demo 2: Explain Architecture
-
-```bash
-uv run visor explain "database client module"
-```
-
----
-
-## Demo 3: Trace a Request
-
-```bash
-uv run visor trace src/api/routes.py src/db/client.py
-```
-
----
-
-## Demo 4: Check for Drift
-
-```bash
+uv run visor status
+uv run visor trace src/visor/server.py src/visor/workspace.py
 uv run visor drift
+uv run visor context "resolve local workspace project root" --json
 ```
 
----
+`visor fix` and `visor explain` are thin wrappers around `visor context` with the `bug-fixer` and `architecture-explainer` skills. Their human-readable output includes a per-result size estimate. That estimate compares candidate file text with returned snippets. It is not a published token-reduction measurement.
 
-## Demo 5: Raw JSON Output
+What this demo can show:
 
-```bash
-uv run visor fix "login crash" --json
-```
+- The CLI runs without the HUD.
+- The default retrieval mode is lexical.
+- A context response names files, symbols, and reasons.
 
-Shows the full structured response with `debug`, `metrics`, `reasoning`, and `prompt_ready` fields.
+What it does not show:
 
----
-
-## Key Talking Points
-
-1. **"80% token reduction"** — V.I.S.O.R. sends only the exact code your AI needs
-2. **"Every selection is explainable"** — human-readable reasoning for why each node was chosen
-3. **"Intent-aware"** — automatically detects if you're debugging, refactoring, or exploring
-4. **"Skill-driven"** — pre-loaded strategies that change scoring behavior
-5. **"Works everywhere"** — Antigravity, VS Code, Cursor, Claude Code via MCP
+- That the selected context is sufficient to change the code.
+- A change in agent task success.
+- A benchmark result. Those live in [`benchmarks/`](../benchmarks/).
