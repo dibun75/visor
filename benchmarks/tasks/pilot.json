@@ -1,17 +1,17 @@
 {
   "version": 1,
   "tasks": [
-    {"id": "p01", "category": "repository-exploration", "prompt": "Locate the workspace resolution path and explain its precedence.", "revision": "PINNED_REVISION"},
-    {"id": "p02", "category": "repository-exploration", "prompt": "Identify the code index lifecycle and its integrity checks.", "revision": "PINNED_REVISION"},
-    {"id": "p03", "category": "bug-fix", "prompt": "Diagnose a deliberately seeded import-resolution failure.", "revision": "PINNED_REVISION"},
-    {"id": "p04", "category": "bug-fix", "prompt": "Diagnose a deliberately seeded stale-index failure.", "revision": "PINNED_REVISION"},
-    {"id": "p05", "category": "refactor", "prompt": "Make a narrowly scoped rename while preserving call edges.", "revision": "PINNED_REVISION"},
-    {"id": "p06", "category": "refactor", "prompt": "Extract a focused helper without changing public behavior.", "revision": "PINNED_REVISION"},
-    {"id": "p07", "category": "test", "prompt": "Add a regression test for a fixed workspace edge case.", "revision": "PINNED_REVISION"},
-    {"id": "p08", "category": "test", "prompt": "Add a regression test for malformed retrieval configuration.", "revision": "PINNED_REVISION"},
-    {"id": "p09", "category": "dependency-analysis", "prompt": "Trace the impact of changing a parser output field.", "revision": "PINNED_REVISION"},
-    {"id": "p10", "category": "dependency-analysis", "prompt": "Find callers affected by a database schema migration.", "revision": "PINNED_REVISION"},
-    {"id": "p11", "category": "headless", "prompt": "Verify behavior with no IDE and no MCP client roots.", "revision": "PINNED_REVISION"},
-    {"id": "p12", "category": "headless", "prompt": "Verify an explicit workspace overrides advertised MCP roots.", "revision": "PINNED_REVISION"}
+    {"id": "p01", "category": "repository-exploration", "prompt": "Locate the workspace resolution path and explain its precedence.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p02", "category": "repository-exploration", "prompt": "Identify the code index lifecycle and its integrity checks.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p03", "category": "dependency-analysis", "prompt": "Explain how parser import targets become canonical file dependency edges, including unresolved and external imports.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p04", "category": "index-integrity", "prompt": "Trace transactional re-indexing when a source file changes or is deleted, including stale symbols, vectors, and edges.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p05", "category": "dependency-analysis", "prompt": "Trace graph cache invalidation when switching between workspaces with identical edge counts.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p06", "category": "repository-exploration", "prompt": "Identify initialization and migration readiness checks that make fresh and legacy indexes queryable.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p07", "category": "test-analysis", "prompt": "Locate regression coverage for workspace resolution edge cases and identify any untested precedence branch.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p08", "category": "configuration-analysis", "prompt": "Trace validation and fallback behavior for malformed retrieval configuration.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p09", "category": "dependency-analysis", "prompt": "Trace the impact of changing a parser output field.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p10", "category": "dependency-analysis", "prompt": "Find callers affected by a database schema migration.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p11", "category": "headless", "prompt": "Verify behavior with no IDE and no MCP client roots.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"},
+    {"id": "p12", "category": "headless", "prompt": "Verify an explicit workspace overrides advertised MCP roots.", "revision": "b7699ed4919b9fb5aab54ec89b71f7788f7e4553"}
   ]
 }

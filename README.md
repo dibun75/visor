@@ -62,11 +62,16 @@ configuration you choose. V.I.S.O.R. does not edit IDE configuration files
 automatically.
 
 ```bash
-uvx visor-mcp --help
-visor-mcp init  # prints a configuration entry; it does not write one
+uvx --from visor-mcp visor --help
+uvx --from visor-mcp visor init  # prints a configuration entry; it does not write one
 ```
 
-*Note: Claude Code handles installation natively via `claude mcp add visor -- uvx visor-mcp`.*
+Codex CLI and Claude Code can register the local stdio server directly:
+
+```bash
+codex mcp add visor -- uvx visor-mcp
+claude mcp add visor -- uvx visor-mcp
+```
 
 <details>
 <summary><b>Prefer manual installation? Click here for raw configs</b></summary>
@@ -248,6 +253,7 @@ See [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md) for the full API reference.
 | [`docs/FAQ.md`](./docs/FAQ.md) | Common questions answered |
 | [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) | Fixing common problems |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to add languages, tools, and skills |
+| [`SECURITY.md`](./SECURITY.md) | Supported versions and private vulnerability reporting |
 | [`CHANGELOG.md`](./CHANGELOG.md) | What changed in each version |
 
 ---
@@ -270,6 +276,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 | IDE | Support | How to Set Up |
 |------|---------|--------------|
+| Codex CLI | ✅ Full | `codex mcp add visor -- uvx visor-mcp` |
 | Claude Code | ✅ Full | `claude mcp add visor -- uvx visor-mcp` |
 | Cursor | ✅ Full | `~/.cursor/mcp.json` |
 | Claude Desktop | ✅ Full | `claude_desktop_config.json` |

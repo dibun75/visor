@@ -37,6 +37,7 @@ body:
         - Antigravity
         - Cursor
         - Claude Code
+        - Codex CLI
         - VS Code + Continue
         - Other
     validations:
