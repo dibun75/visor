@@ -2,7 +2,13 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
-## [Unreleased]
+## [1.2.1] — 2026-10-31
+
+### Patch benchmark
+
+- Added a three-task patch fixture with machine-checked evaluators, isolated worktrees, separate native and V.I.S.O.R. command templates, and interrupt cleanup for agent child processes.
+- Published the 36-cell patch pilot summary. All 36 patches passed. Token and runtime intervals are reported with their limits and are not a universal savings claim.
+- Recomputed 95% paired intervals for the preserved v1.2.0 diagnostic records without republishing raw provider logs.
 
 ### Maintenance
 

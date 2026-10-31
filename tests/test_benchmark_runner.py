@@ -112,7 +112,7 @@ def test_prompt_is_not_evaluated_by_a_shell(tmp_path: Path) -> None:
     assert completed.returncode == 0, completed.stderr
     assert not marker.exists()
     record = json.loads(output.read_text(encoding="utf-8"))
-    assert record["schema_version"] == 2
+    assert record["schema_version"] == 3
     assert record["stdout"].strip() == prompt
     assert isinstance(record["command"], list)
 
@@ -177,6 +177,51 @@ def test_visor_context_is_explicit_and_redacted_from_command(tmp_path: Path) -> 
     assert record["context_sha256"]
 
 
+def test_patch_evaluator_records_machine_verified_success(tmp_path: Path) -> None:
+    workspace, _ = _workspace(tmp_path)
+    (workspace / "check_patch.py").write_text(
+        "from pathlib import Path\n"
+        "raise SystemExit(0 if Path('fixed.txt').read_text() == 'fixed' else 1)\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "-C", workspace, "add", "check_patch.py"], check=True)
+    subprocess.run(
+        ["git", "-C", workspace, "commit", "-qm", "add evaluator"], check=True
+    )
+    revision = subprocess.run(
+        ["git", "-C", workspace, "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    manifest = _manifest(tmp_path, revision, "fix the seeded bug")
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["tasks"][0]["evaluator"] = {
+        "command": [sys.executable, "check_patch.py"],
+        "timeout_seconds": 10,
+    }
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    fixer = tmp_path / "fixer.py"
+    fixer.write_text(
+        "import pathlib, sys\n"
+        "pathlib.Path(sys.argv[1], 'fixed.txt').write_text('fixed')\n",
+        encoding="utf-8",
+    )
+
+    completed, output = _run(
+        tmp_path,
+        workspace,
+        manifest,
+        f"{sys.executable} {fixer} {{workspace}}",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    record = json.loads(output.read_text(encoding="utf-8"))
+    assert record["patch_success"] is True
+    assert record["evaluation"]["passed"] is True
+    assert record["evaluation"]["changed_files"] == ["fixed.txt"]
+
+
 def test_pilot_dry_run_writes_all_four_cells(tmp_path: Path) -> None:
     workspace, revision = _workspace(tmp_path)
     manifest = _manifest(tmp_path, revision, "prompt")
@@ -193,6 +238,8 @@ def test_pilot_dry_run_writes_all_four_cells(tmp_path: Path) -> None:
             str(manifest),
             "--workspace",
             str(workspace),
+            "--worktrees",
+            str(tmp_path / "worktrees"),
             "--contexts",
             str(contexts),
             "--results",
@@ -224,6 +271,8 @@ def test_pilot_dry_run_writes_all_four_cells(tmp_path: Path) -> None:
     assert len(records) == 4
     plan = json.loads((results / "plan.json").read_text(encoding="utf-8"))
     assert len(plan["cells"]) == 4
+    assert plan["isolated_worktrees"] is True
+    assert len(list((tmp_path / "worktrees").iterdir())) == 4
 
 
 def test_completed_successfully_supports_resume(tmp_path: Path) -> None:
@@ -234,3 +283,57 @@ def test_completed_successfully_supports_resume(tmp_path: Path) -> None:
     assert not completed_successfully(tmp_path, cell)
     path.write_text('{"exit_code": 0}', encoding="utf-8")
     assert completed_successfully(tmp_path, cell)
+
+
+def test_process_group_signal_stops_the_child() -> None:
+    import os
+    import signal
+
+    from benchmarks.run import _signal_process_group
+
+    process = subprocess.Popen(
+        ["sleep", "30"],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        _signal_process_group(process, signal.SIGTERM)
+        process.wait(timeout=5)
+        assert process.returncode is not None
+        assert not os.path.exists(f"/proc/{process.pid}")
+    finally:
+        if process.poll() is None:
+            process.kill()
+
+
+def test_fixture_checks_import_and_fail_until_the_seeded_bug_is_fixed(
+    tmp_path: Path,
+) -> None:
+    import shutil
+
+    fixture = Path(__file__).parents[1] / "benchmarks" / "fixtures" / "patch_repo"
+    workspace = tmp_path / "fixture"
+    shutil.copytree(fixture, workspace)
+    discount = subprocess.run(
+        [sys.executable, "checks/check_discounts.py"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+    )
+    assert discount.returncode != 0
+    assert "ModuleNotFoundError" not in discount.stderr
+    source = workspace / "app" / "discounts.py"
+    source.write_text(
+        source.read_text(encoding="utf-8").replace(
+            "total * (1 - percent)", "total * (1 - percent / 100)"
+        ),
+        encoding="utf-8",
+    )
+    fixed = subprocess.run(
+        [sys.executable, "checks/check_discounts.py"],
+        cwd=workspace,
+        capture_output=True,
+        text=True,
+    )
+    assert fixed.returncode == 0, fixed.stderr

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Run the randomized paired Codex/Claude diagnostic pilot."""
+"""Run the randomized paired Codex/Claude diagnostic or patch pilot."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import random
+import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -46,9 +47,62 @@ def build_cells(task_ids: list[str], repeats: int, seed: int) -> list[Cell]:
     return cells
 
 
-def _run_cell(args: argparse.Namespace, cell: Cell) -> tuple[Cell, int]:
+def _cell_name(cell: Cell) -> str:
+    return f"{cell.task}-{cell.agent}-{cell.condition}-{cell.run_id}"
+
+
+def prepare_worktrees(
+    source: Path, destination: Path, cells: list[Cell], revision: str
+) -> dict[Cell, Path]:
+    destination.mkdir(parents=True, exist_ok=True)
+    mapping = {}
+    for cell in cells:
+        workspace = (destination / _cell_name(cell)).resolve()
+        if workspace.exists():
+            removed = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(source),
+                    "worktree",
+                    "remove",
+                    "--force",
+                    str(workspace),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if workspace.exists():
+                if removed.returncode != 0 and not (workspace / ".git").exists():
+                    shutil.rmtree(workspace)
+                else:
+                    raise ValueError(f"worktree already exists: {workspace}")
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(source),
+                "worktree",
+                "add",
+                "--detach",
+                str(workspace),
+                revision,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        mapping[cell] = workspace
+    return mapping
+
+
+def _run_cell(
+    args: argparse.Namespace, cell: Cell, workspace: Path
+) -> tuple[Cell, int]:
     agent_key = "codex" if cell.agent == "codex" else "claude"
-    command = getattr(args, f"{agent_key}_command")
+    command = getattr(args, f"{agent_key}_{cell.condition}_command") or getattr(
+        args, f"{agent_key}_command"
+    )
     model = getattr(args, f"{agent_key}_model")
     client_version = getattr(args, f"{agent_key}_client_version")
     output = output_path(args.results, cell)
@@ -64,7 +118,7 @@ def _run_cell(args: argparse.Namespace, cell: Cell) -> tuple[Cell, int]:
         "--condition",
         cell.condition,
         "--workspace",
-        str(args.workspace),
+        str(workspace),
         "--command",
         command,
         "--model",
@@ -90,18 +144,23 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--workspace", type=Path, required=True)
+    parser.add_argument("--worktrees", type=Path)
     parser.add_argument("--contexts", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261031)
-    parser.add_argument("--concurrency", type=int, default=4)
-    parser.add_argument("--timeout", type=float, default=300.0)
-    parser.add_argument("--codex-command", required=True)
+    parser.add_argument("--codex-command")
+    parser.add_argument("--codex-native-command")
+    parser.add_argument("--codex-visor-command")
+    parser.add_argument("--claude-command")
+    parser.add_argument("--claude-native-command")
+    parser.add_argument("--claude-visor-command")
     parser.add_argument("--codex-model", required=True)
     parser.add_argument("--codex-client-version", required=True)
-    parser.add_argument("--claude-command", required=True)
     parser.add_argument("--claude-model", required=True)
     parser.add_argument("--claude-client-version", required=True)
+    parser.add_argument("--concurrency", type=int, default=2)
+    parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--resume",
@@ -110,10 +169,23 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    for agent in ("codex", "claude"):
+        shared = getattr(args, f"{agent}_command")
+        native = getattr(args, f"{agent}_native_command")
+        visor = getattr(args, f"{agent}_visor_command")
+        if not shared and not (native and visor):
+            parser.error(
+                f"provide --{agent}-command or both condition-specific commands"
+            )
+
     if args.repeats < 1 or args.concurrency < 1 or args.timeout <= 0:
         parser.error("repeats, concurrency, and timeout must be greater than zero")
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     task_ids = [task["id"] for task in manifest["tasks"]]
+    revisions = {task.get("revision") for task in manifest["tasks"]}
+    if len(revisions) != 1 or None in revisions:
+        parser.error("all pilot tasks must declare the same immutable revision")
+    revision = revisions.pop()
     missing = [
         task for task in task_ids if not (args.contexts / f"{task}.json").is_file()
     ]
@@ -127,12 +199,24 @@ def main() -> int:
         if args.resume
         else all_cells
     )
+    if args.worktrees:
+        try:
+            workspaces = prepare_worktrees(
+                args.workspace.resolve(), args.worktrees.resolve(), cells, revision
+            )
+        except (ValueError, subprocess.CalledProcessError) as exc:
+            parser.error(str(exc))
+    else:
+        workspaces = {cell: args.workspace.resolve() for cell in cells}
+
     plan = {
-        "schema_version": 1,
+        "schema_version": 2,
         "seed": args.seed,
         "repeats": args.repeats,
         "concurrency": args.concurrency,
         "resume": args.resume,
+        "revision": revision,
+        "isolated_worktrees": bool(args.worktrees),
         "cells": [cell.__dict__ for cell in all_cells],
         "scheduled_cells": [cell.__dict__ for cell in cells],
     }
@@ -141,8 +225,11 @@ def main() -> int:
     )
 
     failures = 0
-    with ThreadPoolExecutor(max_workers=args.concurrency) as executor:
-        futures = {executor.submit(_run_cell, args, cell): cell for cell in cells}
+    executor = ThreadPoolExecutor(max_workers=args.concurrency)
+    futures = {
+        executor.submit(_run_cell, args, cell, workspaces[cell]): cell for cell in cells
+    }
+    try:
         completed_count = 0
         for future in as_completed(futures):
             cell, returncode = future.result()
@@ -153,6 +240,16 @@ def main() -> int:
                 f"{cell.condition} {cell.run_id}: exit {returncode}",
                 flush=True,
             )
+    except KeyboardInterrupt:
+        for future in futures:
+            future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+        print(
+            "Interrupted. Child benchmark processes were asked to stop.",
+            file=sys.stderr,
+        )
+        return 130
+    executor.shutdown(wait=True)
     return 1 if failures else 0
 
 

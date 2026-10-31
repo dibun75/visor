@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "records": [
     {
       "source": "p01-claude-code-native-r1.json",
@@ -3161,8 +3161,12 @@
         "successful_runs": 36,
         "median_duration_seconds": 30.113237919984385,
         "median_evidence_recall": 1.0,
+        "patch_successes": 0,
+        "patch_evaluated_runs": 0,
+        "patch_success_rate": null,
         "input_tokens": 384,
         "cached_input_tokens": 3491325,
+        "cache_creation_input_tokens": 0,
         "output_tokens": 90250,
         "cost_usd": 3.5244405000000003
       },
@@ -3171,8 +3175,12 @@
         "successful_runs": 36,
         "median_duration_seconds": 25.519888459006324,
         "median_evidence_recall": 1.0,
+        "patch_successes": 0,
+        "patch_evaluated_runs": 0,
+        "patch_success_rate": null,
         "input_tokens": 242,
         "cached_input_tokens": 3981913,
+        "cache_creation_input_tokens": 0,
         "output_tokens": 80171,
         "cost_usd": 4.431305300000001
       },
@@ -3181,8 +3189,12 @@
         "successful_runs": 36,
         "median_duration_seconds": 29.892029610986356,
         "median_evidence_recall": 1.0,
+        "patch_successes": 0,
+        "patch_evaluated_runs": 0,
+        "patch_success_rate": null,
         "input_tokens": 7457973,
         "cached_input_tokens": 6234752,
+        "cache_creation_input_tokens": 0,
         "output_tokens": 81868,
         "cost_usd": 0.0
       },
@@ -3191,8 +3203,12 @@
         "successful_runs": 36,
         "median_duration_seconds": 24.104069262975827,
         "median_evidence_recall": 1.0,
+        "patch_successes": 0,
+        "patch_evaluated_runs": 0,
+        "patch_success_rate": null,
         "input_tokens": 6167121,
         "cached_input_tokens": 5089792,
+        "cache_creation_input_tokens": 0,
         "output_tokens": 69243,
         "cost_usd": 0.0
       }
@@ -3200,14 +3216,141 @@
     "paired": {
       "claude-code": {
         "pairs": 36,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_input_tokens_delta": -4.0,
+        "input_tokens_delta_ci95": [
+          -6.0,
+          -2.0
+        ],
+        "median_input_tokens_delta_percent": -36.66666666666667,
+        "input_tokens_delta_percent_ci95": [
+          -50.0,
+          -22.5
+        ],
+        "median_cached_input_tokens_delta": 17975.0,
+        "cached_input_tokens_delta_ci95": [
+          -7509.0,
+          28222.0
+        ],
+        "median_cached_input_tokens_delta_percent": 22.051425520833522,
+        "cached_input_tokens_delta_percent_ci95": [
+          -7.564393605159514,
+          33.41660283109591
+        ],
+        "median_cache_creation_input_tokens_delta": 0.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_output_tokens_delta": -323.0,
+        "output_tokens_delta_ci95": [
+          -461.0,
+          -192.0
+        ],
+        "median_output_tokens_delta_percent": -12.67934148928822,
+        "output_tokens_delta_percent_ci95": [
+          -16.224299065420556,
+          -8.964480090519794
+        ],
+        "median_cost_usd_delta": 0.04265594999999999,
+        "cost_usd_delta_ci95": [
+          -0.01766120000000002,
+          0.0639314
+        ],
+        "median_cost_usd_delta_percent": 39.703491379203626,
+        "cost_usd_delta_percent_ci95": [
+          -19.79483894037366,
+          59.33994022119711
+        ],
         "median_duration_delta_seconds": -3.6271640904597007,
-        "median_evidence_recall_delta": 0.0
+        "duration_delta_seconds_ci95": [
+          -6.67562131449813,
+          -0.912325968965888
+        ],
+        "median_duration_delta_percent": -12.903477534301622,
+        "duration_delta_percent_ci95": [
+          -22.695269366413743,
+          -3.45924827461172
+        ]
       },
       "codex": {
         "pairs": 36,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_input_tokens_delta": -35310.0,
+        "input_tokens_delta_ci95": [
+          -54890.0,
+          -4308.0
+        ],
+        "median_input_tokens_delta_percent": -16.723730311111765,
+        "input_tokens_delta_percent_ci95": [
+          -29.23265592151366,
+          -2.0280862642820474
+        ],
+        "median_cached_input_tokens_delta": -29056.0,
+        "cached_input_tokens_delta_ci95": [
+          -46720.0,
+          -2176.0
+        ],
+        "median_cached_input_tokens_delta_percent": -18.48851385161261,
+        "cached_input_tokens_delta_percent_ci95": [
+          -30.638586956521742,
+          -1.2426900584795342
+        ],
+        "median_cache_creation_input_tokens_delta": 0.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_output_tokens_delta": -263.0,
+        "output_tokens_delta_ci95": [
+          -451.0,
+          -134.0
+        ],
+        "median_output_tokens_delta_percent": -14.270709106460439,
+        "output_tokens_delta_percent_ci95": [
+          -20.439387044190926,
+          -6.911447084233258
+        ],
+        "median_cost_usd_delta": 0.0,
+        "cost_usd_delta_ci95": [
+          0.0,
+          0.0
+        ],
         "median_duration_delta_seconds": -4.1733845850103535,
-        "median_evidence_recall_delta": 0.0
+        "duration_delta_seconds_ci95": [
+          -8.222744912025519,
+          -2.210612484952435
+        ],
+        "median_duration_delta_percent": -14.170168812965194,
+        "duration_delta_percent_ci95": [
+          -24.999841593454143,
+          -8.145041148715865
+        ]
       }
     }
+  },
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20261031,
+    "confidence": 0.95,
+    "source": "preserved scored records; raw provider logs were not republished"
   }
 }
