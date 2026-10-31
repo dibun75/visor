@@ -15,10 +15,55 @@ import sys
 import os
 
 
-def _init_workspace():
-    """Ensure WORKSPACE_ROOT is set for the engine."""
-    if not os.environ.get("WORKSPACE_ROOT"):
-        os.environ["WORKSPACE_ROOT"] = os.getcwd()
+def _init_workspace(args=None):
+    """Resolve and bind a project workspace before importing engine modules."""
+    from visor.workspace import resolve_local_workspace
+
+    if args and getattr(args, "retrieval_mode", None):
+        os.environ["VISOR_RETRIEVAL_MODE"] = args.retrieval_mode
+    workspace = resolve_local_workspace(
+        explicit=getattr(args, "workspace", None) if args else None
+    )
+    os.environ["WORKSPACE_ROOT"] = workspace
+    from visor.db.client import db_client
+
+    db_client.reinitialize(workspace)
+    db_client.register_workspace()
+    return db_client
+
+
+def cmd_index(args):
+    """Index the workspace without starting an IDE or file watcher."""
+    db_client = _init_workspace(args)
+    from visor.parser.watcher import index_workspace
+
+    index_workspace(db_client.workspace_root)
+    print(json.dumps(db_client.get_index_status(), indent=2))
+
+
+def cmd_status(args):
+    """Print index health and retrieval mode for scripts and users."""
+    print(json.dumps(_init_workspace(args).get_index_status(), indent=2))
+
+
+def cmd_doctor(args):
+    """Run no-network readiness checks for terminal and headless use."""
+    db_client = _init_workspace(args)
+    from visor.db.embeddings import semantic_dependencies_available, retrieval_mode
+
+    status = db_client.get_index_status()
+    print(
+        json.dumps(
+            {
+                "workspace": db_client.workspace_root,
+                "index_ready": status["ready"],
+                "retrieval_mode": retrieval_mode(),
+                "semantic_dependencies_available": semantic_dependencies_available(),
+                "recommendation": None if status["ready"] else "Run `visor index`.",
+            },
+            indent=2,
+        )
+    )
 
 
 def _format_output(data: dict, human: bool = True) -> str:
@@ -72,9 +117,7 @@ def _format_output(data: dict, human: bool = True) -> str:
     else:
         lines.append("  No relevant context found.")
         lines.append("  → V.I.S.O.R. needs to index your workspace first.")
-        lines.append(
-            "  → Run the MCP server or use the IDE extension to trigger indexing."
-        )
+        lines.append("  → Run `visor index` from the project root.")
 
     # Recommended next tools
     rec = data.get("recommended_next", [])
@@ -87,7 +130,7 @@ def _format_output(data: dict, human: bool = True) -> str:
 
 def cmd_context(args):
     """Run build_context with optional skill."""
-    _init_workspace()
+    _init_workspace(args)
     from visor.tools.context_engine import build_context
 
     result = build_context(args.query, skill_name=args.skill)
@@ -96,7 +139,7 @@ def cmd_context(args):
 
 def cmd_fix(args):
     """Shortcut: build_context with bug-fixer skill."""
-    _init_workspace()
+    _init_workspace(args)
     from visor.tools.context_engine import build_context
 
     result = build_context(args.query, skill_name="bug-fixer")
@@ -105,7 +148,7 @@ def cmd_fix(args):
 
 def cmd_explain(args):
     """Shortcut: build_context with architecture-explainer skill."""
-    _init_workspace()
+    _init_workspace(args)
     from visor.tools.context_engine import build_context
 
     result = build_context(args.query, skill_name="architecture-explainer")
@@ -114,7 +157,7 @@ def cmd_explain(args):
 
 def cmd_trace(args):
     """Trace architectural path between two files."""
-    _init_workspace()
+    _init_workspace(args)
     import networkx as nx
     from visor.db.client import db_client
 
@@ -146,7 +189,7 @@ def cmd_trace(args):
 
 def cmd_drift(args):
     """Check drift status for all tracked files."""
-    _init_workspace()
+    _init_workspace(args)
     from visor.db.client import db_client
 
     db_client.conn.commit()
@@ -199,55 +242,10 @@ def cmd_init(args):
     if visor_bin:
         mcp_entry = {"command": "visor-mcp", "args": [], "env": {}}
 
-    # Detect IDE configs
-    ide_configs = [
-        ("Antigravity", os.path.expanduser("~/.gemini/antigravity/mcp_config.json")),
-        ("Cursor", os.path.expanduser("~/.cursor/mcp.json")),
-    ]
-
-    config_written = False
-    for ide_name, config_path in ide_configs:
-        if os.path.exists(os.path.dirname(config_path)):
-            # Read existing config or create new
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    try:
-                        config = json.load(f)
-                    except json.JSONDecodeError:
-                        config = {}
-            else:
-                config = {}
-
-            if "mcpServers" not in config:
-                config["mcpServers"] = {}
-
-            if "visor" in config["mcpServers"]:
-                print(f"  ✓ {ide_name}: V.I.S.O.R. already configured at {config_path}")
-                config_written = True
-                continue
-
-            config["mcpServers"]["visor"] = mcp_entry
-
-            with open(config_path, "w") as f:
-                json.dump(config, f, indent=2)
-
-            print(f"  ✓ {ide_name}: Config written to {config_path}")
-            config_written = True
-
-    if not config_written:
-        # Fallback: print the config for manual setup
-        print("  No supported IDE detected. Add this to your MCP config:\n")
-        print(json.dumps({"visor": mcp_entry}, indent=2))
-        print()
-
-    print(f"\n{'=' * 60}")
-    print("  V.I.S.O.R. is ready!")
-    print(f"{'=' * 60}")
-    print("  Next steps:")
-    print("    1. Restart your IDE / AI session")
-    print("    2. Your AI agent now has access to 16 V.I.S.O.R. tools")
-    print("    3. Try: ask your agent to 'use build_context to find auth code'")
-    print(f"{'=' * 60}\n")
+    print("V.I.S.O.R. does not modify IDE configuration automatically.\n")
+    print("Review and add this entry to your MCP configuration:\n")
+    print(json.dumps({"visor": mcp_entry}, indent=2))
+    print("\nThen restart the client and run `visor index` in the project.")
 
 
 def main():
@@ -260,10 +258,22 @@ def main():
     parser.add_argument(
         "--version", "-v", action="version", version=f"V.I.S.O.R. {__version__}"
     )
+    parser.add_argument("--workspace", help="Project root (default: resolved from cwd)")
+    parser.add_argument(
+        "--retrieval-mode", choices=("lexical", "semantic"), help="Retrieval backend"
+    )
     sub = parser.add_subparsers(dest="command", help="Available commands")
 
+    # terminal-first workflow
+    p_index = sub.add_parser("index", help="Index a workspace for offline retrieval")
+    p_index.set_defaults(func=cmd_index)
+    p_status = sub.add_parser("status", help="Show index health")
+    p_status.set_defaults(func=cmd_status)
+    p_doctor = sub.add_parser("doctor", help="Check headless and offline readiness")
+    p_doctor.set_defaults(func=cmd_doctor)
+
     # visor init
-    p_init = sub.add_parser("init", help="Auto-configure V.I.S.O.R. for your IDE")
+    p_init = sub.add_parser("init", help="Print a V.I.S.O.R. MCP configuration entry")
     p_init.set_defaults(func=cmd_init)
 
     # visor context

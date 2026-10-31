@@ -55,13 +55,15 @@ V.I.S.O.R. checks file hashes and warns your AI if something changed since it la
 
 ## 🚀 Install (2 minutes)
 
-### Step 1: The One-Command Install
+### Step 1: Install and configure deliberately
 
-You no longer need to manually copy and paste JSON configuration files. V.I.S.O.R. includes an interactive setup wizard that automatically configures your IDE.
+Install the CLI, then review and add the displayed MCP entry to the client
+configuration you choose. V.I.S.O.R. does not edit IDE configuration files
+automatically.
 
 ```bash
-# This will auto-detect Cursor, VS Code, or Antigravity and set up the MCP connection
-uvx visor-mcp init
+uvx visor-mcp --help
+visor-mcp init  # prints a configuration entry; it does not write one
 ```
 
 *Note: Claude Code handles installation natively via `claude mcp add visor -- uvx visor-mcp`.*
@@ -115,18 +117,9 @@ Search for **"V.I.S.O.R. HUD"** in your editor's extension panel, or install fro
 
 ---
 
-## 🤔 The Proof: Why You Need V.I.S.O.R.
+## 🤔 Evaluate It in Your Workflow
 
-Every time your AI agent searches for context natively, it relies on brute-force text search (`grep` or ripgrep). This wastes tokens, misses dependencies, and hallucinates context.
-
-Here is what happens when you ask an AI to **"refactor the database client"**:
-
-| AI *Without* V.I.S.O.R. ❌ | AI *With* V.I.S.O.R. 🎯 |
-|---|---|
-| Searches `db_client` and reads 24 files blindly. | Instantly retrieves the `db_client.py` AST node. |
-| Uses **14,500 tokens** filling the context window. | Uses **1,800 tokens** (an 87% reduction). |
-| Misses `src/auth.py` because the word "database" wasn't explicitly mentioned in the file. | Identifies `src/auth.py` because it detects a hard dependency graph link. |
-| **Result:** A broken refactor because it didn't update the authentication service that depended on the database. | **Result:** A perfect refactor because it had complete, surgically precise context. |
+V.I.S.O.R. provides an AST-backed index, dependency graph, and focused context retrieval. Its effect on task success, latency, and context size depends on the repository, agent, model, and prompt. Use the reproducible paired-agent protocol in [`benchmarks/`](./benchmarks/) before making performance claims.
 
 ---
 
@@ -138,7 +131,7 @@ The heart of V.I.S.O.R. When your AI asks "find code related to X", it doesn't j
 - **Understands your question** — Detects if you're fixing a bug, exploring, or refactoring, and adjusts accordingly
 - **Scores code 5 different ways** — Combines meaning similarity, name matching, file proximity, code connections, and how recently the file was changed
 - **Explains its choices** — Every code snippet includes a plain-English reason for why it was picked
-- **Saves tokens** — Shows you exactly how many tokens it saved vs. a naive approach
+- **Saves tokens** — Reports estimated context sizes for the current retrieval result
 
 ### ⚡ Built-in Skills
 Pre-built strategies that change how V.I.S.O.R. finds code. Think of them as "modes":
@@ -211,7 +204,7 @@ $ visor fix "authentication crash"
 ============================================================
 ```
 
-**What happened:** Instead of your AI reading every file in the project, V.I.S.O.R. found the 4 most relevant functions and saved 80% of the tokens.
+**What happened:** This example illustrates the shape of a focused context response; its token estimates are not benchmark results.
 
 ---
 

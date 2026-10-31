@@ -25,7 +25,7 @@ from watchdog.events import (
 from watchdog.observers import Observer
 
 from visor.db.client import db_client
-from visor.db.embeddings import embedder
+from visor.db.embeddings import embedder, semantic_enabled
 from visor.parser.treesitter import ast_parser, _EXT_MAP
 
 from visor.parser.dependencies import canonical_file, normalize_edges
@@ -80,7 +80,11 @@ def index_file(file_path: str, skip_changelog: bool = False):
 
     nodes = []
     for node in result.nodes:
-        vector = embedder.encode(node.docstring if node.docstring else node.name)
+        vector = (
+            embedder.encode(node.docstring if node.docstring else node.name)
+            if semantic_enabled()
+            else None
+        )
         nodes.append(
             {
                 "node_type": node.node_type,

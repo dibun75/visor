@@ -25,6 +25,7 @@ async def run_session(
 ):
     env = os.environ.copy()
     env.pop("WORKSPACE_ROOT", None)
+    env.pop("VISOR_RETRIEVAL_MODE", None)
     env["VISOR_HOME"] = str(visor_home)
     params = StdioServerParameters(
         command=sys.executable,

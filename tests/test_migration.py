@@ -84,6 +84,7 @@ def test_index_readiness_rejects_missing_embeddings(test_db):
 def test_migrated_spoke_reindexes_and_becomes_searchable(
     tmp_path, monkeypatch, mock_embedding
 ):
+    monkeypatch.setenv("VISOR_RETRIEVAL_MODE", "semantic")
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     source = workspace / "app.py"

@@ -25,7 +25,7 @@ from typing import List, Dict, Any, Optional
 import networkx as nx
 
 from visor.db.client import db_client
-from visor.db.embeddings import embedder
+from visor.db.embeddings import embedder, semantic_enabled, retrieval_mode
 
 # ---------------------------------------------------------------------------
 # Scoring weights (tunable intent profiles)
@@ -256,9 +256,11 @@ def build_context(
             active_skill = skill_data["name"]
             skill_strategy = skill_data["strategy"]
 
-    # 2. Semantic search — wider net than default
-    query_vec = embedder.encode(query)
-    candidates = db_client.search_similar(query_vec, limit=max_results)
+    # 2. Retrieval — lexical by default; semantic is explicit opt-in.
+    if semantic_enabled():
+        candidates = db_client.search_similar(embedder.encode(query), limit=max_results)
+    else:
+        candidates = db_client.search_lexical(query, limit=max_results)
 
     if not candidates:
         return {
@@ -266,6 +268,7 @@ def build_context(
             "debug": {
                 "intent": "DEFAULT",
                 "skill": active_skill,
+                "retrieval_mode": retrieval_mode(),
                 "scores": {},
                 "reasoning": {},
             },
@@ -390,6 +393,7 @@ def build_context(
         "debug": {
             "intent": intent,
             "skill": active_skill,
+            "retrieval_mode": retrieval_mode(),
             "scores": {k: v for k, v in debug_scores.items() if k in payload_ids},
             "reasoning": {k: v for k, v in debug_reasoning.items() if k in payload_ids},
         },
