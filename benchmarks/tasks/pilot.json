@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "tasks": [
+    {"id": "p01", "category": "repository-exploration", "prompt": "Locate the workspace resolution path and explain its precedence.", "revision": "PINNED_REVISION"},
+    {"id": "p02", "category": "repository-exploration", "prompt": "Identify the code index lifecycle and its integrity checks.", "revision": "PINNED_REVISION"},
+    {"id": "p03", "category": "bug-fix", "prompt": "Diagnose a deliberately seeded import-resolution failure.", "revision": "PINNED_REVISION"},
+    {"id": "p04", "category": "bug-fix", "prompt": "Diagnose a deliberately seeded stale-index failure.", "revision": "PINNED_REVISION"},
+    {"id": "p05", "category": "refactor", "prompt": "Make a narrowly scoped rename while preserving call edges.", "revision": "PINNED_REVISION"},
+    {"id": "p06", "category": "refactor", "prompt": "Extract a focused helper without changing public behavior.", "revision": "PINNED_REVISION"},
+    {"id": "p07", "category": "test", "prompt": "Add a regression test for a fixed workspace edge case.", "revision": "PINNED_REVISION"},
+    {"id": "p08", "category": "test", "prompt": "Add a regression test for malformed retrieval configuration.", "revision": "PINNED_REVISION"},
+    {"id": "p09", "category": "dependency-analysis", "prompt": "Trace the impact of changing a parser output field.", "revision": "PINNED_REVISION"},
+    {"id": "p10", "category": "dependency-analysis", "prompt": "Find callers affected by a database schema migration.", "revision": "PINNED_REVISION"},
+    {"id": "p11", "category": "headless", "prompt": "Verify behavior with no IDE and no MCP client roots.", "revision": "PINNED_REVISION"},
+    {"id": "p12", "category": "headless", "prompt": "Verify an explicit workspace overrides advertised MCP roots.", "revision": "PINNED_REVISION"}
+  ]
+}
