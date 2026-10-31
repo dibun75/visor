@@ -22,6 +22,7 @@ python benchmarks/run.py \
   --manifest benchmarks/tasks/pilot.json --task p01 \
   --agent codex --condition visor --model MODEL_ID \
   --client-version "codex 0.152.0" \
+  --run-id r1 \
   --workspace /absolute/worktree \
   --context-file /absolute/visor-context.json \
   --command 'codex exec "{prompt} Use this V.I.S.O.R. context as leads: {context}"' \
@@ -30,6 +31,11 @@ python benchmarks/run.py \
 ```
 
 `--dry-run` writes the exact reproducibility record without invoking an agent.
+For the complete randomized matrix, use `run_pilot.py`. It writes `plan.json`
+before execution and supports `--resume`, which reruns only missing or nonzero
+cells while preserving successful records and their original run IDs. This is
+important for provider quotas and transient failures.
+
 Remove it only in an intentionally authorized environment. The command template
 is split into an argument vector before placeholders are expanded, so task
 prompts are never evaluated by a shell. Shell operators such as redirection and
@@ -40,6 +46,23 @@ The pilot manifest currently contains diagnostic prompts, not seeded coding
 fixtures. It validates navigation and explanation behavior only. Do not report
 it as evidence for bug-fix or refactoring performance until immutable fixture
 patches and machine-verifiable evaluators are added.
+
+## Scoring
+
+Each diagnostic task declares concrete file and symbol evidence. Summarize one or
+more completed records with:
+
+```bash
+python benchmarks/analyze.py benchmarks/results/*.json \
+  --output benchmarks/results/summary.json
+```
+
+The analyzer extracts provider-reported usage where available, computes evidence
+recall, and reports paired native-versus-V.I.S.O.R. deltas by task and run ID.
+Evidence recall checks whether an answer cites the predeclared implementation
+anchors; it is not a substitute for human correctness review. Codex traces do
+not currently expose monetary cost, so their cost remains zero/unknown rather
+than estimated.
 
 ## Outcomes and analysis
 

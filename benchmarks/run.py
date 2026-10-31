@@ -48,6 +48,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--timeout", type=float, default=1800.0)
     parser.add_argument("--client-version", required=True)
+    parser.add_argument("--run-id", required=True)
     parser.add_argument("--context-file", type=Path)
     args = parser.parse_args()
 
@@ -103,6 +104,7 @@ def main() -> int:
         "command": recorded_command,
         "timeout_seconds": args.timeout,
         "client_version": args.client_version,
+        "run_id": args.run_id,
         "machine": platform.platform(),
         "python_version": platform.python_version(),
         "context_sha256": hashlib.sha256(context.encode()).hexdigest()

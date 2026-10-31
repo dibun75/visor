@@ -5,7 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parents[1]))
+
+from benchmarks.run_pilot import Cell, completed_successfully
+
 RUNNER = Path(__file__).parents[1] / "benchmarks" / "run.py"
+
+PILOT = Path(__file__).parents[1] / "benchmarks" / "run_pilot.py"
 
 
 def _workspace(tmp_path: Path) -> tuple[Path, str]:
@@ -82,6 +88,8 @@ def _run(
             "test-model",
             "--client-version",
             "test-client",
+            "--run-id",
+            "r1",
             "--output",
             str(output),
             *extra,
@@ -167,3 +175,62 @@ def test_visor_context_is_explicit_and_redacted_from_command(tmp_path: Path) -> 
     assert "private context" not in json.dumps(record["command"])
     assert "<VISOR_CONTEXT>" in json.dumps(record["command"])
     assert record["context_sha256"]
+
+
+def test_pilot_dry_run_writes_all_four_cells(tmp_path: Path) -> None:
+    workspace, revision = _workspace(tmp_path)
+    manifest = _manifest(tmp_path, revision, "prompt")
+    contexts = tmp_path / "contexts"
+    contexts.mkdir()
+    (contexts / "p01.json").write_text("context", encoding="utf-8")
+    results = tmp_path / "results"
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(PILOT),
+            "--manifest",
+            str(manifest),
+            "--workspace",
+            str(workspace),
+            "--contexts",
+            str(contexts),
+            "--results",
+            str(results),
+            "--repeats",
+            "1",
+            "--concurrency",
+            "2",
+            "--codex-command",
+            "true {prompt} {context}",
+            "--codex-model",
+            "codex-test",
+            "--codex-client-version",
+            "codex-test",
+            "--claude-command",
+            "true {prompt} {context}",
+            "--claude-model",
+            "claude-test",
+            "--claude-client-version",
+            "claude-test",
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    records = list(results.glob("p01-*.json"))
+    assert len(records) == 4
+    plan = json.loads((results / "plan.json").read_text(encoding="utf-8"))
+    assert len(plan["cells"]) == 4
+
+
+def test_completed_successfully_supports_resume(tmp_path: Path) -> None:
+    cell = Cell("p01", "codex", "native", "r1")
+    assert not completed_successfully(tmp_path, cell)
+    path = tmp_path / "p01-codex-native-r1.json"
+    path.write_text('{"exit_code": 1}', encoding="utf-8")
+    assert not completed_successfully(tmp_path, cell)
+    path.write_text('{"exit_code": 0}', encoding="utf-8")
+    assert completed_successfully(tmp_path, cell)
