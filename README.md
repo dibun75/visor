@@ -167,7 +167,7 @@ Install **V.I.S.O.R. HUD** from the editor's extension view or [Open VSX](https:
 
 <div align="center">
   <img src="./docs/assets/hud_overview.png" alt="Optional V.I.S.O.R. HUD showing a dependency graph and telemetry panels" width="800"/>
-  <p>Existing HUD capture retained as a secondary visual. It was not recaptured for this revision, so the node count and token panel are not a current measurement. The current HUD reads <code>get_telemetry</code>: indexed node count, a local byte counter displayed as tokens processed, drift when files changed in the last 120 seconds, and agent focus after <code>set_hud_focus</code>.</p>
+  <p>Current 1280×720 capture generated from this repository's real <code>get_architecture_map</code>, <code>get_telemetry</code>, and <code>build_context</code> outputs. The token panel is V.I.S.O.R.'s local byte-based estimate, not measured agent usage. Reproduce it with <code>node demo/capture_hud.mjs</code>.</p>
 </div>
 
 ## Local-first and privacy

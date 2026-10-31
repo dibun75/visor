@@ -1,5 +1,31 @@
 # Recording the terminal demo
 
+## HUD still
+
+The HUD screenshot is generated from the current repository index and the real
+`get_architecture_map`, `get_telemetry`, and `build_context` MCP tool outputs.
+It does not use fixture telemetry or a hand-authored graph.
+
+```bash
+cd src/visor/hud
+npm ci
+cd ../../..
+node demo/capture_hud.mjs
+```
+
+The script runs a temporary local Vite server, injects the same messages that
+the VS Code extension sends to the webview, and writes
+`docs/assets/hud_overview.png`. Review the image for private paths before
+committing it.
+
+## Social preview
+
+`docs/assets/social-preview.png` is a 1280×640 solid-background image assembled
+from the project icon and a cropped frame of the real lexical terminal demo. It
+contains no benchmark result. GitHub's public API does not expose social-preview
+uploads; a repository owner uploads the reviewed file under **Settings → Social
+preview → Edit → Upload an image**.
+
 Record the CLI, not the 3D graph. The source of truth is [`terminal_demo.tape`](./terminal_demo.tape).
 
 ## Command

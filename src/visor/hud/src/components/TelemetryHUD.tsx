@@ -294,7 +294,7 @@ export const TelemetryHUD = ({ viewMode }: TelemetryHUDProps) => {
             )}
             
             {/* Manage Skills Button (Shown everywhere) */}
-            <div style={{ display: 'flex', justifyContent: isSidebar ? 'center' : 'flex-end', marginTop: isSidebar ? '8px' : 'auto', position: isSidebar ? 'static' : 'absolute', bottom: isSidebar ? 'auto' : '24px', right: isSidebar ? 'auto' : '24px', zIndex: 10, pointerEvents: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: isSidebar ? 'center' : 'flex-end', marginTop: isSidebar ? '8px' : 'auto', position: isSidebar ? 'static' : 'absolute', bottom: isSidebar ? 'auto' : '120px', right: isSidebar ? 'auto' : '24px', zIndex: 10, pointerEvents: 'auto' }}>
                     <button 
                         onClick={() => setShowSkillModal(true)}
                         style={{
