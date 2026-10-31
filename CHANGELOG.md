@@ -2,6 +2,16 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [Unreleased]
+
+### Maintenance
+
+- Upgraded GitHub Actions and CI JavaScript runtimes to Node.js 24.
+- Hardened the benchmark harness with immutable revisions, shell-safe arguments,
+  explicit context provenance, and enforced timeouts.
+- Added a security policy and Codex CLI installation guidance.
+- Updated supported HUD tooling and reproducible release installs.
+
 ## [1.2.0] — 2026-10-31
 
 ### Terminal-first and offline retrieval

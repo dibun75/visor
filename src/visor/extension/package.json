@@ -83,5 +83,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

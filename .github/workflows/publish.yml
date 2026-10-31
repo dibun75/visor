@@ -12,10 +12,10 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Build package
         run: uv build
@@ -27,22 +27,22 @@ jobs:
     name: Build & Publish to Open VSX
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Build Web HUD
         working-directory: src/visor/hud
         run: |
-          npm install
+          npm ci
           npm run build
 
       - name: Install Extension Dependencies
         working-directory: src/visor/extension
-        run: npm install
+        run: npm ci
 
       - name: Create Open VSX Namespace (if needed)
         working-directory: src/visor/extension
