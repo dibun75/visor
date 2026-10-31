@@ -673,46 +673,6 @@ const StatusIndicator: React.FC<{ status: 'SYNCING' | 'LIVE' | 'ERROR' }> = ({ s
   );
 };
 
-const QueryPanel: React.FC<{ contextResult: ContextResult | null }> = ({ contextResult }) => {
-  if (!contextResult || contextResult.context.length === 0) return null;
-
-  return (
-    <div style={{
-      position: 'absolute', top: 24, left: 24, zIndex: 10,
-      background: 'rgba(10, 12, 20, 0.75)', backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(0, 242, 254, 0.2)', borderRadius: '10px',
-      padding: '12px 16px', minWidth: '220px',
-      fontFamily: "'Inter', sans-serif", fontSize: '11px', color: '#e0e6ed',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.3)', pointerEvents: 'none', userSelect: 'none',
-    }}>
-      <div style={{ fontSize: '10px', color: '#8892a4', letterSpacing: '1px', marginBottom: '6px' }}>ACTIVE QUERY</div>
-      <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>"{contextResult.query}"</div>
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '6px' }}>
-        <div>
-          <div style={{ fontSize: '9px', color: '#8892a4', letterSpacing: '1px' }}>INTENT</div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#00f2fe' }}>{contextResult.debug.intent}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '9px', color: '#8892a4', letterSpacing: '1px' }}>NODES</div>
-          <div style={{ fontSize: '12px', fontWeight: 600 }}>{contextResult.context.length}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '9px', color: '#8892a4', letterSpacing: '1px' }}>REDUCTION</div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#06d6a0' }}>{contextResult.metrics.reduction_percent}%</div>
-        </div>
-      </div>
-      {contextResult.debug.skill && (
-        <div style={{
-          display: 'inline-block', fontSize: '9px', padding: '3px 8px', borderRadius: '4px',
-          background: 'rgba(0, 242, 254, 0.12)', color: '#00f2fe', fontWeight: 600, letterSpacing: '0.5px',
-        }}>
-          🧠 {contextResult.debug.skill}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const AgentFocusPanel: React.FC<{ agentFocus: { paths: string[], intent: string } | null }> = ({ agentFocus }) => {
   if (!agentFocus || !agentFocus.paths || agentFocus.paths.length === 0) return null;
 
@@ -870,7 +830,6 @@ export const GraphCanvas: React.FC = () => {
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
       <StatusIndicator status={syncStatus} />
-      <QueryPanel contextResult={contextResult} />
       <AgentFocusPanel agentFocus={agentFocus} />
       <DriftPanel driftFiles={driftFiles} />
       <EdgeLegend hasFocusPanel={agentFocus !== null && agentFocus.paths.length > 0} />
