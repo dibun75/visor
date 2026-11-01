@@ -38,7 +38,7 @@ No. V.I.S.O.R. does not generate code. Codex, Claude Code, and other configured 
 
 ### What languages can V.I.S.O.R. index?
 
-Eight languages: **Python**, **TypeScript**, **JavaScript**, **Go**, **Rust**, **Java**, **C**, and **C++**. `.tsx` uses the TypeScript parser's TSX variant. It is not a separate language.
+Nine languages: **Python**, **TypeScript**, **JavaScript**, **Go**, **Rust**, **Java**, **C**, **C++**, and **C#**. `.tsx` uses the TypeScript parser's TSX variant. It is not a separate language.
 
 V.I.S.O.R. uses Tree-sitter for AST parsing, so adding new languages is straightforward (~15 lines of code) — see [CONTRIBUTING.md](../CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 
