@@ -199,7 +199,7 @@ Install **V.I.S.O.R. HUD** from the editor's extension view or [Open VSX](https:
 
 ## Languages
 
-Tree-sitter parsing covers eight languages. TSX uses the TypeScript grammar's TSX variant. It is not a ninth language.
+Tree-sitter parsing covers nine languages. TSX uses the TypeScript grammar's TSX variant. It is not a tenth language.
 
 | Language | Extensions |
 | --- | --- |
@@ -211,6 +211,7 @@ Tree-sitter parsing covers eight languages. TSX uses the TypeScript grammar's TS
 | Java | `.java` |
 | C | `.c`, `.h` |
 | C++ | `.cpp`, `.cc`, `.cxx`, `.hpp` |
+| C# | `.cs` |
 
 Adding a language is a small parser change. See [CONTRIBUTING.md](./CONTRIBUTING.md#how-to-add-a-new-language-most-common-contribution).
 

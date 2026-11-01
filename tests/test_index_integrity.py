@@ -179,6 +179,11 @@ def test_index_file_is_repeatable_and_replaces_changed_symbols(
         ),
         ("main.c", "util.h", '#include "util.h"\n'),
         ("main.cpp", "util.hpp", '#include "util.hpp"\n'),
+        (
+            "src/Demo/App.cs",
+            "src/Demo/Lib.cs",
+            "using Demo.Lib;\nnamespace Demo { class App {} }\n",
+        ),
     ],
 )
 def test_real_parser_edges_resolve_to_workspace_files(
@@ -314,6 +319,86 @@ def test_changed_target_invalidates_stale_internal_call_edges(test_db, mock_embe
         "SELECT to_node, target_symbol, resolution FROM edges "
         "WHERE from_node = '/workspace/caller.py'"
     ).fetchone() == ("old_name", "old_name", "unresolved")
+
+
+def test_csharp_system_using_is_external(tmp_path, test_db):
+    source = tmp_path / "App.cs"
+    source.write_text("using System;\nclass App {}\n", encoding="utf-8")
+    parsed = ast_parser.parse_file(str(source))
+    normalized = normalize_edges(
+        source_file=str(source),
+        parser_edges=parsed.edges,
+        workspace_root=str(tmp_path),
+        db_client=test_db,
+    )
+    using = next(edge for edge in normalized if edge["raw_target"] == "System")
+    assert using["resolution"] == "external"
+
+
+def test_csharp_reindex_and_deletion(tmp_path, test_db, monkeypatch):
+    source = tmp_path / "Service.cs"
+    source.write_text(
+        "namespace Demo {\n  public class Service {\n    public void Apply() {}\n  }\n}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("VISOR_RETRIEVAL_MODE", "lexical")
+    monkeypatch.setattr(watcher, "db_client", test_db)
+    test_db.workspace_root = str(tmp_path)
+
+    watcher.index_file(str(source), skip_changelog=True)
+    indexed = canonical_file(source)
+    names = {
+        row[0]
+        for row in test_db.conn.execute(
+            "SELECT name FROM code_nodes WHERE file_path = ?", (indexed,)
+        )
+    }
+    assert "Service" in names
+    assert "Apply" in names
+
+    source.write_text(
+        "namespace Demo {\n  public class Service {\n    public void Replace() {}\n  }\n}\n",
+        encoding="utf-8",
+    )
+    watcher.index_file(str(source), skip_changelog=True)
+    names = {
+        row[0]
+        for row in test_db.conn.execute(
+            "SELECT name FROM code_nodes WHERE file_path = ?", (indexed,)
+        )
+    }
+    assert "Replace" in names
+    assert "Apply" not in names
+
+    source.unlink()
+    watcher.index_workspace(str(tmp_path))
+    assert test_db.get_indexed_file_hash(indexed) is None
+    assert (
+        test_db.conn.execute(
+            "SELECT COUNT(*) FROM code_nodes WHERE file_path = ?", (indexed,)
+        ).fetchone()[0]
+        == 0
+    )
+
+
+def test_csharp_context_retrieval_finds_symbols(tmp_path, test_db, monkeypatch):
+    source = tmp_path / "Service.cs"
+    source.write_text(
+        "namespace Demo {\n  public class Service {\n    public void ApplyDiscount() {}\n  }\n}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("VISOR_RETRIEVAL_MODE", "lexical")
+    monkeypatch.setattr(watcher, "db_client", test_db)
+    test_db.workspace_root = str(tmp_path)
+    watcher.index_file(str(source), skip_changelog=True)
+    test_db.mark_index_ready()
+
+    from visor.tools.context_engine import build_context
+
+    payload = build_context("ApplyDiscount service")
+    names = {item["name"] for item in payload["context"]}
+    assert "ApplyDiscount" in names or "Service" in names
+    assert payload["debug"]["retrieval_mode"] == "lexical"
 
 
 def test_system_include_is_external_not_missing_workspace_file(tmp_path, test_db):

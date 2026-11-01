@@ -21,6 +21,7 @@ SOURCE_EXTENSIONS = {
     ".cc",
     ".cxx",
     ".hpp",
+    ".cs",
 }
 
 _INDEX_NAMES = (
