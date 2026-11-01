@@ -2,6 +2,13 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.3.0] — 2026-11-01
+
+### C# support
+
+- Added tree-sitter parsing for `.cs` files. The indexer extracts namespaces, classes, structs, interfaces, records, enums, methods, constructors, and using directives.
+- Added call edges for direct calls and member-access calls. This is structural extraction, not C# type or overload resolution.
+
 ## [1.2.1] — 2026-10-31
 
 ### Patch benchmark

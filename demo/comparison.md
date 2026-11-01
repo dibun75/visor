@@ -7,7 +7,7 @@ Native agent search remains the right fallback. The Agent Skill tells the agent 
 | Capability | In this repository |
 | --- | --- |
 | Persistent local repository index | `visor index` writes a project graph under `~/.visor/` |
-| AST symbol extraction | Tree-sitter in `src/visor/parser/treesitter.py` for eight languages |
+| AST symbol extraction | Tree-sitter in `src/visor/parser/treesitter.py` for nine languages |
 | Dependency graph | Import edges queried by `trace`, `impact_analysis`, and context scoring |
 | Deterministic terminal interface | `visor doctor`, `index`, `status`, `context`, `trace`, `drift` |
 | MCP integration | `uvx visor-mcp` over stdio, 17 tools |

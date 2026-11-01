@@ -19,6 +19,7 @@ import tree_sitter_rust
 import tree_sitter_java
 import tree_sitter_c
 import tree_sitter_cpp
+import tree_sitter_c_sharp
 
 # ---------------------------------------------------------------------------
 # Language setup
@@ -33,6 +34,7 @@ _LANG_RUST = tree_sitter.Language(tree_sitter_rust.language())
 _LANG_JAVA = tree_sitter.Language(tree_sitter_java.language())
 _LANG_C = tree_sitter.Language(tree_sitter_c.language())
 _LANG_CPP = tree_sitter.Language(tree_sitter_cpp.language())
+_LANG_CSHARP = tree_sitter.Language(tree_sitter_c_sharp.language())
 
 _EXT_MAP = {
     ".py": _LANG_PYTHON,
@@ -49,6 +51,7 @@ _EXT_MAP = {
     ".cc": _LANG_CPP,
     ".cxx": _LANG_CPP,
     ".hpp": _LANG_CPP,
+    ".cs": _LANG_CSHARP,
 }
 
 # ---------------------------------------------------------------------------
@@ -105,6 +108,22 @@ _QUERIES = {
         "class": "(class_specifier name: (type_identifier) @name) @node",
         "import": "(preproc_include path: [(string_literal) (system_lib_string)] @module) @node",
     },
+    _LANG_CSHARP: {
+        "function": """
+            (method_declaration name: (identifier) @name) @node
+            (constructor_declaration name: (identifier) @name) @node
+        """,
+        "class": """
+            (namespace_declaration name: [(identifier) (qualified_name)] @name) @node
+            (file_scoped_namespace_declaration name: [(identifier) (qualified_name)] @name) @node
+            (class_declaration name: (identifier) @name) @node
+            (interface_declaration name: (identifier) @name) @node
+            (struct_declaration name: (identifier) @name) @node
+            (record_declaration name: (identifier) @name) @node
+            (enum_declaration name: (identifier) @name) @node
+        """,
+        "import": "(using_directive) @module",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -122,6 +141,11 @@ _CALL_QUERIES = {
     _LANG_JAVA: "(method_invocation name: (identifier) @callee) @call",
     _LANG_C: "(call_expression function: (identifier) @callee) @call",
     _LANG_CPP: "(call_expression function: [(identifier) @callee (field_expression field: (field_identifier) @callee)]) @call",
+    _LANG_CSHARP: """
+    (invocation_expression function: (identifier) @callee) @call
+    (invocation_expression
+      function: (member_access_expression name: (identifier) @callee)) @call
+    """,
 }
 
 # ---------------------------------------------------------------------------
@@ -146,6 +170,17 @@ class ParseResult:
     nodes: List[ASTNode] = field(default_factory=list)
     edges: List[dict] = field(default_factory=list)
     error: Optional[str] = None
+
+
+def _csharp_using_target(node) -> str | None:
+    """Imported namespace from a C# using directive, ignoring aliases."""
+    for child in node.children:
+        if child.type == "qualified_name" and child.text:
+            return child.text.decode("utf-8", errors="replace")
+    for child in node.children:
+        if child.type == "identifier" and child.text:
+            return child.text.decode("utf-8", errors="replace")
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +249,12 @@ class ASTParser:
                         if name_node.text
                         else ""
                     )
+                    if outer_node.type == "using_directive":
+                        imported = _csharp_using_target(outer_node)
+                        if not imported:
+                            continue
+                        name_text = imported
+
                     # Strip quotes for import module names
                     if node_type == "import":
                         name_text = name_text.strip("'\"")
