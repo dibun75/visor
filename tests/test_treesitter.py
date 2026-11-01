@@ -192,9 +192,21 @@ class TestExistingLanguagesUnchanged:
 
     def test_python_typescript_and_javascript_symbols(self, tmp_path):
         samples = {
-            "app.py": ("def helper():\n    return 1\nclass Box:\n    pass\n", "helper", "Box"),
-            "app.ts": ("function helper() { return 1; }\nclass Box {}\n", "helper", "Box"),
-            "app.js": ("function helper() { return 1; }\nclass Box {}\n", "helper", "Box"),
+            "app.py": (
+                "def helper():\n    return 1\nclass Box:\n    pass\n",
+                "helper",
+                "Box",
+            ),
+            "app.ts": (
+                "function helper() { return 1; }\nclass Box {}\n",
+                "helper",
+                "Box",
+            ),
+            "app.js": (
+                "function helper() { return 1; }\nclass Box {}\n",
+                "helper",
+                "Box",
+            ),
         }
         for filename, (source, function_name, class_name) in samples.items():
             path = tmp_path / filename
