@@ -20,6 +20,7 @@ Pipeline:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 import networkx as nx
@@ -160,6 +161,11 @@ def _generate_reasoning(
         reasons.append("Reachable via dependency chain")
     if signals.get("recency", 0) > 0:
         reasons.append("Recently modified file (boosted)")
+    feedback = signals.get("feedback", 0)
+    if feedback > 0:
+        reasons.append("Boosted by prior developer feedback for a similar query")
+    elif feedback < 0:
+        reasons.append("Reduced by prior developer feedback for a similar query")
     if not lexical and signals.get("embedding", 0) > 0:
         reasons.append(f"Semantic similarity (score: {signals['embedding']})")
     if reasons:
@@ -269,11 +275,25 @@ def build_context(
             active_skill = skill_data["name"]
             skill_strategy = skill_data["strategy"]
 
-    # 2. Retrieval — lexical by default; semantic is explicit opt-in.
+    # 2. Intent is fixed before retrieval so feedback can use the same profile.
+    query_tokens = [token.lower() for token in query.split() if len(token) > 2]
+    intent = _classify_intent(query)
+    if skill_strategy:
+        override_intent = skill_strategy.get("intent_override")
+        if override_intent and override_intent in INTENT_PROFILES:
+            intent = override_intent
+
+    # 3. Retrieval — lexical by default; semantic is explicit opt-in.
     if semantic_enabled():
         candidates = db_client.search_similar(embedder.encode(query), limit=max_results)
     else:
         candidates = db_client.search_lexical(query, limit=max_results)
+
+    from visor.feedback import applicable_feedback, inject_missing_candidates
+
+    feedback_rows = applicable_feedback(query, intent)
+    candidates = inject_missing_candidates(candidates, feedback_rows)
+    feedback_by_path = {row["absolute_path"]: row for row in feedback_rows}
 
     if not candidates:
         return {
@@ -309,16 +329,7 @@ def build_context(
         ).items():
             hop_map[target] = hops
 
-    # 5. Tokenise query and map intent
-    query_tokens = [t.lower() for t in query.split() if len(t) > 2]
-    intent = _classify_intent(query)
-
-    # 6. Apply skill strategy overrides
-    if skill_strategy:
-        override_intent = skill_strategy.get("intent_override")
-        if override_intent and override_intent in INTENT_PROFILES:
-            intent = override_intent
-
+    # 5. Apply skill strategy overrides. Intent was resolved before retrieval.
     weights = dict(INTENT_PROFILES[intent])  # Copy so we don't mutate global
 
     if skill_strategy:
@@ -335,10 +346,22 @@ def build_context(
     scored: List[Dict[str, Any]] = []
     debug_scores = {}
     debug_reasoning = {}
+    applied_ids: list[str] = []
     for node in candidates:
         score, signals = _score_node(
             node, query_tokens, anchor_file, anchor_dist, hop_map, recency_map, weights
         )
+        try:
+            resolved_path = str(Path(node["file_path"]).resolve())
+        except OSError:
+            resolved_path = node["file_path"]
+        feedback = feedback_by_path.get(resolved_path)
+        adjustment = float(feedback["adjustment"]) if feedback else 0.0
+        if feedback and feedback["id"] not in applied_ids:
+            applied_ids.append(feedback["id"])
+        score += adjustment
+        signals["feedback"] = round(adjustment, 4)
+        signals["final"] = round(score, 4)
         scored.append({**node, "relevance_score": round(score, 4)})
         node_id = str(node.get("id", "unknown"))
         debug_scores[node_id] = signals
@@ -346,8 +369,19 @@ def build_context(
             signals, retrieval=node.get("retrieval") or retrieval_mode()
         )
 
-    # 9. Sort descending by relevance
-    scored.sort(key=lambda n: n["relevance_score"], reverse=True)
+    from visor.feedback import mark_feedback_applied
+
+    mark_feedback_applied(applied_ids)
+
+    # 9. Sort by score, then by stable path, symbol, and id.
+    scored.sort(
+        key=lambda node: (
+            -node["relevance_score"],
+            node.get("file_path") or "",
+            node.get("name") or "",
+            str(node.get("id") or ""),
+        )
+    )
 
     # 10. Estimate raw token cost (without V.I.S.O.R.) — full file approach
     estimated_without = 0

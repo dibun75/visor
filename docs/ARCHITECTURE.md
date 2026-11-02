@@ -269,6 +269,26 @@ Directed dependency relationships between files.
 #### `vec_code_nodes` (virtual — sqlite-vec)
 Stores 384-dimensional float embeddings for ANN search.
 
+#### `context_feedback`
+Explicit retrieval verdicts for one workspace. Paths are project-relative. The table is created for existing spoke databases on open.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | TEXT PK | Stable record id |
+| `workspace_hash` | TEXT | Workspace that owns the record |
+| `query` | TEXT | Query text supplied by the user or agent |
+| `query_signature` | TEXT | Sorted unique tokens longer than two characters |
+| `intent` | TEXT | Intent detected when the verdict was recorded |
+| `relative_path` | TEXT | Project-relative file path |
+| `verdict` | TEXT | `useful`, `irrelevant`, or `missing` |
+| `reason` | TEXT | Optional note |
+| `file_hash` | TEXT | SHA-256 of the file at record time |
+| `index_revision` | INTEGER | Spoke graph revision at record time |
+| `created_at` | TEXT | ISO-8601 UTC creation time |
+| `updated_at` | TEXT | ISO-8601 UTC update time; decay uses this |
+| `application_count` | INTEGER | Times the record affected a later ranking |
+| `last_applied_at` | TEXT | Last time it affected a ranking |
+
 #### `file_changelog`
 Records file modification events for timestamp-based drift detection.
 
@@ -339,7 +359,10 @@ score =
   W_embed   × embedding_similarity (1 - normalised_distance / 2)
   W_dep     × dependency_proximity (1 / (1 + hop_count))
   W_recency × file_recency         (time-decayed modification freshness)
+  + feedback_adjustment
 ```
+
+`feedback_adjustment` is 0 unless an explicit feedback record matches. A match requires Jaccard token overlap of at least 0.6, the same intent, and a file that still exists inside the workspace. Useful and missing verdicts add at most `+0.35`; irrelevant subtracts at most `0.35`. The value is multiplied by `0.5 ** (age_days / 30)`. One record is kept per workspace, normalized query, and project-relative file. Feedback is not an import or call edge. On a tie, ordering continues by file path, symbol name, and node id.
 
 ### Intent Profiles
 
