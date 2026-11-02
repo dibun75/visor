@@ -2,7 +2,7 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
-## [Unreleased]
+## [1.4.1] — 2026-11-02
 
 ### Extension
 
@@ -19,7 +19,8 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ### Packaging and validation
 
-- The Python wheel no longer includes the HUD or extension source.
+- The Python wheel no longer includes the HUD or extension source, so the published package stays in the 60 KB range.
+- Removed generated Playwright output, unused HUD template assets, the unused square logo, the unused drift image, and the obsolete bootstrap script.
 - CI checks the whole tree, wheel contents, Playwright HUD tests, extension compilation, and VSIX packaging.
 
 ### Documentation
