@@ -4,7 +4,7 @@
   <p><strong>Local-first context retrieval for Codex, Claude Code, and terminal coding agents.</strong></p>
 </div>
 
-[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml)
+[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![Open VSX downloads](https://img.shields.io/open-vsx/dt/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml)
 
 V.I.S.O.R. is a local-first context engine for Codex, Claude Code, and other coding agents. It builds an AST-backed repository index and dependency graph, then returns focused code context with the files, symbols, and reasons behind each selection.
 
@@ -23,6 +23,8 @@ uv run visor context "resolve local workspace project root"
 ![Terminal demo: doctor, index, and context on this repository](./docs/assets/terminal-demo.gif)
 
 Recorded from [`demo/terminal_demo.tape`](./demo/terminal_demo.tape). The same take is also at [`docs/assets/terminal-demo.mp4`](./docs/assets/terminal-demo.mp4).
+
+If V.I.S.O.R. is useful in your workflow, consider [starring the repository](https://github.com/dibun75/visor)—it helps other coding-agent users discover it.
 
 ## Quick Start
 
@@ -177,6 +179,8 @@ V.I.S.O.R. complements normal repository inspection, including an agent's own se
 Each context response also includes an internal size estimate: tokens for the full text of candidate files compared with tokens for the returned snippets. That estimate is not a measured change in agent token use.
 
 ## Optional visual HUD
+
+Prefer a visual graph? Install the optional V.I.S.O.R. HUD from [Open VSX](https://open-vsx.org/extension/dibun75/visor-hud).
 
 The HUD is a VS Code extension that draws the indexed graph and shows local telemetry. The MCP server and CLI do not need it.
 
