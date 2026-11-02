@@ -72,7 +72,14 @@ The extension targets VS Code `^1.80.0` and other editors that install Open VSX 
 
 The MCP server indexes the workspace and can answer `get_architecture_map`. The webview renders that map. Structural import edges and function-call edges use the legend in the view. Selecting or focusing a node depends on the running HUD and on `set_hud_focus`; this page does not claim a particular focus state for the still above.
 
-Project documentation: [github.com/dibun75/visor](https://github.com/dibun75/visor).
+## Links
+
+- [GitHub repository](https://github.com/dibun75/visor)
+- [Issue tracker](https://github.com/dibun75/visor/issues)
+- [Documentation](https://github.com/dibun75/visor#documentation)
+- [Open VSX listing](https://open-vsx.org/extension/dibun75/visor-hud)
+
+Useful bug reports are welcome. A [GitHub star](https://github.com/dibun75/visor) helps other coding-agent users discover the project.
 
 ## License
 
