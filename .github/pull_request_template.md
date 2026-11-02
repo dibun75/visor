@@ -1,6 +1,10 @@
 ## What does this PR do?
 
-<!-- Brief description of the change -->
+<!-- Brief description of the change and why it is needed. -->
+
+## Related issue
+
+Fixes #
 
 ## Type of Change
 
@@ -13,13 +17,35 @@
 
 ## Checklist
 
-- [ ] Tests added/updated
-- [ ] `uv run pytest tests/ -v` passes locally
-- [ ] `uv run ruff format --check .` and `uv run ruff check .` pass
-- [ ] Docs updated (if user-facing change)
-- [ ] HUD/extension checks pass (if frontend or extension changed)
-- [ ] `uv build` succeeds (if packaging changed)
+- [ ] Tests cover the change
+- [ ] Public documentation is updated when behavior changes
+- [ ] Unrelated changes are left out
+- [ ] Python checks pass for Python changes:
 
-## Related Issue
+```bash
+uv sync --dev
+uv run ruff format --check .
+uv run ruff check .
+uv run pytest -q
+uv build
+```
 
-Fixes #
+- [ ] HUD checks pass when `src/visor/hud` changes:
+
+```bash
+cd src/visor/hud
+npm ci
+npm run lint
+npm run build
+npx playwright test
+```
+
+- [ ] Extension checks pass when `src/visor/extension` changes:
+
+```bash
+cd src/visor/extension
+npm ci
+npm run check-types
+npm run compile
+npx --yes @vscode/vsce package --no-dependencies --out /tmp/visor-hud-audit.vsix
+```

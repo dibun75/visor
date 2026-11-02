@@ -2,13 +2,60 @@
 
 Thanks for your interest in contributing to V.I.S.O.R.! This guide will help you get started.
 
-## Quick Start
+## Prerequisites
+
+- Git
+- Python 3.10 or newer
+- [uv](https://docs.astral.sh/uv/)
+- Node.js and npm only when changing the HUD or the extension
+
+## Contribution workflow
+
+1. Fork the repository.
+2. Clone your fork.
+3. Create a focused branch.
+4. Make one logical change.
+5. Add or update tests.
+6. Run the checks that match the files you changed.
+7. Push the branch to your fork.
+8. Open a pull request against `dibun75/visor:main`.
+
+## Before starting
+
+Search existing issues and pull requests first. Open or comment on an issue before a large architectural change. Never put credentials, private source code, or personal data in issues, pull requests, or logs.
+
+## Python checks
 
 ```bash
-git clone https://github.com/dibun75/visor.git
-cd visor
 uv sync --dev
-uv run pytest tests/ -v
+uv run ruff format --check .
+uv run ruff check .
+uv run pytest -q
+uv build
+```
+
+## HUD checks
+
+Run these when you change `src/visor/hud`:
+
+```bash
+cd src/visor/hud
+npm ci
+npm run lint
+npm run build
+npx playwright test
+```
+
+## Extension checks
+
+Run these when you change `src/visor/extension`:
+
+```bash
+cd src/visor/extension
+npm ci
+npm run check-types
+npm run compile
+npx --yes @vscode/vsce package --no-dependencies --out /tmp/visor-hud-audit.vsix
 ```
 
 ## How to Add a New Language (Most Common Contribution)
@@ -92,21 +139,23 @@ Adding a new language is the easiest way to contribute. Each language needs a gr
 2. Include: `name`, `description`, `content` (instructions), and optional `strategy` (JSON with `intent_override`, `scoring_bias`, and `tool_priority`)
 3. Test via `visor context --skill "your-skill" "test query"`
 
-## Development Guidelines
+## Pull requests
 
-- **Tests are required** for new features
-- **Run the linter** before submitting: `uv run ruff check .`
-- **Keep it simple** — V.I.S.O.R. values pragmatic code over clever code
-- **One PR per feature** — don't bundle unrelated changes
+- Explain what changed and why.
+- Link the related issue.
+- Include tests.
+- Update public documentation when the change affects user-facing behavior.
+- Keep unrelated changes out of the pull request.
+- Respond to review comments.
+- Wait for all checks.
 
-## PR Checklist
+## Security reports
 
-Before submitting a pull request:
+Read [SECURITY.md](SECURITY.md). Suspected vulnerabilities must not be filed as public issues. Use the private report form linked there.
 
-- [ ] Tests pass: `uv run pytest tests/ -v`
-- [ ] Linter passes: `uv run ruff check .`
-- [ ] Docs updated (if user-facing change)
-- [ ] Commit messages are descriptive
+## Community
+
+Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Questions?
 
