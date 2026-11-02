@@ -113,6 +113,10 @@ def score_record(record: dict[str, Any], source: Path) -> dict[str, Any]:
         "agent": record["agent"],
         "condition": record["condition"],
         "run_id": record["run_id"],
+        "model": record.get("model"),
+        "client_version": record.get("client_version"),
+        "fixture_revision": record["task"].get("revision"),
+        "context_sha256": record.get("context_sha256"),
         "exit_code": record["exit_code"],
         "duration_seconds": record["duration_seconds"],
         "answer_characters": len(answer),
@@ -233,7 +237,14 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 else None
             ),
             "median_initial_gold_recall": (
-                _median(items, "initial_gold_recall")
+                _median(
+                    [
+                        item
+                        for item in items
+                        if item.get("initial_gold_recall") is not None
+                    ],
+                    "initial_gold_recall",
+                )
                 if any(item.get("initial_gold_recall") is not None for item in items)
                 else None
             ),
@@ -260,6 +271,7 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     for row in rows:
         by_pair[(row["agent"], row["task"], row["run_id"])][row["condition"]] = row
     deltas: dict[str, list[dict[str, float]]] = defaultdict(list)
+    patch_transitions: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     metrics = (
         "duration_seconds",
         "evidence_recall",
@@ -286,6 +298,13 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
         visor_patch = pair["visor"].get("patch_success")
         if native_patch is not None and visor_patch is not None:
             item["patch_success"] = float(bool(visor_patch)) - float(bool(native_patch))
+            transition = {
+                (True, True): "both_passed",
+                (True, False): "native_only",
+                (False, True): "visor_only",
+                (False, False): "both_failed",
+            }[(bool(native_patch), bool(visor_patch))]
+            patch_transitions[agent][transition] += 1
         deltas[agent].append(item)
 
     paired = {}
@@ -322,6 +341,10 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "failed_records": len(failures),
         "cells": cells,
         "paired": paired,
+        "patch_transitions": {
+            agent: dict(sorted(counts.items()))
+            for agent, counts in sorted(patch_transitions.items())
+        },
         "outcomes": dict(sorted(outcome_counts.items())),
         "outcomes_by_cell": {
             key: dict(sorted(counts.items()))

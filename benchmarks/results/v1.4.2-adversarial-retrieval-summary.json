@@ -1,0 +1,1956 @@
+{
+  "schema_version": 2,
+  "bootstrap": {
+    "samples": 10000,
+    "seed": 20261031,
+    "confidence": 0.95
+  },
+  "records": [
+    {
+      "source": "hidden-invoice-rounding-claude-code-native-r1.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 18.74173762695864,
+      "answer_characters": 786,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 85202,
+      "cache_creation_input_tokens": 4972,
+      "output_tokens": 963,
+      "cost_usd": 0.038062200000000004
+    },
+    {
+      "source": "hidden-invoice-rounding-claude-code-native-r2.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 11.718231674050912,
+      "answer_characters": 590,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 10,
+      "cached_input_tokens": 70052,
+      "cache_creation_input_tokens": 4723,
+      "output_tokens": 776,
+      "cost_usd": 0.033677200000000004
+    },
+    {
+      "source": "hidden-invoice-rounding-claude-code-native-r3.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 12.81625128898304,
+      "answer_characters": 777,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 10,
+      "cached_input_tokens": 68431,
+      "cache_creation_input_tokens": 6567,
+      "output_tokens": 990,
+      "cost_usd": 0.043031099999999996
+    },
+    {
+      "source": "hidden-invoice-rounding-claude-code-visor-r1.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 12.96375607396476,
+      "answer_characters": 649,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 74314,
+      "cache_creation_input_tokens": 4635,
+      "output_tokens": 837,
+      "cost_usd": 0.0343614
+    },
+    {
+      "source": "hidden-invoice-rounding-claude-code-visor-r2.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 14.19891762000043,
+      "answer_characters": 615,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 72828,
+      "cache_creation_input_tokens": 6200,
+      "output_tokens": 798,
+      "cost_usd": 0.0400828
+    },
+    {
+      "source": "hidden-invoice-rounding-claude-code-visor-r3.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 13.965624396922067,
+      "answer_characters": 765,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 72988,
+      "cache_creation_input_tokens": 6312,
+      "output_tokens": 967,
+      "cost_usd": 0.0422368
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-native-r1.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 53.27890868403483,
+      "answer_characters": 311,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 238802,
+      "cached_input_tokens": 230272,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2447,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-native-r2.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 38.65775068697985,
+      "answer_characters": 434,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 167830,
+      "cached_input_tokens": 157568,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2099,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-native-r3.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 34.322184988996014,
+      "answer_characters": 329,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 150975,
+      "cached_input_tokens": 145152,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1975,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-visor-r1.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 42.858385307947174,
+      "answer_characters": 342,
+      "evidence_hits": [
+        "settle"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 141981,
+      "cached_input_tokens": 135808,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2162,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-visor-r2.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 42.91812307294458,
+      "answer_characters": 360,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 140906,
+      "cached_input_tokens": 134784,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1950,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-invoice-rounding-codex-visor-r3.json",
+      "task": "hidden-invoice-rounding",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "725781f768cfa4365a40ecbe9b834aa4d96b4bc243b0029cd39b58ccbd42de00",
+      "exit_code": 0,
+      "duration_seconds": 43.729587472975254,
+      "answer_characters": 376,
+      "evidence_hits": [
+        "app/kernel/arithmetic.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/arithmetic.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 157956,
+      "cached_input_tokens": 147456,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2226,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-claude-code-native-r1.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 12.79917817201931,
+      "answer_characters": 690,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 83577,
+      "cache_creation_input_tokens": 6708,
+      "output_tokens": 837,
+      "cost_usd": 0.043583699999999996
+    },
+    {
+      "source": "hidden-job-delay-claude-code-native-r2.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 10.99720855394844,
+      "answer_characters": 628,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 85106,
+      "cache_creation_input_tokens": 4757,
+      "output_tokens": 689,
+      "cost_usd": 0.0344526
+    },
+    {
+      "source": "hidden-job-delay-claude-code-native-r3.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 10.815575403044932,
+      "answer_characters": 558,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 84394,
+      "cache_creation_input_tokens": 5449,
+      "output_tokens": 663,
+      "cost_usd": 0.0368894
+    },
+    {
+      "source": "hidden-job-delay-claude-code-visor-r1.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 10.723361285985447,
+      "answer_characters": 617,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 72730,
+      "cache_creation_input_tokens": 4451,
+      "output_tokens": 591,
+      "cost_usd": 0.031006999999999996
+    },
+    {
+      "source": "hidden-job-delay-claude-code-visor-r2.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 9.91286282602232,
+      "answer_characters": 672,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 71583,
+      "cache_creation_input_tokens": 5809,
+      "output_tokens": 642,
+      "cost_usd": 0.03683430000000001
+    },
+    {
+      "source": "hidden-job-delay-claude-code-visor-r3.json",
+      "task": "hidden-job-delay",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 9.966776760993525,
+      "answer_characters": 638,
+      "evidence_hits": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 71506,
+      "cache_creation_input_tokens": 5718,
+      "output_tokens": 591,
+      "cost_usd": 0.035952599999999994
+    },
+    {
+      "source": "hidden-job-delay-codex-native-r1.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 43.297459915978834,
+      "answer_characters": 391,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 165749,
+      "cached_input_tokens": 159744,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1909,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-codex-native-r2.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 39.36553482094314,
+      "answer_characters": 330,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 165825,
+      "cached_input_tokens": 159872,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1916,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-codex-native-r3.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 48.32847727590706,
+      "answer_characters": 328,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 165255,
+      "cached_input_tokens": 143872,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1890,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-codex-visor-r1.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 36.80161256203428,
+      "answer_characters": 366,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 139425,
+      "cached_input_tokens": 127488,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1781,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-codex-visor-r2.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 35.870962027926,
+      "answer_characters": 415,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 139320,
+      "cached_input_tokens": 133120,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1796,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-job-delay-codex-visor-r3.json",
+      "task": "hidden-job-delay",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "a8cb9239d5f79eb06aa6363d8ff16dc1a95ca8e588a510b35127470991aeed27",
+      "exit_code": 0,
+      "duration_seconds": 36.894619790953584,
+      "answer_characters": 373,
+      "evidence_hits": [
+        "app/kernel/timing.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/timing.py"
+      ],
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/timing.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 155004,
+      "cached_input_tokens": 148736,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1839,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-native-r1.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 11.632222380954772,
+      "answer_characters": 551,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 85133,
+      "cache_creation_input_tokens": 4847,
+      "output_tokens": 735,
+      "cost_usd": 0.035275299999999996
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-native-r2.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 15.54454493895173,
+      "answer_characters": 712,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 85207,
+      "cache_creation_input_tokens": 4861,
+      "output_tokens": 841,
+      "cost_usd": 0.0363987
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-native-r3.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 12.189863600069657,
+      "answer_characters": 772,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 12,
+      "cached_input_tokens": 84844,
+      "cache_creation_input_tokens": 5603,
+      "output_tokens": 836,
+      "cost_usd": 0.0392804
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-visor-r1.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 10.791359135997482,
+      "answer_characters": 859,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 74335,
+      "cache_creation_input_tokens": 4611,
+      "output_tokens": 748,
+      "cost_usd": 0.0333775
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-visor-r2.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 11.345998659962788,
+      "answer_characters": 932,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 72800,
+      "cache_creation_input_tokens": 6168,
+      "output_tokens": 791,
+      "cost_usd": 0.039882
+    },
+    {
+      "source": "hidden-session-permissions-claude-code-visor-r3.json",
+      "task": "hidden-session-permissions",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 12.17094409908168,
+      "answer_characters": 723,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 74493,
+      "cache_creation_input_tokens": 4775,
+      "output_tokens": 771,
+      "cost_usd": 0.0342793
+    },
+    {
+      "source": "hidden-session-permissions-codex-native-r1.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 57.73466312594246,
+      "answer_characters": 534,
+      "evidence_hits": [],
+      "evidence_total": 2,
+      "evidence_recall": 0.0,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/sessions.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 229691,
+      "cached_input_tokens": 212352,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2504,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-codex-native-r2.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 53.65719017398078,
+      "answer_characters": 458,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 203865,
+      "cached_input_tokens": 190464,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2453,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-codex-native-r3.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 64.50324483006261,
+      "answer_characters": 503,
+      "evidence_hits": [],
+      "evidence_total": 2,
+      "evidence_recall": 0.0,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/sessions.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 206866,
+      "cached_input_tokens": 193792,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2773,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-codex-visor-r1.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 43.360910648014396,
+      "answer_characters": 723,
+      "evidence_hits": [
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/sessions.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 178382,
+      "cached_input_tokens": 171264,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2310,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-codex-visor-r2.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 43.816425650031306,
+      "answer_characters": 599,
+      "evidence_hits": [
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/sessions.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 157924,
+      "cached_input_tokens": 151680,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2091,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-session-permissions-codex-visor-r3.json",
+      "task": "hidden-session-permissions",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "337d3f879db5fbfb16711fc64206b72807951212b02feb62e61fe076a5e8427f",
+      "exit_code": 0,
+      "duration_seconds": 53.51632525306195,
+      "answer_characters": 514,
+      "evidence_hits": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/projection.py"
+      ],
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/projection.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 197426,
+      "cached_input_tokens": 185344,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2647,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-native-r1.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 11.212846279027872,
+      "answer_characters": 786,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 10,
+      "cached_input_tokens": 70580,
+      "cache_creation_input_tokens": 4847,
+      "output_tokens": 723,
+      "cost_usd": 0.033696
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-native-r2.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 11.031912269070745,
+      "answer_characters": 772,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 10,
+      "cached_input_tokens": 69905,
+      "cache_creation_input_tokens": 5506,
+      "output_tokens": 701,
+      "cost_usd": 0.0360445
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-native-r3.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 15.769778853980824,
+      "answer_characters": 975,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 10,
+      "cached_input_tokens": 70651,
+      "cache_creation_input_tokens": 4969,
+      "output_tokens": 864,
+      "cost_usd": 0.0356011
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-visor-r1.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 11.69411514501553,
+      "answer_characters": 767,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 74775,
+      "cache_creation_input_tokens": 4671,
+      "output_tokens": 695,
+      "cost_usd": 0.0331315
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-visor-r2.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 10.605368870077655,
+      "answer_characters": 877,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 73176,
+      "cache_creation_input_tokens": 6281,
+      "output_tokens": 746,
+      "cost_usd": 0.0399216
+    },
+    {
+      "source": "hidden-webhook-signature-claude-code-visor-r3.json",
+      "task": "hidden-webhook-signature",
+      "agent": "claude-code",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "claude-sonnet-5-5",
+      "client_version": "2.1.316",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 14.310880845994689,
+      "answer_characters": 702,
+      "evidence_hits": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 1.0,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 10,
+      "cached_input_tokens": 74744,
+      "cache_creation_input_tokens": 4654,
+      "output_tokens": 661,
+      "cost_usd": 0.032720400000000004
+    },
+    {
+      "source": "hidden-webhook-signature-codex-native-r1.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 53.38522194896359,
+      "answer_characters": 357,
+      "evidence_hits": [],
+      "evidence_total": 2,
+      "evidence_recall": 0.0,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/webhooks.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 245592,
+      "cached_input_tokens": 230400,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2758,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-codex-native-r2.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 45.67615157098044,
+      "answer_characters": 465,
+      "evidence_hits": [
+        "app/kernel/collections.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 186177,
+      "cached_input_tokens": 174208,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2292,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-codex-native-r3.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "native",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": null,
+      "exit_code": 0,
+      "duration_seconds": 55.38428840006236,
+      "answer_characters": 461,
+      "evidence_hits": [
+        "app/kernel/collections.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": null,
+      "initial_gold_missing": [],
+      "outcome": "correct_patch",
+      "input_tokens": 238474,
+      "cached_input_tokens": 231296,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2690,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-codex-visor-r1.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r1",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 42.80361867893953,
+      "answer_characters": 425,
+      "evidence_hits": [
+        "app/kernel/collections.py"
+      ],
+      "evidence_total": 2,
+      "evidence_recall": 0.5,
+      "patch_success": true,
+      "changed_files": [
+        "app/kernel/collections.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "recovered_beyond_initial_context",
+      "input_tokens": 176340,
+      "cached_input_tokens": 165120,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2124,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-codex-visor-r2.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r2",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 54.22846399794798,
+      "answer_characters": 539,
+      "evidence_hits": [],
+      "evidence_total": 2,
+      "evidence_recall": 0.0,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/webhooks.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 198879,
+      "cached_input_tokens": 184960,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2700,
+      "cost_usd": 0.0
+    },
+    {
+      "source": "hidden-webhook-signature-codex-visor-r3.json",
+      "task": "hidden-webhook-signature",
+      "agent": "codex",
+      "condition": "visor",
+      "run_id": "r3",
+      "model": "gpt-5.6-sol",
+      "client_version": "0.152.0",
+      "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "context_sha256": "c17dd61439e65028129c83eff53cd332b3477e9690342050ea64df149f6e5193",
+      "exit_code": 0,
+      "duration_seconds": 55.13964131497778,
+      "answer_characters": 307,
+      "evidence_hits": [],
+      "evidence_total": 2,
+      "evidence_recall": 0.0,
+      "patch_success": false,
+      "changed_files": [
+        "app/api/webhooks.py"
+      ],
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "initial_gold_recall": 0.0,
+      "initial_gold_missing": [
+        "app/kernel/collections.py"
+      ],
+      "outcome": "plausible_wrong_location",
+      "input_tokens": 178915,
+      "cached_input_tokens": 167040,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 2597,
+      "cost_usd": 0.0
+    }
+  ],
+  "skipped_inputs": [],
+  "aggregate": {
+    "successful_records": 48,
+    "failed_records": 0,
+    "cells": {
+      "claude-code:native": {
+        "runs": 12,
+        "successful_runs": 12,
+        "median_duration_seconds": 11.954047637060285,
+        "median_evidence_recall": 1.0,
+        "median_initial_gold_recall": null,
+        "patch_successes": 12,
+        "patch_evaluated_runs": 12,
+        "patch_success_rate": 1.0,
+        "input_tokens": 134,
+        "cached_input_tokens": 943082,
+        "cache_creation_input_tokens": 63809,
+        "output_tokens": 9618,
+        "cost_usd": 0.4459922
+      },
+      "claude-code:visor": {
+        "runs": 12,
+        "successful_runs": 12,
+        "median_duration_seconds": 11.52005690248916,
+        "median_evidence_recall": 1.0,
+        "median_initial_gold_recall": 0.0,
+        "patch_successes": 12,
+        "patch_evaluated_runs": 12,
+        "patch_success_rate": 1.0,
+        "input_tokens": 120,
+        "cached_input_tokens": 880272,
+        "cache_creation_input_tokens": 64285,
+        "output_tokens": 8838,
+        "cost_usd": 0.43378720000000004
+      },
+      "codex:native": {
+        "runs": 12,
+        "successful_runs": 12,
+        "median_duration_seconds": 50.80369297997095,
+        "median_evidence_recall": 0.5,
+        "median_initial_gold_recall": null,
+        "patch_successes": 9,
+        "patch_evaluated_runs": 12,
+        "patch_success_rate": 0.75,
+        "input_tokens": 2365101,
+        "cached_input_tokens": 2228992,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 27706,
+        "cost_usd": 0.0
+      },
+      "codex:visor": {
+        "runs": 12,
+        "successful_runs": 12,
+        "median_duration_seconds": 43.13951686047949,
+        "median_evidence_recall": 0.5,
+        "median_initial_gold_recall": 0.0,
+        "patch_successes": 8,
+        "patch_evaluated_runs": 12,
+        "patch_success_rate": 0.6666666666666666,
+        "input_tokens": 1962458,
+        "cached_input_tokens": 1852800,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 26223,
+        "cost_usd": 0.0
+      }
+    },
+    "paired": {
+      "claude-code": {
+        "pairs": 12,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_input_tokens_delta": -2.0,
+        "input_tokens_delta_ci95": [
+          -2.0,
+          0.0
+        ],
+        "median_input_tokens_delta_percent": -16.666666666666664,
+        "input_tokens_delta_percent_ci95": [
+          -16.666666666666664,
+          0.0
+        ],
+        "median_cached_input_tokens_delta": -10574.5,
+        "cached_input_tokens_delta_ci95": [
+          -11647.5,
+          3682.0
+        ],
+        "median_cached_input_tokens_delta_percent": -12.441860447182673,
+        "cached_input_tokens_delta_percent_ci95": [
+          -13.769730627443028,
+          5.236236491995394
+        ],
+        "median_cache_creation_input_tokens_delta": -206.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          -326.0,
+          913.5
+        ],
+        "median_cache_creation_input_tokens_delta_percent": -3.7570818249018423,
+        "cache_creation_input_tokens_delta_percent_ci95": [
+          -6.558630119775593,
+          18.095166081361658
+        ],
+        "median_output_tokens_delta": -48.5,
+        "output_tokens_delta_ci95": [
+          -99.0,
+          -5.0
+        ],
+        "median_output_tokens_delta_percent": -6.3833918084249035,
+        "output_tokens_delta_percent_ci95": [
+          -11.971920328160017,
+          -0.2772624201195617
+        ],
+        "median_cost_usd_delta": -0.0008655500000000031,
+        "cost_usd_delta_ci95": [
+          -0.0032907499999999985,
+          0.0029325000000000045
+        ],
+        "median_cost_usd_delta_percent": -2.1926785748579647,
+        "cost_usd_delta_percent_ci95": [
+          -8.907318105438534,
+          8.241411681826339
+        ],
+        "median_duration_delta_seconds": -0.8448309435043484,
+        "duration_delta_seconds_ci95": [
+          -1.7673574470099993,
+          0.23117468249984086
+        ],
+        "median_duration_delta_percent": -7.53833490206272,
+        "duration_delta_percent_ci95": [
+          -13.039275680918132,
+          2.06845679980861
+        ],
+        "patch_pairs": 12,
+        "median_patch_success_delta": 0.0,
+        "patch_success_delta_ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "codex": {
+        "pairs": 12,
+        "median_evidence_recall_delta": 0.0,
+        "evidence_recall_delta_ci95": [
+          -0.5,
+          0.25
+        ],
+        "median_evidence_recall_delta_percent": 0.0,
+        "evidence_recall_delta_percent_ci95": [
+          -100.0,
+          0.0
+        ],
+        "median_input_tokens_delta": -26714.5,
+        "input_tokens_delta_ci95": [
+          -55434.0,
+          -9845.5
+        ],
+        "median_input_tokens_delta_percent": -16.01307082803551,
+        "input_tokens_delta_percent_ci95": [
+          -23.755030302518467,
+          -5.3832405604198215
+        ],
+        "median_cached_input_tokens_delta": -29504.0,
+        "cached_input_tokens_delta_ci95": [
+          -52672.0,
+          -3072.0
+        ],
+        "median_cached_input_tokens_delta_percent": -18.04119606716114,
+        "cached_input_tokens_delta_percent_ci95": [
+          -24.071877733545172,
+          -1.3860057453188244
+        ],
+        "median_cache_creation_input_tokens_delta": 0.0,
+        "cache_creation_input_tokens_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_output_tokens_delta": -127.0,
+        "output_tokens_delta_ci95": [
+          -239.5,
+          -72.0
+        ],
+        "median_output_tokens_delta_percent": -6.484064605522027,
+        "output_tokens_delta_percent_ci95": [
+          -9.697259211579413,
+          -3.0778308845223368
+        ],
+        "median_cost_usd_delta": 0.0,
+        "cost_usd_delta_ci95": [
+          0.0,
+          0.0
+        ],
+        "median_duration_delta_seconds": -8.168305938947015,
+        "duration_delta_seconds_ci95": [
+          -10.784261423512362,
+          2.0078626504400745
+        ],
+        "median_duration_delta_percent": -16.01798199396145,
+        "duration_delta_percent_ci95": [
+          -19.68983090706245,
+          5.289509580542002
+        ],
+        "patch_pairs": 12,
+        "median_patch_success_delta": 0.0,
+        "patch_success_delta_ci95": [
+          -0.5,
+          0.0
+        ]
+      }
+    },
+    "patch_transitions": {
+      "claude-code": {
+        "both_passed": 12
+      },
+      "codex": {
+        "both_failed": 1,
+        "both_passed": 6,
+        "native_only": 3,
+        "visor_only": 2
+      }
+    },
+    "outcomes": {
+      "correct_patch": 21,
+      "plausible_wrong_location": 7,
+      "recovered_beyond_initial_context": 20
+    },
+    "outcomes_by_cell": {
+      "claude-code:native": {
+        "correct_patch": 12
+      },
+      "claude-code:visor": {
+        "recovered_beyond_initial_context": 12
+      },
+      "codex:native": {
+        "correct_patch": 9,
+        "plausible_wrong_location": 3
+      },
+      "codex:visor": {
+        "plausible_wrong_location": 4,
+        "recovered_beyond_initial_context": 8
+      }
+    }
+  }
+}

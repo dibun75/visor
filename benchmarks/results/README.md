@@ -18,15 +18,23 @@ the recorded local machine; do not generalize them across machines or plans.
 
 ## Adversarial retrieval benchmark
 
-The four-task hidden-cause fixture and sanitized initial lexical contexts are
-committed, but no live agent results are published yet. The preparer verifies
-that each initial context omits its declared causal file and includes a declared
-decoy. A future result summary must report initial gold-file recall separately
-from patch correctness, include outcome counts by agent and condition, preserve
-the random seed and client/model versions, and disclose failures and exclusions.
+`v1.4.2-adversarial-retrieval-summary.json` contains the sanitized 48-cell
+run from 2–3 November 2026: four tasks, two agents, two conditions, and three
+repeats. Random seed `20261102`. Codex `gpt-5.6-sol`, CLI `0.152.0`; Claude
+Code canonical model `claude-sonnet-5-5`, CLI `2.1.316`, invoked with `--model
+sonnet`.
 
-Until that run exists, this repository makes no claim about whether focused
-context helps or hurts on retrieval misses.
+Every V.I.S.O.R. initial context had zero gold-file recall and included a
+declared decoy. Claude Code passed 12/12 in each condition. Codex passed 9/12
+native and 8/12 with V.I.S.O.R.; its paired transitions were six both-pass,
+three native-only, two V.I.S.O.R.-only, and one both-fail. Codex made three
+wrong-location edits natively and four with V.I.S.O.R. No agent process failed.
+
+The scored records contain metrics, causal and changed paths, and outcome labels,
+but not raw provider stdout, stderr, session identifiers, prompts, or absolute
+paths. The sample is too small and synthetic to establish a correctness effect.
+It demonstrates that retrieval misses and plausible wrong-location patches need
+to be measured separately from token and runtime deltas.
 
 ## v1.2.1 patch pilot
 

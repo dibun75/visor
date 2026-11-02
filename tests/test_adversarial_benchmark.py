@@ -98,6 +98,7 @@ def test_aggregate_reports_outcomes_by_agent_and_condition() -> None:
     }
     assert report["outcomes_by_cell"]["codex:visor"] == {"plausible_wrong_location": 1}
     assert report["cells"]["codex:visor"]["median_initial_gold_recall"] == 0.0
+    assert report["patch_transitions"]["codex"] == {"native_only": 1}
 
 
 def test_preparer_proves_every_task_omits_gold_and_includes_a_decoy(

@@ -118,7 +118,18 @@ Any other MCP client can launch the same stdio command: `uvx visor-mcp`.
 
 ## Measured pilot results
 
-Two published pilots are in this repository. Neither is a universal token-reduction claim. Both depend on the task, agent, model, cache behavior, and context. Provider token fields are not comparable across Codex and Claude Code. V.I.S.O.R. context was supplied as leads and had to be checked against the repository.
+Three published pilots are in this repository. None is a universal token-reduction claim. All depend on the task, agent, model, cache behavior, and context. Provider token fields are not comparable across Codex and Claude Code. V.I.S.O.R. context was supplied as leads and had to be checked against the repository.
+
+### Adversarial retrieval misses, 2–3 November 2026
+
+Four hidden-cause fixes, three repeats, Codex and Claude Code, native and V.I.S.O.R., produced 48 cells (24 native/V.I.S.O.R. pairs). Every V.I.S.O.R. initial context omitted the declared causal file and included an obvious API decoy, so initial gold-file recall was 0%. A patch counted as correct only when its behavioral check passed and it changed the causal file. Full figures: [`benchmarks/results/v1.4.2-adversarial-retrieval-summary.json`](./benchmarks/results/v1.4.2-adversarial-retrieval-summary.json).
+
+| Agent | Native passed | V.I.S.O.R. passed | Both passed | Native only | V.I.S.O.R. only | Both failed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Codex | 9/12 | 8/12 | 6 | 3 | 2 | 1 |
+| Claude Code | 12/12 | 12/12 | 12 | 0 | 0 | 0 |
+
+Claude Code recovered the omitted causal file in all 12 V.I.S.O.R. runs. Codex recovered it in 8/12 V.I.S.O.R. runs; four Codex V.I.S.O.R. runs made behaviorally plausible edits in the decoy file instead. Codex also made three wrong-location edits without V.I.S.O.R. The one-run correctness difference is not evidence of a real advantage or disadvantage: this is a small synthetic suite, and the five discordant Codex pairs split 3 native-only to 2 V.I.S.O.R.-only. The result shows the failure mode exists and must be measured; it does not establish that focused context generally helps or hurts correctness.
 
 ### Patch correctness, 31 October 2026
 
@@ -151,7 +162,7 @@ The v1.2.0 diagnostic pilot compared native repository navigation with the same 
 Limitations:
 
 - The navigation pilot does not measure patch correctness, refactoring quality, or task success.
-- The patch pilot is three small fixtures, not a general coding benchmark.
+- The patch and adversarial pilots use small synthetic fixtures, not representative production repositories.
 - Timing and token counts are machine-, model-, provider-, plan-, and cache-dependent.
 - Evidence recall is a heuristic, not human correctness review.
 - These results are not proof that V.I.S.O.R. makes coding agents universally faster, cheaper, or better.
