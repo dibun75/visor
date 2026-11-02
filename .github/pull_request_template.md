@@ -15,8 +15,10 @@
 
 - [ ] Tests added/updated
 - [ ] `uv run pytest tests/ -v` passes locally
-- [ ] `uv run ruff check src/visor/` passes
+- [ ] `uv run ruff format --check .` and `uv run ruff check .` pass
 - [ ] Docs updated (if user-facing change)
+- [ ] HUD/extension checks pass (if frontend or extension changed)
+- [ ] `uv build` succeeds (if packaging changed)
 
 ## Related Issue
 

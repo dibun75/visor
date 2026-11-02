@@ -13,7 +13,7 @@ uv run pytest tests/ -v
 
 ## How to Add a New Language (Most Common Contribution)
 
-Adding a new language is the easiest way to contribute. Each language requires ~15 lines of code.
+Adding a new language is the easiest way to contribute. Each language needs a grammar dependency, extraction queries, fixtures, and parser tests.
 
 ### Step-by-Step
 
@@ -89,13 +89,13 @@ Adding a new language is the easiest way to contribute. Each language requires ~
 ## How to Add a Built-in Skill
 
 1. Add the skill definition in `src/visor/server.py` inside `_seed_default_skills()`
-2. Include: `name`, `description`, `content` (instructions), and optional `strategy` (JSON with `intent`, `scoring_bias`, `tool_priority`)
+2. Include: `name`, `description`, `content` (instructions), and optional `strategy` (JSON with `intent_override`, `scoring_bias`, and `tool_priority`)
 3. Test via `visor context --skill "your-skill" "test query"`
 
 ## Development Guidelines
 
 - **Tests are required** for new features
-- **Run the linter** before submitting: `uv run ruff check src/visor/`
+- **Run the linter** before submitting: `uv run ruff check .`
 - **Keep it simple** — V.I.S.O.R. values pragmatic code over clever code
 - **One PR per feature** — don't bundle unrelated changes
 
@@ -104,7 +104,7 @@ Adding a new language is the easiest way to contribute. Each language requires ~
 Before submitting a pull request:
 
 - [ ] Tests pass: `uv run pytest tests/ -v`
-- [ ] Linter passes: `uv run ruff check src/visor/`
+- [ ] Linter passes: `uv run ruff check .`
 - [ ] Docs updated (if user-facing change)
 - [ ] Commit messages are descriptive
 

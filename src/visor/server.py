@@ -175,7 +175,6 @@ _DEFAULT_SKILLS = [
         "content": "Follow data flows from entry points to sinks. Look for missing validation, fail-open states, and OWASP vulnerabilities.",
         "strategy": json.dumps(
             {
-                "intent_override": "SECURITY_AUDIT",
                 "scoring_bias": {"dep": 1.5, "embed": 1.2},
                 "tool_priority": [
                     "build_context",
@@ -191,7 +190,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze code for structural integrity, single responsibility, and architectural adherence. Highlight over-engineering.",
         "strategy": json.dumps(
             {
-                "intent_override": "CODE_REVIEW",
                 "scoring_bias": {"embed": 1.5, "exact": 1.2},
                 "tool_priority": ["build_context", "get_architecture_map"],
             }
@@ -203,7 +201,6 @@ _DEFAULT_SKILLS = [
         "content": "Do not guess. Trace the exact execution path from the error origin to the ultimate root cause using deep dependency graphs.",
         "strategy": json.dumps(
             {
-                "intent_override": "ROOT_CAUSE_ANALYSIS",
                 "scoring_bias": {"dep": 2.0, "recency": 1.0},
                 "tool_priority": [
                     "trace_route",
@@ -222,7 +219,6 @@ _DEFAULT_SKILLS = [
         "content": "Map test files to their source targets. Find untested code paths. Trace which tests cover a given function.",
         "strategy": json.dumps(
             {
-                "intent_override": "TEST_COVERAGE",
                 "scoring_bias": {"dep": 1.8, "exact": 1.5, "same": 0.5},
                 "tool_priority": [
                     "build_context",
@@ -238,7 +234,6 @@ _DEFAULT_SKILLS = [
         "content": "Follow the request path: route → middleware → handler → service → repository → database. Map all endpoints and their dependencies.",
         "strategy": json.dumps(
             {
-                "intent_override": "API_TRACE",
                 "scoring_bias": {"dep": 1.8, "exact": 1.3, "embed": 0.8},
                 "tool_priority": [
                     "trace_route",
@@ -254,7 +249,6 @@ _DEFAULT_SKILLS = [
         "content": "Focus on ORM models, migration files, and database query patterns. Map entity relationships and index usage.",
         "strategy": json.dumps(
             {
-                "intent_override": "SCHEMA_ANALYSIS",
                 "scoring_bias": {"exact": 2.0, "dep": 1.2, "recency": 0.3},
                 "tool_priority": [
                     "build_context",
@@ -270,7 +264,6 @@ _DEFAULT_SKILLS = [
         "content": "Think like an attacker. Map entry points, find auth weaknesses, trace privilege escalation paths, identify data exfiltration routes.",
         "strategy": json.dumps(
             {
-                "intent_override": "ATTACK_CHAIN",
                 "scoring_bias": {"dep": 2.0, "embed": 1.5, "exact": 1.0},
                 "tool_priority": [
                     "trace_route",
@@ -286,7 +279,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze Dockerfiles, CI workflows, deployment scripts, and environment configs. Map the deployment pipeline end-to-end.",
         "strategy": json.dumps(
             {
-                "intent_override": "DEPLOYMENT_ANALYSIS",
                 "scoring_bias": {"embed": 2.0, "same": 1.5, "dep": 0.5},
                 "tool_priority": [
                     "build_context",
@@ -302,7 +294,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze MCP tool definitions, resource patterns, and server architecture. Focus on tool naming, input schemas, and error handling.",
         "strategy": json.dumps(
             {
-                "intent_override": "MCP_ANALYSIS",
                 "scoring_bias": {"exact": 1.8, "same": 1.5, "embed": 1.0},
                 "tool_priority": [
                     "build_context",
@@ -321,7 +312,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze component hierarchy, identify re-render cascades, find bundle bloat, and trace data-fetching waterfalls across server/client boundaries.",
         "strategy": json.dumps(
             {
-                "intent_override": "REACT_OPTIMIZATION",
                 "scoring_bias": {"dep": 1.5, "same": 1.5, "embed": 1.2},
                 "tool_priority": [
                     "build_context",
@@ -337,7 +327,6 @@ _DEFAULT_SKILLS = [
         "content": "Map CSS/Tailwind class usage, detect unused styles, find specificity conflicts, and analyze design token propagation.",
         "strategy": json.dumps(
             {
-                "intent_override": "CSS_ANALYSIS",
                 "scoring_bias": {"embed": 1.8, "same": 2.0, "dep": 0.5},
                 "tool_priority": [
                     "build_context",
@@ -353,7 +342,6 @@ _DEFAULT_SKILLS = [
         "content": "Trace ownership chains, resolve trait implementations, map lifetime dependencies, and analyze async task boundaries.",
         "strategy": json.dumps(
             {
-                "intent_override": "RUST_ANALYSIS",
                 "scoring_bias": {"exact": 1.8, "dep": 1.5, "embed": 1.0},
                 "tool_priority": [
                     "build_context",
@@ -369,7 +357,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze import graphs, map decorator usage, trace async chains, and detect type hint gaps across modules.",
         "strategy": json.dumps(
             {
-                "intent_override": "PYTHON_ANALYSIS",
                 "scoring_bias": {"dep": 1.5, "embed": 1.3, "exact": 1.2},
                 "tool_priority": [
                     "build_context",
@@ -385,7 +372,6 @@ _DEFAULT_SKILLS = [
         "content": "Trace async/await chains, map middleware execution order, analyze package.json dependency trees, and find event loop blockers.",
         "strategy": json.dumps(
             {
-                "intent_override": "NODE_ANALYSIS",
                 "scoring_bias": {"dep": 1.8, "embed": 1.2, "recency": 1.0},
                 "tool_priority": [
                     "build_context",
@@ -404,7 +390,6 @@ _DEFAULT_SKILLS = [
         "content": "Find untranslated strings, map i18n key usage across components, detect missing locale entries, and verify RTL support.",
         "strategy": json.dumps(
             {
-                "intent_override": "I18N_ANALYSIS",
                 "scoring_bias": {"exact": 2.0, "same": 1.5, "embed": 0.8},
                 "tool_priority": [
                     "search_codebase",
@@ -420,7 +405,6 @@ _DEFAULT_SKILLS = [
         "content": "Map component hierarchy, trace prop drilling chains, detect accessibility gaps, and verify design system token usage.",
         "strategy": json.dumps(
             {
-                "intent_override": "FRONTEND_ANALYSIS",
                 "scoring_bias": {"same": 1.8, "dep": 1.3, "embed": 1.2},
                 "tool_priority": [
                     "build_context",
@@ -436,7 +420,6 @@ _DEFAULT_SKILLS = [
         "content": "Trace full user journeys: button click → event handler → API call → server handler → database mutation → response. Identify break points.",
         "strategy": json.dumps(
             {
-                "intent_override": "E2E_TRACE",
                 "scoring_bias": {"dep": 2.0, "exact": 1.2, "embed": 0.8},
                 "tool_priority": [
                     "trace_route",
@@ -452,7 +435,6 @@ _DEFAULT_SKILLS = [
         "content": "Find undocumented public functions, verify README accuracy against code, and map doc-to-source alignment.",
         "strategy": json.dumps(
             {
-                "intent_override": "DOC_ANALYSIS",
                 "scoring_bias": {"embed": 1.8, "exact": 1.5, "dep": 0.5},
                 "tool_priority": [
                     "build_context",
@@ -468,7 +450,6 @@ _DEFAULT_SKILLS = [
         "content": "Detect code style inconsistencies, find anti-patterns, verify linter config coverage, and map quality hotspots.",
         "strategy": json.dumps(
             {
-                "intent_override": "LINT_ANALYSIS",
                 "scoring_bias": {"exact": 1.5, "same": 1.5, "embed": 1.0},
                 "tool_priority": [
                     "build_context",
@@ -484,7 +465,6 @@ _DEFAULT_SKILLS = [
         "content": "Analyze mobile component hierarchy, verify touch target sizes, map navigation flows, and check platform-specific patterns.",
         "strategy": json.dumps(
             {
-                "intent_override": "MOBILE_ANALYSIS",
                 "scoring_bias": {"same": 1.8, "dep": 1.3, "embed": 1.5},
                 "tool_priority": [
                     "build_context",
@@ -500,7 +480,6 @@ _DEFAULT_SKILLS = [
         "content": "Map asset references, trace scene graph hierarchy, analyze game loop structure, and detect orphaned resources.",
         "strategy": json.dumps(
             {
-                "intent_override": "GAME_ANALYSIS",
                 "scoring_bias": {"same": 2.0, "dep": 1.5, "exact": 1.0},
                 "tool_priority": [
                     "build_context",
@@ -519,7 +498,6 @@ _DEFAULT_SKILLS = [
         "content": "When building test-first, surface the test file that imports the target symbol. Boost recently-failing test files by recency. Trace test→source dependency edges to keep implementation aligned with assertions.",
         "strategy": json.dumps(
             {
-                "intent_override": "TDD_CONTEXT",
                 "scoring_bias": {"dep": 2.0, "exact": 1.5, "recency": 1.5, "same": 0.5},
                 "tool_priority": [
                     "build_context",
@@ -535,7 +513,6 @@ _DEFAULT_SKILLS = [
         "content": "Trace data flow backward from the error site. Weight recent changes heavily since regressions correlate with recent commits. Expand symbol matching on error messages, stack frames, and exception types.",
         "strategy": json.dumps(
             {
-                "intent_override": "FAULT_TRACE",
                 "scoring_bias": {
                     "dep": 2.0,
                     "recency": 1.8,
@@ -556,7 +533,6 @@ _DEFAULT_SKILLS = [
         "content": "Before claiming a change is complete, surface all verification-relevant files: test suites that cover the changed code, CI workflow definitions, build configs, and linter rules. Co-location weighted heavily.",
         "strategy": json.dumps(
             {
-                "intent_override": "VERIFICATION",
                 "scoring_bias": {"same": 2.0, "dep": 1.5, "recency": 1.5, "exact": 0.8},
                 "tool_priority": [
                     "build_context",
@@ -572,7 +548,6 @@ _DEFAULT_SKILLS = [
         "content": "Map all downstream consumers of the changed files. Expand dependency graph to find transitive impact. Surface test files that exercise the affected paths. Ideal for code review preparation.",
         "strategy": json.dumps(
             {
-                "intent_override": "CHANGE_IMPACT",
                 "scoring_bias": {"dep": 2.0, "same": 1.5, "embed": 0.8, "exact": 1.0},
                 "tool_priority": [
                     "impact_analysis",

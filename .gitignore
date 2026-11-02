@@ -22,6 +22,8 @@ visor_memory.db*
 node_modules/
 out/
 *.vsix
+playwright-report/
+test-results/
 
 # OS
 .DS_Store

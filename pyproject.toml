@@ -1,7 +1,7 @@
 [project]
 name = "visor-mcp"
 version = "1.4.0"
-description = "Skill-Orchestrated Context Intelligence Engine for AI coding agents"
+description = "Terminal-first, local-first context engine for AI coding agents"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -69,6 +69,13 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "visor"
 module-root = "src"
-default-excludes = false
-source-include = ["src/visor/**/*.py", "pyproject.toml", "README.md", "LICENSE"]
-source-exclude = ["**/node_modules/**", "**/out/**", "**/dist/**", "**/.venv/**"]
+source-exclude = [
+    "src/visor/extension",
+    "src/visor/hud",
+    "src/visor/extension/**",
+    "src/visor/hud/**",
+    "**/node_modules/**",
+    "**/out/**",
+    "**/dist/**",
+    "**/.venv/**",
+]

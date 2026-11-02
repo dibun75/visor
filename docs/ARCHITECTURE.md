@@ -13,7 +13,7 @@
 7. [Embedding Pipeline](#embedding-pipeline)
 8. [Context Scoring Engine](#context-scoring-engine)
 9. [MCP Server & Tool Registration](#mcp-server--tool-registration)
-10. [IDE Extension & WebGPU HUD](#ide-extension--webgpu-hud)
+10. [IDE Extension & 3D HUD](#ide-extension--3d-hud)
 11. [Security Model](#security-model)
 12. [How to Extend V.I.S.O.R.](#how-to-extend-visor)
 
@@ -38,7 +38,7 @@ V.I.S.O.R. is a local-first MCP server and terminal context engine for coding ag
 │                              └───────────────┘   └───────────┘ │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │              WebGPU HUD (Sidebar / Panel)                │   │
+│  │              3D HUD (Sidebar / Panel)                │   │
 │  │      React + Three.js force-directed 3D graph            │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
@@ -53,7 +53,7 @@ V.I.S.O.R. is a local-first MCP server and terminal context engine for coding ag
 | **Local-first** | All data lives in `~/.visor/` (SQLite). No cloud calls. |
 | **Privacy-preserving** | No traffic interception. Communicates via stdio only. |
 | **Token-efficient** | Context Scoring Engine ranks and compresses before returning context. |
-| **Zero-config** | Bootstrapped by the IDE extension via `uv run`. |
+| **Zero-config** | The CLI discovers a recognized local project; the extension launches a local checkout or `uv tool run visor-mcp`. |
 | **Incremental** | File watcher only re-indexes changed files (hash-based cache). |
 | **Multi-workspace** | Hub-and-spoke DB separates user-global data from workspace-specific code graphs. |
 
@@ -99,28 +99,27 @@ graph TB
 
 ### Path Resolution
 
-Both the extension and standalone MCP use the **same deterministic convention**:
+The hub is always `~/.visor/hub.db`. Each project uses
+`~/.visor/workspaces/{sha256(workspace_root)[:12]}/graph.db`.
 
-- **Hub**: `~/.visor/hub.db` (always)
-- **Spoke**: `~/.visor/workspaces/{sha256(workspace_root)[:12]}/graph.db`
+Workspace resolution depends on the entry point:
 
-#### Automatic Workspace Detection (v1.0.2+)
+- CLI and explicit server startup: `--workspace`, then `WORKSPACE_ROOT`, then
+  the Git root or a recognized project in the current directory.
+- MCP requests: the first valid local project advertised by
+  `session.list_roots()`, falling back to the local rules when roots are absent.
+- Implicit resolution rejects the home directory and paths without a recognized
+  project marker.
 
-V.I.S.O.R. automatically detects the active project workspace using the MCP `session.list_roots()` API. When the IDE connects, V.I.S.O.R.:
-
-1. Queries the MCP session for workspace roots
-2. Uses the first root as the workspace path
-3. Computes the SHA-256 hash to determine the spoke database path
-4. Initializes or switches to that spoke database
-
-This replaces the old `WORKSPACE_ROOT` environment variable approach — no manual configuration needed.
+The active workspace can change between MCP clients. V.I.S.O.R. reinitializes
+its spoke connection and watcher when the resolved project changes.
 
 ### Data Classification
 
 | Table | Database | Scope | Reasoning |
 |-------|----------|-------|-----------|
 | `workspaces` | Hub | Global | Registry of all indexed workspaces |
-| `telemetry_logs` | Hub | Global | Token usage — user wants cross-project totals |
+| `telemetry_logs` | Hub | Global | MCP response bytes by workspace |
 | `custom_skills` | Hub | Global | AI strategies should be portable |
 | `agent_memory` | Hub | Hybrid | Tagged with `workspace_hash` for filtering |
 | `vec_agent_memory` | Hub | Global | Embeddings for memory recall |
@@ -144,44 +143,39 @@ On first boot, V.I.S.O.R. automatically discovers old monolith `visor_memory.db`
 
 ## Data Flow
 
-### Indexing Pipeline (Background)
+### Indexing Pipeline
 
 ```
-File saved / workspace opened
-        ↓
-Watchdog detects change
+visor index, MCP startup, or a watched file change
         ↓
 SHA-256 hash compared to DB (cache hit → skip)
         ↓
-Tree-sitter parses AST (Python, TS, JS, Go, Rust, Java, C, C++)
+Tree-sitter parses Python, TypeScript/TSX, JavaScript, Go, Rust,
+Java, C, C++, and C#
         ↓
-Nodes extracted: classes, functions, imports
+Symbols, imports, and call names are extracted
         ↓
-sentence-transformers encodes each node docstring/name
+Lexical mode updates SQLite FTS5; semantic mode also embeds nodes
         ↓
-Embedding + metadata upserted to spoke graph.db
-        ↓
-Import relationships written to `edges` table
+Nodes, index metadata, and verified graph edges are committed
 ```
 
-### Query Pipeline (On AI Request)
+### Query Pipeline
 
 ```
-MCP tool called by AI agent
+CLI or MCP query
         ↓
-build_context(query)
+SQLite FTS5 search (default) or sqlite-vec search (semantic opt-in)
         ↓
-Semantic search via sqlite-vec (cosine similarity) [spoke]
+Dependency expansion and multi-signal scoring
         ↓
-Dependency expansion via NetworkX BFS
+Explicit workspace feedback adjustment, when applicable
         ↓
-Multi-signal relevance scoring
+8,000-token local snippet budget
         ↓
-Token budget enforcement (8,000 token cap)
+Ranked context, reasons, and local size estimates returned
         ↓
-Ranked context payload returned as JSON
-        ↓
-Telemetry logged to hub.db (bytes transmitted, workspace tag)
+MCP response byte count logged for HUD telemetry
 ```
 
 ---
@@ -313,7 +307,7 @@ Key-value store for bidirectional HUD state (e.g., agent focus).
 ```
 visor/
 ├── server.py               # FastMCP entrypoint + migration + workspace registration + skill seeding
-├── cli.py                  # CLI interface: visor context/fix/explain/trace/drift
+├── cli.py                  # CLI: doctor/index/status/context/trace/drift/feedback
 ├── db/
 │   ├── client.py           # VectorDBClient: dual-connection hub+spoke, schema, CRUD, vector search
 │   ├── embeddings.py       # SemanticEmbedder: lazy-loaded all-MiniLM-L6-v2 singleton
@@ -322,7 +316,7 @@ visor/
 │   ├── treesitter.py       # ASTParser: extracts nodes + edges + file hash per file
 │   └── watcher.py          # Watchdog: debounced file watcher + index_workspace boot scan
 └── tools/
-    ├── core.py             # 16 MCP tools in register_tools(), plus health_check in server.py
+    ├── core.py             # 20 MCP tools in register_tools(), plus health_check in server.py
     └── context_engine.py   # Context Intelligence Engine: skill-aware scoring + reasoning + metrics
 ```
 
@@ -350,13 +344,13 @@ self.model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
 Located in `src/visor/tools/context_engine.py`.
 
-The `build_context(query, skill_name?)` function applies a weighted 5-signal formula to rank every candidate node returned by semantic search:
+The `build_context(query, skill_name?)` function applies a weighted 5-signal formula to rank candidates returned by the active retrieval backend:
 
 ```
 score =
   W_exact   × exact_name_match     (query token found in symbol name)
-  W_same    × same_file_as_anchor  (same file as top semantic hit)
-  W_embed   × embedding_similarity (1 - normalised_distance / 2)
+  W_same    × same_file_as_anchor  (same file as the first retrieval hit)
+  W_embed   × embedding_similarity (semantic mode only; zero in lexical mode)
   W_dep     × dependency_proximity (1 / (1 + hop_count))
   W_recency × file_recency         (time-decayed modification freshness)
   + feedback_adjustment
@@ -393,14 +387,16 @@ See [`MCP_TOOLS.md`](./MCP_TOOLS.md) for a complete tool reference.
 
 ---
 
-## IDE Extension & WebGPU HUD
+## IDE Extension & 3D HUD
 
 The IDE extension (`src/visor/extension/`) serves two roles:
 
-1. **Backend bootstrapper**: Spawns the Python MCP server via `uv run` and manages its lifecycle.
-2. **HUD host**: Embeds the React WebGPU frontend as a VS Code Webview Panel or Sidebar.
+1. **MCP client**: Connects to a local development checkout when present;
+   otherwise launches `visor-mcp` with `uv tool run`.
+2. **HUD host**: Embeds the React/Three.js frontend as a VS Code webview panel
+   or sidebar and forwards MCP results through `postMessage`.
 
-The HUD connects to the MCP server indirectly — the extension translates IPC `postMessage` events from the React frontend into direct Python subprocess calls, then forwards results back to the webview.
+The HUD connects indirectly: the extension translates webview `postMessage` events into MCP tool calls over a stdio client and forwards results back to the webview.
 
 **Key constraint**: `acquireVsCodeApi()` may only be called **once** per Webview lifecycle. V.I.S.O.R. caches the instance in `window.vscodeApiInstance`.
 

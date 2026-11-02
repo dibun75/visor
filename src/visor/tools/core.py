@@ -3,11 +3,59 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
 import functools
+import math
 import networkx as nx
 
 from visor.db.client import db_client
 from visor.db.embeddings import embedder, semantic_enabled
-from visor.tools.context_engine import build_context as _build_context
+from visor.tools.context_engine import INTENT_PROFILES, build_context as _build_context
+
+_STRATEGY_KEYS = {"intent_override", "scoring_bias", "tool_priority"}
+_SCORING_KEYS = {"exact", "same", "embed", "dep", "recency"}
+
+
+def _normalize_skill_strategy(strategy: Optional[str]) -> Optional[str]:
+    """Validate and canonicalize a custom-skill strategy JSON string."""
+    if strategy is None or not strategy.strip():
+        return None
+    try:
+        value = json.loads(strategy)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("strategy must be valid JSON") from exc
+    if not isinstance(value, dict):
+        raise ValueError("strategy must be a JSON object")
+
+    unknown = sorted(set(value) - _STRATEGY_KEYS)
+    if unknown:
+        raise ValueError(f"unsupported strategy keys: {', '.join(unknown)}")
+
+    intent = value.get("intent_override")
+    if intent is not None and intent not in INTENT_PROFILES:
+        allowed = ", ".join(sorted(INTENT_PROFILES))
+        raise ValueError(f"intent_override must be one of: {allowed}")
+
+    scoring = value.get("scoring_bias", {})
+    if not isinstance(scoring, dict):
+        raise ValueError("scoring_bias must be an object")
+    unknown_scoring = sorted(set(scoring) - _SCORING_KEYS)
+    if unknown_scoring:
+        raise ValueError(f"unsupported scoring_bias keys: {', '.join(unknown_scoring)}")
+    for key, weight in scoring.items():
+        if (
+            isinstance(weight, bool)
+            or not isinstance(weight, (int, float))
+            or not math.isfinite(weight)
+            or weight < 0
+        ):
+            raise ValueError(f"scoring_bias.{key} must be a finite non-negative number")
+
+    priority = value.get("tool_priority", [])
+    if not isinstance(priority, list) or not all(
+        isinstance(tool, str) and tool.strip() for tool in priority
+    ):
+        raise ValueError("tool_priority must be a list of non-empty tool names")
+
+    return json.dumps(value, sort_keys=True)
 
 
 class DriftReport(BaseModel):
@@ -523,20 +571,20 @@ def register_tools(mcp: FastMCP):
         **Context Intelligence Engine** — the most powerful V.I.S.O.R. tool.
 
         Builds a ranked, token-budget-enforced context payload from a natural
-        language query. Combines four signals:
-        - Embedding similarity (semantic proximity)
+        language query. Lexical retrieval is the default; semantic retrieval is
+        an explicit opt-in. Ranking combines five signals:
         - Exact symbol name match
         - Co-location in the same file as the top hit
+        - Retrieval similarity when semantic mode is enabled
         - Dependency graph distance
+        - File recency
 
         Returns a scored list of code nodes ready to be injected into an LLM
         prompt, capped at 8,000 tokens to prevent context overflow.
-
         Example:
             ``build_context("how is authentication handled")``
         """
         result = _build_context(query, skill_name=skill)
-        # Orchestration hints — suggest follow-up tools based on intent
         intent = result.get("debug", {}).get("intent", "DEFAULT")
         hints = {
             "BUG_FIX": ["get_dependency_chain", "get_drift_report", "impact_analysis"],
@@ -544,7 +592,12 @@ def register_tools(mcp: FastMCP):
             "EXPLAIN": ["get_architecture_map", "trace_route", "get_symbol_context"],
             "DEFAULT": ["search_codebase", "get_dependency_chain"],
         }
-        result["recommended_next"] = hints.get(intent, hints["DEFAULT"])
+        priority = None
+        if skill:
+            skill_data = db_client.get_skill_by_name(skill)
+            if skill_data and skill_data.get("strategy"):
+                priority = skill_data["strategy"].get("tool_priority")
+        result["recommended_next"] = priority or hints.get(intent, hints["DEFAULT"])
         return json.dumps(result)
 
     @mcp.prompt()
@@ -578,8 +631,14 @@ def register_tools(mcp: FastMCP):
     def add_custom_skill(
         name: str, description: str, content: str, strategy: Optional[str] = None
     ) -> str:
-        """Adds a newly created custom skill via the UI."""
-        skill_id = db_client.add_custom_skill(name, description, content, strategy)
+        """Add a custom skill after validating its optional strategy JSON."""
+        try:
+            normalized_strategy = _normalize_skill_strategy(strategy)
+        except ValueError as exc:
+            return json.dumps({"success": False, "error": str(exc)})
+        skill_id = db_client.add_custom_skill(
+            name, description, content, normalized_strategy
+        )
         return json.dumps({"success": True, "id": skill_id})
 
     @mcp.tool()

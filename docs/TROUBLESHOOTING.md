@@ -11,11 +11,11 @@ Common issues and their solutions.
 **Cause:** V.I.S.O.R. hasn't indexed your workspace yet.
 
 **Fix:**
-1. Run the MCP server to trigger the file watcher:
+1. Index the intended project explicitly:
    ```bash
-   uv run src/visor/server.py
+   visor index --workspace /path/to/project
    ```
-2. Or use the IDE extension — it auto-starts the server and indexes on workspace open.
+2. Confirm the selected workspace and retrieval mode with `visor doctor --workspace /path/to/project`.
 
 ### Feedback is changing a later result
 
@@ -30,25 +30,15 @@ V.I.S.O.R. uses a hub-and-spoke architecture with databases stored in `~/.visor/
 - **Hub**: `~/.visor/hub.db` — global telemetry, custom skills, workspace registry
 - **Spoke**: `~/.visor/workspaces/{hash}/graph.db` — per-workspace code nodes, edges, embeddings
 
-To reset the current workspace's graph:
-```bash
-rm ~/.visor/workspaces/*/graph.db
-```
+First run `visor doctor --workspace /path/to/project` and note its exact `database` path. Close V.I.S.O.R., back up that file, and delete only that one `graph.db`; the next index recreates it. Do not use a wildcard, because it would reset every indexed workspace.
 
-To reset everything (including telemetry and skills):
-```bash
-rm -rf ~/.visor/
-```
+To reset all local V.I.S.O.R. state, first close V.I.S.O.R. and move `~/.visor` to a backup location. This removes every workspace index, telemetry row, skill, memory, and feedback record.
 
 ### "sqlite3.OperationalError: no such table"
 
 **Cause:** Database was corrupted or partially migrated.
 
-**Fix:** Delete the affected database and let V.I.S.O.R. recreate:
-```bash
-rm -rf ~/.visor/
-uv run src/visor/server.py
-```
+**Fix:** Back up and remove only the exact affected database reported by `visor doctor`, then run `visor index --workspace /path/to/project`. If the hub itself is corrupt, move `~/.visor/hub.db` aside rather than deleting the whole directory.
 
 ---
 
@@ -58,7 +48,7 @@ uv run src/visor/server.py
 
 **Check these:**
 
-1. **File extension**: V.I.S.O.R. indexes `.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.java`, `.c`, `.h`, `.cpp`, `.cc`, `.cxx`, and `.hpp` files.
+1. **File extension**: V.I.S.O.R. indexes `.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.java`, `.c`, `.h`, `.cpp`, `.cc`, `.cxx`, `.hpp`, and `.cs` files.
 2. **Ignored paths**: Files in `node_modules/`, `.git/`, `__pycache__/`, and `dist/` are skipped.
 3. **Hash cache**: If a file hasn't changed (same SHA-256), it won't re-index. Modify the file to trigger re-indexing.
 
@@ -141,7 +131,7 @@ Put this in `.vscode/mcp.json` (VS Code / Antigravity) or `~/.cursor/mcp.json` (
 
 **Cause:** This was a known bug in versions before 1.0.2.
 
-**Fix:** Update to the latest version. V.I.S.O.R. now automatically detects your active project workspace using the MCP roots API — no environment variables needed.
+**Fix:** Update to the latest version. V.I.S.O.R. now resolves MCP roots when the client supplies them, then falls back to `--workspace`, `WORKSPACE_ROOT`, or a recognized local project.
 
 ```bash
 pip install --upgrade visor-mcp
@@ -155,11 +145,11 @@ pip install --upgrade visor-mcp
 
 ## HUD / Extension Issues
 
-### "WebGPU not supported"
+### "3D HUD is blank"
 
-**Cause:** Your browser/IDE webview doesn't support WebGPU.
+**Cause:** The VS Code webview could not create a WebGL context, or hardware acceleration is disabled.
 
-**Fix:** The HUD falls back to WebGL. If neither works, ensure you're using a recent version of VS Code (1.80+).
+**Fix:** Reload the VS Code window and ensure hardware acceleration is enabled. V.I.S.O.R. uses Three.js through React Three Fiber; it does not require WebGPU.
 
 ### "acquireVsCodeApi() error"
 
