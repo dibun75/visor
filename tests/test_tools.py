@@ -127,7 +127,10 @@ def test_add_custom_skill_rejects_unknown_strategy_keys(test_db, mcp_tools):
     assert test_db.get_skill_by_name("broken") is None
 
 
-def test_custom_skill_tool_priority_drives_recommended_next(test_db, mcp_tools):
+def test_custom_skill_tool_priority_drives_recommended_next(
+    test_db, mcp_tools, monkeypatch
+):
+    monkeypatch.setenv("VISOR_RETRIEVAL_MODE", "lexical")
     strategy = {
         "intent_override": "BUG_FIX",
         "scoring_bias": {"dep": 1.5, "recency": 0.5},
