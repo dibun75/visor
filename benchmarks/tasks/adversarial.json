@@ -1,0 +1,179 @@
+{
+  "version": 2,
+  "benchmark": "adversarial-retrieval",
+  "retrieval_mode": "lexical",
+  "fixture_revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+  "tasks": [
+    {
+      "id": "hidden-invoice-rounding",
+      "category": "hidden-cause-patch",
+      "prompt": "Invoice totals can be one cent too low for fractional line items. Fix the underlying cause, run python checks/check_invoice.py, and make the smallest justified change.",
+      "query": "invoice totals one cent low fractional line items",
+      "gold_files": [
+        "app/kernel/arithmetic.py"
+      ],
+      "decoy_files": [
+        "app/api/invoices.py"
+      ],
+      "evidence": [
+        "app/kernel/arithmetic.py",
+        "settle"
+      ],
+      "evaluator": {
+        "command": [
+          "python",
+          "checks/check_invoice.py"
+        ],
+        "timeout_seconds": 30,
+        "require_gold_change": true
+      },
+      "revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "prepared_initial_context_coverage": {
+        "gold_files": [
+          "app/kernel/arithmetic.py"
+        ],
+        "selected_files": [
+          "app/api/invoices.py",
+          "checks/check_invoice.py"
+        ],
+        "hits": [],
+        "missing": [
+          "app/kernel/arithmetic.py"
+        ],
+        "recall": 0.0,
+        "ranks": {}
+      },
+      "prepared_selected_decoys": [
+        "app/api/invoices.py"
+      ]
+    },
+    {
+      "id": "hidden-webhook-signature",
+      "category": "hidden-cause-patch",
+      "prompt": "A retried webhook keeps the stale signature header instead of the new signature. Fix the underlying cause, run python checks/check_webhook.py, and make the smallest justified change.",
+      "query": "retried webhook stale signature header new signature",
+      "gold_files": [
+        "app/kernel/collections.py"
+      ],
+      "decoy_files": [
+        "app/api/webhooks.py"
+      ],
+      "evidence": [
+        "app/kernel/collections.py",
+        "put_unique"
+      ],
+      "evaluator": {
+        "command": [
+          "python",
+          "checks/check_webhook.py"
+        ],
+        "timeout_seconds": 30,
+        "require_gold_change": true
+      },
+      "revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "prepared_initial_context_coverage": {
+        "gold_files": [
+          "app/kernel/collections.py"
+        ],
+        "selected_files": [
+          "app/api/webhooks.py",
+          "checks/check_webhook.py"
+        ],
+        "hits": [],
+        "missing": [
+          "app/kernel/collections.py"
+        ],
+        "recall": 0.0,
+        "ranks": {}
+      },
+      "prepared_selected_decoys": [
+        "app/api/webhooks.py"
+      ]
+    },
+    {
+      "id": "hidden-session-permissions",
+      "category": "hidden-cause-patch",
+      "prompt": "After switching accounts, a session can retain an old admin permission. Fix the underlying cause, run python checks/check_session.py, and make the smallest justified change.",
+      "query": "switching accounts session retains old admin permission",
+      "gold_files": [
+        "app/kernel/projection.py"
+      ],
+      "decoy_files": [
+        "app/api/sessions.py"
+      ],
+      "evidence": [
+        "app/kernel/projection.py",
+        "project"
+      ],
+      "evaluator": {
+        "command": [
+          "python",
+          "checks/check_session.py"
+        ],
+        "timeout_seconds": 30,
+        "require_gold_change": true
+      },
+      "revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "prepared_initial_context_coverage": {
+        "gold_files": [
+          "app/kernel/projection.py"
+        ],
+        "selected_files": [
+          "app/api/sessions.py",
+          "checks/check_session.py"
+        ],
+        "hits": [],
+        "missing": [
+          "app/kernel/projection.py"
+        ],
+        "recall": 0.0,
+        "ranks": {}
+      },
+      "prepared_selected_decoys": [
+        "app/api/sessions.py"
+      ]
+    },
+    {
+      "id": "hidden-job-delay",
+      "category": "hidden-cause-patch",
+      "prompt": "A background job retry schedule starts at twice the configured base delay. Fix the underlying cause, run python checks/check_jobs.py, and make the smallest justified change.",
+      "query": "background job retry schedule twice configured base delay",
+      "gold_files": [
+        "app/kernel/timing.py"
+      ],
+      "decoy_files": [
+        "app/api/jobs.py"
+      ],
+      "evidence": [
+        "app/kernel/timing.py",
+        "span"
+      ],
+      "evaluator": {
+        "command": [
+          "python",
+          "checks/check_jobs.py"
+        ],
+        "timeout_seconds": 30,
+        "require_gold_change": true
+      },
+      "revision": "7583b42ab4fde87d3d0f0858d72e8e07f6b71f7b",
+      "prepared_initial_context_coverage": {
+        "gold_files": [
+          "app/kernel/timing.py"
+        ],
+        "selected_files": [
+          "app/api/jobs.py"
+        ],
+        "hits": [],
+        "missing": [
+          "app/kernel/timing.py"
+        ],
+        "recall": 0.0,
+        "ranks": {}
+      },
+      "prepared_selected_decoys": [
+        "app/api/jobs.py"
+      ]
+    }
+  ]
+}

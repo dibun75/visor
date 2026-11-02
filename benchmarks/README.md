@@ -99,6 +99,55 @@ python benchmarks/analyze.py \
   --output benchmarks/results/v1.2.0-diagnostic-pilot-summary.json
 ```
 
+## Adversarial retrieval benchmark
+
+`prepare_adversarial_pilot.py` creates four hidden-cause bug-fix tasks. For
+each task, the committed lexical V.I.S.O.R. context includes an obvious API
+decoy but omits the declared causal (gold) file. Preparation fails if that
+property is not true, preventing a supposedly adversarial fixture from silently
+becoming an ordinary retrieval task.
+
+The evaluator runs the behavioral check and separately requires the gold file
+to change. A workaround in the decoy can therefore pass the behavior check but
+not the benchmark. The analyzer reports initial gold-file recall separately
+from final correctness and classifies outcomes as `correct_patch`,
+`recovered_beyond_initial_context`, `plausible_wrong_location`,
+`incorrect_patch`, `no_patch`, or `loud_failure`, including counts per agent and
+condition. Initial context is a lead, not a restriction: agents may inspect the
+repository and recover the omitted cause.
+
+Prepare the deterministic fixture and its audited lexical contexts:
+
+```bash
+python benchmarks/prepare_adversarial_pilot.py \
+  --workspace /tmp/visor-adversarial/workspace \
+  --manifest /tmp/visor-adversarial/manifest.json \
+  --contexts /tmp/visor-adversarial/contexts
+```
+
+Run the same command templates documented for the patch pilot, replacing its
+manifest, workspace, worktrees, contexts, and results paths with the
+`/tmp/visor-adversarial` paths above. Use `--repeats 3`, `--seed 20261102`,
+and record the actual client versions and model identifiers. Four tasks by two
+agents by two conditions by three repeats produces 48 cells. Analyze them with:
+
+```bash
+python benchmarks/analyze.py /tmp/visor-adversarial/results/*.json \
+  --output /tmp/visor-adversarial/adversarial-summary.json
+```
+
+The committed contexts under `benchmarks/contexts/adversarial` are sanitized
+reference artifacts. Regenerate and compare them before a live run. Preserve
+the raw result records privately until stdout, stderr, session identifiers, and
+absolute paths have been reviewed; publish a sanitized summary plus the exact
+configuration and exclusions.
+
+The earlier 36-cell patch pilot remains a reliability gate: because all patches
+passed, correctness could not distinguish native from V.I.S.O.R. It cannot
+estimate retrieval-miss risk or confident wrong-location edits. This adversarial
+suite is designed to expose those cases. No live result is claimed here; do not
+interpret the fixture or harness alone as an improvement or regression.
+
 ## Scoring
 
 Each diagnostic task declares concrete file and symbol evidence. Summarize one or

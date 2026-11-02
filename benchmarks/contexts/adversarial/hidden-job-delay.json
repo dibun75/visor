@@ -1,0 +1,47 @@
+{
+  "context": [
+    {
+      "id": 11,
+      "file_path": "app/api/jobs.py",
+      "node_type": "function",
+      "name": "job_retry_schedule",
+      "start_line": 6,
+      "end_line": 7,
+      "retrieval": "lexical",
+      "relevance_score": 3.7,
+      "code_snippet": "def job_retry_schedule(base_seconds: float, attempts: int) -> list[float]:\n    return span(base_seconds, attempts)\n"
+    }
+  ],
+  "debug": {
+    "intent": "BUG_FIX",
+    "skill": "bug-fixer",
+    "retrieval_mode": "lexical",
+    "scores": {
+      "11": {
+        "final": 3.7,
+        "exact_match": 1.0,
+        "proximity": 1.5,
+        "embedding": 0.0,
+        "dependency": 1.2,
+        "recency": 0.0,
+        "feedback": 0.0
+      }
+    },
+    "reasoning": {
+      "11": [
+        "Matched query token in symbol name",
+        "Co-located in same file as top lexical hit",
+        "Reachable via dependency chain"
+      ]
+    }
+  },
+  "metrics": {
+    "estimated_tokens_without": 44,
+    "estimated_tokens_with": 49,
+    "reduction_percent": -11.4
+  },
+  "prompt_ready": "// app/api/jobs.py:6-7 (job_retry_schedule)\ndef job_retry_schedule(base_seconds: float, attempts: int) -> list[float]:\n    return span(base_seconds, attempts)\n",
+  "query": "background job retry schedule twice configured base delay",
+  "total_tokens": 49,
+  "truncated": false
+}

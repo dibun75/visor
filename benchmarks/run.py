@@ -15,6 +15,15 @@ import time
 from pathlib import Path
 from typing import Any
 
+try:
+    from benchmarks.context_coverage import (
+        context_files,
+        normalize_repo_path,
+        score_gold_files,
+    )
+except ModuleNotFoundError:  # Direct script execution
+    from context_coverage import context_files, normalize_repo_path, score_gold_files
+
 
 def load_task(manifest: Path, task_id: str) -> dict[str, Any]:
     tasks = json.loads(manifest.read_text(encoding="utf-8"))["tasks"]
@@ -127,14 +136,23 @@ def _run_evaluator(task: dict[str, Any], workspace: Path) -> dict[str, Any] | No
         env=env,
         timeout=timeout,
     )
+    changed_files = _changed_files(workspace)
+    required_changed = (
+        [normalize_repo_path(path) for path in task.get("gold_files", [])]
+        if evaluator.get("require_gold_change")
+        else []
+    )
+    missing_required = [path for path in required_changed if path not in changed_files]
     return {
         "command": command,
         "exit_code": exit_code,
-        "passed": exit_code == 0,
+        "passed": exit_code == 0 and not missing_required,
         "duration_seconds": time.monotonic() - started,
         "timed_out": timed_out,
         "interrupted": _interrupted,
-        "changed_files": _changed_files(workspace),
+        "changed_files": changed_files,
+        "behavioral_check_passed": exit_code == 0,
+        "missing_required_changed_files": missing_required,
         "stdout": stdout,
         "stderr": stderr,
     }
@@ -190,6 +208,20 @@ def main() -> int:
         parser.error("--context-file is not allowed for the native condition")
     context_path = args.context_file.resolve() if args.context_file else None
     context = context_path.read_text(encoding="utf-8") if context_path else ""
+    initial_context_coverage = None
+    gold_files = task.get("gold_files", [])
+    if context_path and gold_files:
+        try:
+            context_payload = json.loads(context)
+        except json.JSONDecodeError as exc:
+            parser.error(f"context file is not valid JSON: {exc}")
+        if not isinstance(context_payload, dict):
+            parser.error("context file must contain a JSON object")
+        if not all(isinstance(path, str) and path for path in gold_files):
+            parser.error("task gold_files must be a list of non-empty paths")
+        initial_context_coverage = score_gold_files(
+            gold_files, context_files(context_payload, workspace)
+        )
     values = {
         "prompt": task["prompt"],
         "workspace": workspace,
@@ -217,6 +249,7 @@ def main() -> int:
         "context_sha256": hashlib.sha256(context.encode()).hexdigest()
         if context
         else None,
+        "initial_context_coverage": initial_context_coverage,
         "started_at_epoch": time.time(),
     }
     interrupted = False

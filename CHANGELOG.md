@@ -2,6 +2,10 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## Unreleased
+
+- Added a reproducible adversarial retrieval benchmark with four hidden-cause tasks, audited gold-file omission, decoy coverage, required causal-file edits, and recovery versus wrong-location outcome reporting. No live comparative result is claimed yet.
+
 ## [1.4.2] — 2026-11-02
 
 V.I.S.O.R. 1.4.2 is a dependency-security maintenance release. It raises the supported dependency floors used by the Python package and refreshes the optional semantic stack. Application and HUD behavior are unchanged.

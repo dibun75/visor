@@ -1,0 +1,70 @@
+{
+  "context": [
+    {
+      "id": 5,
+      "file_path": "app/api/invoices.py",
+      "node_type": "function",
+      "name": "invoice_total",
+      "start_line": 6,
+      "end_line": 7,
+      "retrieval": "lexical",
+      "relevance_score": 3.7,
+      "code_snippet": "def invoice_total(line_items: list[float]) -> float:\n    return settle(sum(line_items))\n"
+    },
+    {
+      "id": 15,
+      "file_path": "checks/check_invoice.py",
+      "node_type": "import",
+      "name": "app.api.invoices",
+      "start_line": 1,
+      "end_line": 1,
+      "retrieval": "lexical",
+      "relevance_score": 1.0,
+      "code_snippet": "from app.api.invoices import invoice_total\n"
+    }
+  ],
+  "debug": {
+    "intent": "BUG_FIX",
+    "skill": "bug-fixer",
+    "retrieval_mode": "lexical",
+    "scores": {
+      "5": {
+        "final": 3.7,
+        "exact_match": 1.0,
+        "proximity": 1.5,
+        "embedding": 0.0,
+        "dependency": 1.2,
+        "recency": 0.0,
+        "feedback": 0.0
+      },
+      "15": {
+        "final": 1.0,
+        "exact_match": 1.0,
+        "proximity": 0.0,
+        "embedding": 0.0,
+        "dependency": 0.0,
+        "recency": 0.0,
+        "feedback": 0.0
+      }
+    },
+    "reasoning": {
+      "5": [
+        "Matched query token in symbol name",
+        "Co-located in same file as top lexical hit",
+        "Reachable via dependency chain"
+      ],
+      "15": [
+        "Matched query token in symbol name"
+      ]
+    }
+  },
+  "metrics": {
+    "estimated_tokens_without": 79,
+    "estimated_tokens_with": 75,
+    "reduction_percent": 5.1
+  },
+  "prompt_ready": "// app/api/invoices.py:6-7 (invoice_total)\ndef invoice_total(line_items: list[float]) -> float:\n    return settle(sum(line_items))\n\n\n// checks/check_invoice.py:1-1 (app.api.invoices)\nfrom app.api.invoices import invoice_total\n",
+  "query": "invoice totals one cent low fractional line items",
+  "total_tokens": 75,
+  "truncated": false
+}
