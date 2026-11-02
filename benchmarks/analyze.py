@@ -11,6 +11,11 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable
 
+try:
+    from benchmarks.context_coverage import normalize_repo_path
+except ModuleNotFoundError:  # Direct script execution
+    from context_coverage import normalize_repo_path
+
 BOOTSTRAP_SAMPLES = 10_000
 BOOTSTRAP_SEED = 20261031
 
@@ -84,6 +89,24 @@ def score_record(record: dict[str, Any], source: Path) -> dict[str, Any]:
     usage = extract_usage(record)
     evaluation = record.get("evaluation") or {}
     patch_success = record.get("patch_success", evaluation.get("passed"))
+    changed_files = [
+        normalize_repo_path(path) for path in evaluation.get("changed_files", [])
+    ]
+    initial = record.get("initial_context_coverage")
+    gold_files = [
+        normalize_repo_path(path) for path in record["task"].get("gold_files", [])
+    ]
+    decoy_files = [
+        normalize_repo_path(path) for path in record["task"].get("decoy_files", [])
+    ]
+    outcome = classify_outcome(
+        exit_code=record["exit_code"],
+        patch_success=patch_success,
+        changed_files=changed_files,
+        gold_files=gold_files,
+        decoy_files=decoy_files,
+        initial_context=initial,
+    )
     return {
         "source": source.name,
         "task": record["task"]["id"],
@@ -97,9 +120,42 @@ def score_record(record: dict[str, Any], source: Path) -> dict[str, Any]:
         "evidence_total": len(evidence),
         "evidence_recall": len(hits) / len(evidence) if evidence else None,
         "patch_success": patch_success,
-        "changed_files": evaluation.get("changed_files", []),
+        "changed_files": changed_files,
+        "gold_files": gold_files,
+        "initial_gold_recall": initial.get("recall") if initial else None,
+        "initial_gold_missing": initial.get("missing", []) if initial else [],
+        "outcome": outcome,
         **usage,
     }
+
+
+def classify_outcome(
+    *,
+    exit_code: int | None,
+    patch_success: bool | None,
+    changed_files: list[str],
+    gold_files: list[str],
+    decoy_files: list[str],
+    initial_context: dict[str, Any] | None,
+) -> str | None:
+    """Classify observable failure and recovery modes without reading agent prose."""
+    if patch_success is None:
+        return None
+    changed = set(changed_files)
+    gold = set(gold_files)
+    decoys = set(decoy_files)
+    initial_missed_gold = bool(initial_context and initial_context.get("missing"))
+    if patch_success:
+        if initial_missed_gold and changed & gold:
+            return "recovered_beyond_initial_context"
+        return "correct_patch"
+    if exit_code not in (0, None) and not changed:
+        return "loud_failure"
+    if changed & decoys and not changed & gold:
+        return "plausible_wrong_location"
+    if changed:
+        return "incorrect_patch"
+    return "no_patch"
 
 
 def _median(rows: list[dict[str, Any]], key: str) -> float:
@@ -151,6 +207,13 @@ def _paired_metric(items: list[dict[str, float]], key: str) -> dict[str, Any]:
 
 
 def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    outcome_counts: dict[str, int] = defaultdict(int)
+    outcomes_by_cell: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for row in rows:
+        if row.get("outcome"):
+            outcome_counts[row["outcome"]] += 1
+            key = f"{row['agent']}:{row['condition']}"
+            outcomes_by_cell[key][row["outcome"]] += 1
     failures = [row for row in rows if row["exit_code"] != 0]
     rows = [row for row in rows if row["exit_code"] == 0]
     groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -167,6 +230,11 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "median_evidence_recall": (
                 _median(items, "evidence_recall")
                 if all(item.get("evidence_recall") is not None for item in items)
+                else None
+            ),
+            "median_initial_gold_recall": (
+                _median(items, "initial_gold_recall")
+                if any(item.get("initial_gold_recall") is not None for item in items)
                 else None
             ),
             "patch_successes": sum(bool(item["patch_success"]) for item in patch_rows),
@@ -254,6 +322,11 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "failed_records": len(failures),
         "cells": cells,
         "paired": paired,
+        "outcomes": dict(sorted(outcome_counts.items())),
+        "outcomes_by_cell": {
+            key: dict(sorted(counts.items()))
+            for key, counts in sorted(outcomes_by_cell.items())
+        },
     }
 
 

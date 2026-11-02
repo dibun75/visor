@@ -16,6 +16,18 @@ zero placeholders and must be interpreted as unknown. Claude cost values are
 provider-reported. Timings include provider latency and repository inspection on
 the recorded local machine; do not generalize them across machines or plans.
 
+## Adversarial retrieval benchmark
+
+The four-task hidden-cause fixture and sanitized initial lexical contexts are
+committed, but no live agent results are published yet. The preparer verifies
+that each initial context omits its declared causal file and includes a declared
+decoy. A future result summary must report initial gold-file recall separately
+from patch correctness, include outcome counts by agent and condition, preserve
+the random seed and client/model versions, and disclose failures and exclusions.
+
+Until that run exists, this repository makes no claim about whether focused
+context helps or hurts on retrieval misses.
+
 ## v1.2.1 patch pilot
 
 `v1.2.1-patch-pilot-summary.json` is the sanitized aggregate for the 3-task

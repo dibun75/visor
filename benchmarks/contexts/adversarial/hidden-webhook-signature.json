@@ -1,0 +1,70 @@
+{
+  "context": [
+    {
+      "id": 9,
+      "file_path": "app/api/webhooks.py",
+      "node_type": "function",
+      "name": "webhook_headers",
+      "start_line": 6,
+      "end_line": 7,
+      "retrieval": "lexical",
+      "relevance_score": 3.7,
+      "code_snippet": "def webhook_headers(signature: str, current: dict[str, str]) -> dict[str, str]:\n    return put_unique(current, \"X-Signature\", signature)\n"
+    },
+    {
+      "id": 16,
+      "file_path": "checks/check_webhook.py",
+      "node_type": "import",
+      "name": "app.api.webhooks",
+      "start_line": 1,
+      "end_line": 1,
+      "retrieval": "lexical",
+      "relevance_score": 1.0,
+      "code_snippet": "from app.api.webhooks import webhook_headers\n"
+    }
+  ],
+  "debug": {
+    "intent": "BUG_FIX",
+    "skill": "bug-fixer",
+    "retrieval_mode": "lexical",
+    "scores": {
+      "9": {
+        "final": 3.7,
+        "exact_match": 1.0,
+        "proximity": 1.5,
+        "embedding": 0.0,
+        "dependency": 1.2,
+        "recency": 0.0,
+        "feedback": 0.0
+      },
+      "16": {
+        "final": 1.0,
+        "exact_match": 1.0,
+        "proximity": 0.0,
+        "embedding": 0.0,
+        "dependency": 0.0,
+        "recency": 0.0,
+        "feedback": 0.0
+      }
+    },
+    "reasoning": {
+      "9": [
+        "Matched query token in symbol name",
+        "Co-located in same file as top lexical hit",
+        "Reachable via dependency chain"
+      ],
+      "16": [
+        "Matched query token in symbol name"
+      ]
+    }
+  },
+  "metrics": {
+    "estimated_tokens_without": 135,
+    "estimated_tokens_with": 88,
+    "reduction_percent": 34.8
+  },
+  "prompt_ready": "// app/api/webhooks.py:6-7 (webhook_headers)\ndef webhook_headers(signature: str, current: dict[str, str]) -> dict[str, str]:\n    return put_unique(current, \"X-Signature\", signature)\n\n\n// checks/check_webhook.py:1-1 (app.api.webhooks)\nfrom app.api.webhooks import webhook_headers\n",
+  "query": "retried webhook stale signature header new signature",
+  "total_tokens": 88,
+  "truncated": false
+}
