@@ -83,7 +83,7 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
 
     const uvPath = resolveUvPath();
     const config = vscode.workspace.getConfiguration('visor');
-    let customServerPath = config.get<string>('serverPath');
+    const customServerPath = config.get<string>('serverPath')?.trim();
     
     const localServerPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
     const serverEnv = buildServerEnv(workspaceFolder);
@@ -96,29 +96,35 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
 
     if (customServerPath) {
         outputChannel.appendLine(`[VISOR] Using configured serverPath: ${customServerPath}`);
-        args = ['--directory', workspaceFolder, 'run', '-q', customServerPath];
+        if (customServerPath.endsWith('.py')) {
+            args = ['--directory', workspaceFolder, 'run', '-q', customServerPath];
+        } else {
+            cmd = customServerPath;
+            args = [];
+        }
     } else if (fs.existsSync(localServerPath)) {
         outputChannel.appendLine(`[VISOR] Found local server.py in workspace: ${localServerPath}`);
         args = ['--directory', workspaceFolder, 'run', '-q', localServerPath];
     } else {
-        const msg = 'No V.I.S.O.R. server found. Install visor-mcp explicitly or configure visor.serverPath.';
-        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
-        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
-        throw new Error(msg);
+        outputChannel.appendLine('[VISOR] No source checkout found; launching visor-mcp with uv tool run.');
+        args = ['tool', 'run', 'visor-mcp'];
     }
 
-    // Pre-flight: verify uv can run
-    try {
-        const uvVersion = cp.execSync(`"${uvPath}" --version`, { 
-            env: serverEnv, timeout: 10000 
-        }).toString().trim();
-        outputChannel.appendLine(`[VISOR] uv version: ${uvVersion}`);
-    } catch (e: any) {
-        const msg = `Cannot run uv at "${uvPath}": ${e.message}`;
-        outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
-        outputChannel.show(true);
-        vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
-        throw new Error(msg);
+    // Pre-flight uv only when it is the selected launcher. A configured
+    // visor-mcp executable must remain usable on systems without uv.
+    if (cmd === uvPath) {
+        try {
+            const uvVersion = cp.execFileSync(uvPath, ['--version'], {
+                env: serverEnv, timeout: 10000
+            }).toString().trim();
+            outputChannel.appendLine(`[VISOR] uv version: ${uvVersion}`);
+        } catch (e: any) {
+            const msg = `Cannot run uv at "${uvPath}": ${e.message}`;
+            outputChannel.appendLine(`[VISOR] FATAL: ${msg}`);
+            outputChannel.show(true);
+            vscode.window.showErrorMessage(`V.I.S.O.R.: ${msg}`);
+            throw new Error(msg);
+        }
     }
 
     activeTransport = new StdioClientTransport({

@@ -1,6 +1,6 @@
 # V.I.S.O.R. — Example Use Cases
 
-Real-world scenarios showing how V.I.S.O.R. helps AI coding agents work faster and more precisely.
+Illustrative workflows for using V.I.S.O.R. with coding agents. Results depend on the indexed repository and retrieval mode.
 
 ---
 
@@ -13,16 +13,11 @@ uv run visor fix "login crash when email is null"
 ```
 
 **What V.I.S.O.R. does:**
-- Detects **BUG_FIX** intent → activates `bug-fixer` skill
-- Boosts dependency chain weight (1.2×) to find related files
-- Boosts recency weight (1.5×) to prioritize recently modified files
-- Returns only the 3-5 most relevant code snippets
+- Detects `BUG_FIX` intent and applies its ranking profile
+- Ranks lexical results using exact-name, same-file, dependency, and recency signals
+- Returns snippets within the configured local token budget
 
-**What your AI gets:**
-- The exact function with the null check missing
-- The middleware that calls it
-- The data model involved
-- Human-readable reasoning for each selection
+**What your AI gets:** ranked candidate symbols, source snippets, and a reason for each selection. V.I.S.O.R. does not diagnose or fix the bug itself.
 
 ---
 
@@ -35,16 +30,11 @@ uv run visor explain "database client module"
 ```
 
 **What V.I.S.O.R. does:**
-- Detects **EXPLAIN** intent → activates `architecture-explainer` skill
-- Boosts embedding similarity weight (1.8×) for broad semantic coverage
-- Reduces dependency weight to avoid narrowing too early
-- Returns a wider set of conceptually related symbols
+- Detects `EXPLAIN` intent and applies its ranking profile
+- Uses lexical retrieval by default; optional semantic mode adds embedding similarity
+- Returns ranked symbols and their graph relationships
 
-**What your AI gets:**
-- The main `DatabaseClient` class
-- Its configuration and initialization
-- Related utility functions
-- Connection management patterns
+**What your AI gets:** the most relevant indexed symbols V.I.S.O.R. can find. Names shown here are examples, not guaranteed output.
 
 ---
 
@@ -60,7 +50,7 @@ uv run visor trace src/api/routes.py src/db/client.py
 - Queries the dependency graph for the shortest path
 - Returns every file in the chain
 
-**Output:**
+**Illustrative output:**
 ```json
 {
   "source": "src/api/routes.py",
@@ -86,7 +76,7 @@ uv run visor trace src/api/routes.py src/db/client.py
 # impact_analysis("src/db/client.py")
 ```
 
-**What V.I.S.O.R. returns:**
+**Illustrative return shape:**
 ```json
 {
   "target": "src/db/client.py",
@@ -99,7 +89,7 @@ uv run visor trace src/api/routes.py src/db/client.py
 }
 ```
 
-**Why this matters:** Your AI now knows to check all 4 downstream files before making changes.
+**Why this matters:** The graph provides candidates to inspect; it is not a guarantee that every listed file will break or that no unlisted file can be affected.
 
 ---
 
@@ -115,7 +105,7 @@ uv run visor context "refactor auth module" --skill refactor-assistant
 - Detects **REFACTOR** intent → activates `refactor-assistant` skill
 - Boosts dependency weight (1.5×) to map the full graph
 - Boosts exact match weight (1.5×) to catch all `auth` references
-- Returns a comprehensive view of the module and its dependencies
+- Returns a ranked, token-budgeted view of matching symbols and graph neighbors
 
 ---
 
@@ -127,7 +117,7 @@ uv run visor context "refactor auth module" --skill refactor-assistant
 uv run visor drift
 ```
 
-**Output:**
+**Illustrative output:**
 ```
 ============================================================
   V.I.S.O.R. Drift Monitor — Recent Changes
@@ -151,7 +141,7 @@ add_custom_skill(
     name="db-debugger",
     description="Database issue investigation",
     content="Focus on connection pools, query timeouts, and transaction locks.",
-    strategy='{"intent_override": "BUG_FIX", "scoring_bias": {"dependency": 2.0, "recency": 1.8}}'
+    strategy='{"intent_override": "BUG_FIX", "scoring_bias": {"dep": 2.0, "recency": 1.8}}'
 )
 ```
 

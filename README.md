@@ -273,7 +273,7 @@ Reference: [`docs/MCP_TOOLS.md`](./docs/MCP_TOOLS.md).
 - [Contributing](./CONTRIBUTING.md)
 - [Security reports](./SECURITY.md)
 
-A code of conduct is not in the tree. Adding one needs an owner-designated enforcement contact. No contact is designated for that purpose today.
+Please follow the [Code of Conduct](./CODE_OF_CONDUCT.md) when participating.
 
 ```bash
 git clone https://github.com/dibun75/visor.git

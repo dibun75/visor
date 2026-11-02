@@ -2,6 +2,30 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [Unreleased]
+
+### Extension
+
+- Ordinary repositories now launch the installed package with `uv tool run visor-mcp`.
+- A configured `visor-mcp` executable no longer requires `uv`.
+- Removed the unused HUD proxy settings.
+
+### Skills
+
+- Custom strategies accept only `intent_override`, `scoring_bias`, and `tool_priority`.
+- Scoring weights accept `exact`, `same`, `embed`, `dep`, and `recency`.
+- `tool_priority` now supplies `recommended_next`.
+- Removed unsupported intent overrides from the seeded skills.
+
+### Packaging and validation
+
+- The Python wheel no longer includes the HUD or extension source.
+- CI checks the whole tree, wheel contents, Playwright HUD tests, extension compilation, and VSIX packaging.
+
+### Documentation
+
+- Corrected the lexical default, skill count, C# support, HUD wording, Code of Conduct link, scoring examples, and database-reset instructions.
+
 ## [1.4.0] — 2026-11-02
 
 ### Explicit retrieval feedback

@@ -8,7 +8,7 @@ separates V.I.S.O.R. from a simple code indexer.
 Pipeline:
     User Query
         → Skill Resolution (optional strategy override)
-        → Semantic Search (embedding similarity)
+        → Lexical Search (default) or Semantic Search (opt-in)
         → Dependency Expansion (graph traversal)
         → Relevance Scoring (weighted multi-signal)
         → Explainable Reasoning (per-node justification)
@@ -187,8 +187,8 @@ def _score_node(
 
     Signals:
         exact_match     — name token overlap with query
-        same_file       — same file as the closest semantic match
-        embedding_sim   — inverted cosine distance (lower dist = higher score)
+        same_file       — same file as the first retrieval hit
+        embedding_sim   — inverted cosine distance in semantic mode; zero in lexical mode
         dependency_dist — inverse hop count from anchor file
         recency         — time-decayed modification freshness
     """
@@ -251,7 +251,7 @@ def build_context(
 
     Args:
         query:        Natural language question or task description.
-        max_results:  Maximum candidates to retrieve from semantic search.
+        max_results:  Maximum candidates to retrieve from the active backend.
         skill_name:   Optional skill name to apply strategy overrides.
 
     Returns:

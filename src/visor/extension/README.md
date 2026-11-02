@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://github.com/dibun75/visor/raw/main/docs/assets/icon.png" alt="V.I.S.O.R. logo" width="120"/>
   <h1>V.I.S.O.R. HUD</h1>
-  <p>Optional WebGPU view of a local V.I.S.O.R. index.</p>
+  <p>Optional 3D view of a local V.I.S.O.R. index.</p>
 </div>
 
 The HUD is optional. Context retrieval lives in the `visor` CLI and the `visor-mcp` stdio server. Both work without this extension.
@@ -18,7 +18,7 @@ The extension draws the indexed dependency graph in the editor and polls `get_te
 
 <div align="center">
   <img src="https://github.com/dibun75/visor/raw/main/docs/assets/hud_overview.png" alt="Optional HUD with a dependency graph and telemetry panels" width="800"/>
-  <p>Existing capture. It was not recaptured with the current build, so the numbers in the image are not a measurement for this revision.</p>
+  <p>Current capture generated from this repository's local graph and telemetry outputs. The values are a UI demonstration, not measured agent usage.</p>
 </div>
 
 ## Install and verify the server
@@ -50,7 +50,11 @@ For VS Code, add `.vscode/mcp.json`:
 }
 ```
 
-`visor init` only prints that style of entry. It does not write the file.
+`visor init` only prints that style of entry. It does not write the file. The
+extension launches a local checkout's `src/visor/server.py` during V.I.S.O.R.
+development; in other workspaces it uses `uv tool run visor-mcp`. Set
+`visor.serverPath` only to override that behavior with an absolute `server.py`
+path or a `visor-mcp` executable.
 
 Search for **V.I.S.O.R. HUD** in the editor, or install [dibun75.visor-hud on Open VSX](https://open-vsx.org/extension/dibun75/visor-hud). Open the V.I.S.O.R. activity-bar view, or run **Start V.I.S.O.R. HUD** from the command palette.
 
@@ -62,10 +66,7 @@ The extension targets VS Code `^1.80.0` and other editors that install Open VSX 
 
 | Setting | Default | Role |
 | --- | --- | --- |
-| `visor.localProxyPort` | `4173` | Port for a local HUD dev server |
-| `visor.remoteProxyPort` | `8080` | Port used for a remote SSH proxy |
-| `visor.enableLocalForwarding` | `true` | Open a reverse tunnel when the HUD is reached over SSH |
-| `visor.serverPath` | empty | Optional path to `server.py` or a `visor` executable. Empty uses discovery |
+| `visor.serverPath` | empty | Optional absolute path to `server.py` or a `visor-mcp` executable. Empty uses local-source discovery and then `uv tool run visor-mcp` |
 
 ## What the graph is
 

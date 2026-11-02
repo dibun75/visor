@@ -67,7 +67,7 @@ Skills are pre-loaded strategies that change how V.I.S.O.R. scores and retrieves
 - Adjust individual scoring weights (e.g., boost dependency proximity)
 - Suggest specific follow-up tools
 
-V.I.S.O.R. ships with 4 built-in skills: `bug-fixer`, `architecture-explainer`, `refactor-assistant`, and `performance-optimizer`. You can create your own via the `add_custom_skill` MCP tool.
+V.I.S.O.R. seeds 29 built-in skills. Four of them also select a supported ranking intent: `bug-fixer`, `architecture-explainer`, `refactor-assistant`, and `performance-optimizer`. You can create your own with the `add_custom_skill` MCP tool.
 
 ---
 
@@ -75,7 +75,7 @@ V.I.S.O.R. ships with 4 built-in skills: `bug-fixer`, `architecture-explainer`, 
 
 The MCP server is the core. It registers 21 tools, including `health_check`. `get_visor_skill` is an MCP prompt. The VS Code extension is optional and adds:
 
-- a WebGPU view of the indexed graph
+- a Three.js/WebGL view of the indexed graph
 - telemetry from `get_telemetry` (node count, local payload-byte counter, drift)
 - agent focus when `set_hud_focus` has been called
 

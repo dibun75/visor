@@ -110,3 +110,70 @@ def test_dependency_chain_accepts_exact_file_path(test_db, mcp_tools):
 
     assert result["source_file"] == "app.py"
     assert result["dependency_chain"] == ["util.py"]
+
+
+def test_add_custom_skill_rejects_unknown_strategy_keys(test_db, mcp_tools):
+    result = json.loads(
+        mcp_tools["add_custom_skill"](
+            "broken",
+            "Invalid strategy",
+            "Test invalid configuration.",
+            json.dumps({"scoring_bias": {"dependency": 2.0}}),
+        )
+    )
+
+    assert result["success"] is False
+    assert "dependency" in result["error"]
+    assert test_db.get_skill_by_name("broken") is None
+
+
+def test_custom_skill_tool_priority_drives_recommended_next(test_db, mcp_tools):
+    strategy = {
+        "intent_override": "BUG_FIX",
+        "scoring_bias": {"dep": 1.5, "recency": 0.5},
+        "tool_priority": ["impact_analysis", "get_dependency_chain"],
+    }
+    added = json.loads(
+        mcp_tools["add_custom_skill"](
+            "triage",
+            "Triage a change",
+            "Inspect impact before editing.",
+            json.dumps(strategy),
+        )
+    )
+    assert added["success"] is True
+
+    stored = test_db.get_skill_by_name("triage")
+    assert stored is not None
+    assert stored["strategy"] == strategy
+
+    result = json.loads(mcp_tools["build_context"]("missing symbol", "triage"))
+    assert result["recommended_next"] == [
+        "impact_analysis",
+        "get_dependency_chain",
+    ]
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        "not json",
+        "[]",
+        json.dumps({"intent_override": "NOT_REAL"}),
+        json.dumps({"scoring_bias": {"dep": -1}}),
+        json.dumps({"tool_priority": "impact_analysis"}),
+    ],
+)
+def test_add_custom_skill_rejects_invalid_strategies(test_db, mcp_tools, strategy):
+    result = json.loads(
+        mcp_tools["add_custom_skill"](
+            "invalid",
+            "Invalid strategy",
+            "Test invalid configuration.",
+            strategy,
+        )
+    )
+
+    assert result["success"] is False
+    assert result["error"]
+    assert test_db.get_skill_by_name("invalid") is None

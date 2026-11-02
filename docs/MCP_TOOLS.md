@@ -87,14 +87,14 @@ The **Context Intelligence Engine**. Builds a ranked, token-budget-aware context
         "exact_match": 1.0,
         "proximity": 1.5,
         "embedding": 0.375,
-        "dependency": 1.2,
+        "dep": 1.2,
         "recency": 1.5
       }
     },
     "reasoning": {
       "42": [
         "Matched query token in symbol name",
-        "Co-located in same file as top semantic hit",
+        "Co-located in same file as top retrieval hit",
         "Reachable via dependency chain",
         "Recently modified file (boosted)"
       ]
@@ -266,7 +266,7 @@ Detects context drift — situations where the AI's loaded snapshot is stale.
 
 ### `get_architecture_map`
 
-Returns the full codebase file topology as a graph JSON for the 3D WebGPU HUD.
+Returns the full codebase file topology as a graph JSON for the 3D HUD.
 
 **Parameters**:
 
@@ -385,7 +385,7 @@ Creates a new custom skill with an optional execution strategy.
 {
   "intent_override": "BUG_FIX",
   "scoring_bias": {
-    "dependency": 1.2,
+    "dep": 1.2,
     "recency": 1.5
   },
   "tool_priority": [

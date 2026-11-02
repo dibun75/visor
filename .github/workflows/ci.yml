@@ -20,9 +20,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --python 3.12
       - name: Lint
-        run: uv run ruff check src/visor/ tests/
+        run: uv run ruff check .
       - name: Format check
-        run: uv run ruff format --check src/visor/ tests/
+        run: uv run ruff format --check .
 
   test:
     runs-on: ubuntu-latest
@@ -61,6 +61,12 @@ jobs:
         run: uv sync --dev --python 3.12
       - name: Build package
         run: uv build
+      - name: Audit wheel contents
+        run: |
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          unzip -Z1 "$wheel" > /tmp/visor-wheel-files.txt
+          ! grep -Eq '(^|/)(hud|extension|node_modules|playwright-report|test-results|__pycache__)(/|$)' /tmp/visor-wheel-files.txt
+          test "$(stat -c%s "$wheel")" -lt 1048576
       - name: Verify CLI
         run: uv run visor --version
       - name: Verify CLI initialization
@@ -85,12 +91,13 @@ jobs:
         run: npm run lint
       - name: Build HUD
         run: npm run build
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Test HUD
+        run: npx playwright test
 
   extension:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src/visor/extension
     steps:
       - uses: actions/checkout@v7
       - name: Set up Node.js
@@ -98,8 +105,23 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: src/visor/extension/package-lock.json
+          cache-dependency-path: |
+            src/visor/hud/package-lock.json
+            src/visor/extension/package-lock.json
+      - name: Build HUD for extension package
+        working-directory: ./src/visor/hud
+        run: npm ci && npm run build
       - name: Install extension dependencies
+        working-directory: ./src/visor/extension
         run: npm ci
       - name: Type-check extension
+        working-directory: ./src/visor/extension
         run: npm run check-types
+      - name: Compile extension
+        working-directory: ./src/visor/extension
+        run: npm run compile
+      - name: Audit extension package
+        working-directory: ./src/visor/extension
+        run: npx --yes @vscode/vsce package --no-dependencies --out /tmp/visor-hud.vsix
+      - name: Inspect extension artifact
+        run: unzip -l /tmp/visor-hud.vsix
