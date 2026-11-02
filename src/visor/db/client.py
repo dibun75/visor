@@ -357,6 +357,29 @@ class VectorDBClient:
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS context_feedback (
+                id TEXT PRIMARY KEY,
+                workspace_hash TEXT NOT NULL,
+                query TEXT NOT NULL,
+                query_signature TEXT NOT NULL,
+                intent TEXT NOT NULL,
+                relative_path TEXT NOT NULL,
+                verdict TEXT NOT NULL,
+                reason TEXT NOT NULL DEFAULT '',
+                file_hash TEXT NOT NULL DEFAULT '',
+                index_revision INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                application_count INTEGER NOT NULL DEFAULT 0,
+                last_applied_at TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_context_feedback_identity
+            ON context_feedback (workspace_hash, query_signature, relative_path)
+        """)
+
         self.spoke_conn.commit()
 
     # ──────────────────────────────────────────────

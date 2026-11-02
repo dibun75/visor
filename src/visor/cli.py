@@ -215,6 +215,107 @@ def cmd_drift(args):
     print(f"{'=' * 60}\n")
 
 
+def _print_feedback(payload: dict, human: bool) -> None:
+    if not human:
+        print(json.dumps(payload, indent=2))
+        return
+    if not payload.get("ok", True):
+        print(payload.get("error", "Feedback command failed."))
+        return
+    if "deleted" in payload and "feedback" not in payload:
+        count = payload["deleted"]
+        if isinstance(count, bool):
+            print("Deleted feedback." if count else "Feedback record was not found.")
+        else:
+            print(f"Removed {count} feedback record{'s' if count != 1 else ''}.")
+        return
+    record = payload.get("feedback")
+    if isinstance(record, dict):
+        print(
+            f"Recorded {record['verdict']} feedback for {record['relative_path']} ({record['id']})."
+        )
+        return
+    if isinstance(record, list):
+        if not record:
+            print("No feedback records.")
+            return
+        for item in record:
+            print(
+                f"{item['id']}  {item['verdict']}  {item['relative_path']}  {item['query']}"
+            )
+        return
+    print("Feedback updated.")
+
+
+def _feedback_exit(payload: dict, human: bool, code: int = 2) -> None:
+    _print_feedback(payload, human)
+    sys.exit(code)
+
+
+def cmd_feedback_record(args):
+    """Store one explicit useful, irrelevant, or missing verdict."""
+    _init_workspace(args)
+    from visor.feedback import FeedbackError, record_feedback
+    from visor.tools.context_engine import _classify_intent
+
+    try:
+        record = record_feedback(
+            query=args.query,
+            file_path=args.file,
+            verdict=args.verdict,
+            reason=args.reason or "",
+            intent=_classify_intent(args.query),
+        )
+    except FeedbackError as exc:
+        _feedback_exit({"ok": False, "error": str(exc)}, human=not args.json)
+    _print_feedback({"ok": True, "feedback": record}, human=not args.json)
+
+
+def cmd_feedback_list(args):
+    """List workspace feedback, optionally filtered by a similar query."""
+    _init_workspace(args)
+    from visor.feedback import list_feedback
+    from visor.tools.context_engine import _classify_intent
+
+    intent = _classify_intent(args.query) if args.query else None
+    records = list_feedback(args.query, intent=intent)
+    _print_feedback({"ok": True, "feedback": records}, human=not args.json)
+
+
+def cmd_feedback_delete(args):
+    """Delete one feedback record from the current workspace."""
+    _init_workspace(args)
+    from visor.feedback import delete_feedback
+
+    deleted = delete_feedback(args.id)
+    payload = {"ok": deleted, "deleted": deleted}
+    if not deleted:
+        payload["error"] = "Feedback record was not found."
+        _feedback_exit(payload, human=not args.json)
+    _print_feedback(payload, human=not args.json)
+
+
+def cmd_feedback_clear(args):
+    """Delete every feedback record for the current workspace."""
+    if not args.yes:
+        if not sys.stdin.isatty():
+            _feedback_exit(
+                {"ok": False, "error": "Refusing to clear feedback without --yes."},
+                human=not args.json,
+            )
+        answer = input("Clear all feedback for this workspace? Type yes: ")
+        if answer.strip().lower() != "yes":
+            _feedback_exit(
+                {"ok": False, "error": "Feedback clear cancelled."},
+                human=not args.json,
+            )
+    _init_workspace(args)
+    from visor.feedback import clear_feedback
+
+    removed = clear_feedback()
+    _print_feedback({"ok": True, "deleted": removed}, human=not args.json)
+
+
 def cmd_init(args):
     """Auto-detect IDE and generate MCP config for V.I.S.O.R."""
     import shutil
@@ -306,6 +407,40 @@ def main():
     # visor drift
     p_drift = sub.add_parser("drift", help="Show recent file changes (drift detection)")
     p_drift.set_defaults(func=cmd_drift)
+
+    p_feedback = sub.add_parser(
+        "feedback", help="Record or inspect explicit retrieval feedback"
+    )
+    feedback_commands = p_feedback.add_subparsers(
+        dest="feedback_command", required=True
+    )
+    for verdict in ("useful", "irrelevant", "missing"):
+        command = feedback_commands.add_parser(
+            verdict, help=f"Mark a file as {verdict} for a query"
+        )
+        command.add_argument("file", help="Project file")
+        command.add_argument(
+            "--query", required=True, help="Query this feedback applies to"
+        )
+        command.add_argument("--reason", default="", help="Optional note")
+        command.add_argument("--json", action="store_true", help="Print JSON")
+        command.set_defaults(func=cmd_feedback_record, verdict=verdict)
+    p_feedback_list = feedback_commands.add_parser("list", help="List feedback records")
+    p_feedback_list.add_argument(
+        "--query", default=None, help="Keep similar queries only"
+    )
+    p_feedback_list.add_argument("--json", action="store_true", help="Print JSON")
+    p_feedback_list.set_defaults(func=cmd_feedback_list)
+    p_feedback_delete = feedback_commands.add_parser("delete", help="Delete one record")
+    p_feedback_delete.add_argument("id", help="Feedback record id")
+    p_feedback_delete.add_argument("--json", action="store_true", help="Print JSON")
+    p_feedback_delete.set_defaults(func=cmd_feedback_delete)
+    p_feedback_clear = feedback_commands.add_parser(
+        "clear", help="Delete workspace feedback"
+    )
+    p_feedback_clear.add_argument("--yes", action="store_true", help="Confirm deletion")
+    p_feedback_clear.add_argument("--json", action="store_true", help="Print JSON")
+    p_feedback_clear.set_defaults(func=cmd_feedback_clear)
 
     args = parser.parse_args()
     if not args.command:
