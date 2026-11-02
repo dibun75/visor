@@ -584,6 +584,76 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool()
     @track_telemetry
+    def record_context_feedback(
+        query: str, file_path: str, verdict: str, reason: str = ""
+    ) -> str:
+        """
+        Record explicit retrieval feedback for one workspace file and query.
+
+        Verdicts are ``useful``, ``irrelevant``, or ``missing``. This does not
+        store agent conversation memory and does not change import or call edges.
+        The same workspace, normalized query, and file updates one record.
+        """
+        from visor.feedback import FeedbackError, record_feedback
+        from visor.tools.context_engine import _classify_intent
+
+        try:
+            record = record_feedback(
+                query=query,
+                file_path=file_path,
+                verdict=verdict,
+                reason=reason,
+                intent=_classify_intent(query),
+            )
+        except FeedbackError as exc:
+            return json.dumps({"ok": False, "error": str(exc)})
+        return json.dumps({"ok": True, "feedback": record})
+
+    @mcp.tool()
+    @track_telemetry
+    def list_context_feedback(query: Optional[str] = None) -> str:
+        """
+        List explicit retrieval feedback for the current workspace.
+
+        When ``query`` is set, only records at or above the lexical similarity
+        threshold for that query and intent are returned.
+        """
+        from visor.feedback import list_feedback
+        from visor.tools.context_engine import _classify_intent
+
+        intent = _classify_intent(query) if query else None
+        return json.dumps({"ok": True, "feedback": list_feedback(query, intent=intent)})
+
+    @mcp.tool()
+    @track_telemetry
+    def delete_context_feedback(feedback_id: str) -> str:
+        """Delete one explicit feedback record from the current workspace."""
+        from visor.feedback import delete_feedback
+
+        deleted = delete_feedback(feedback_id)
+        payload = {"ok": deleted, "deleted": deleted}
+        if not deleted:
+            payload["error"] = "Feedback record was not found."
+        return json.dumps(payload)
+
+    @mcp.tool()
+    @track_telemetry
+    def clear_context_feedback(confirm: bool = False) -> str:
+        """
+        Delete every explicit feedback record for the current workspace.
+
+        ``confirm`` must be true. This does not delete the code index or agent memory.
+        """
+        if confirm is not True:
+            return json.dumps(
+                {"ok": False, "error": "Confirmation is required to clear feedback."}
+            )
+        from visor.feedback import clear_feedback
+
+        return json.dumps({"ok": True, "deleted": clear_feedback()})
+
+    @mcp.tool()
+    @track_telemetry
     def delete_custom_skill(skill_id: int) -> str:
         """Deletes a custom skill."""
         success = db_client.delete_custom_skill(skill_id)

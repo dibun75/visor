@@ -71,7 +71,7 @@ async def test_headless_handshake_uses_active_request_roots_once(tmp_path):
         repeat_initialize=True,
     )
 
-    assert len(tools.tools) == 17
+    assert len(tools.tools) == 21
     assert telemetry_data(telemetry)["workspace_name"] == project.name
     assert calls == 1
 
