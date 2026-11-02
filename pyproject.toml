@@ -1,6 +1,6 @@
 [project]
 name = "visor-mcp"
-version = "1.4.1"
+version = "1.4.2"
 description = "Terminal-first, local-first context engine for AI coding agents"
 readme = "README.md"
 license = "MIT"

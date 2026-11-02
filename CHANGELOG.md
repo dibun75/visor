@@ -2,6 +2,16 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.4.2] — 2026-11-02
+
+V.I.S.O.R. 1.4.2 is a dependency-security maintenance release. It raises the supported dependency floors used by the Python package and refreshes the optional semantic stack. Application and HUD behavior are unchanged.
+
+- Raised the GitPython floor to 3.2.1 and the MCP floor to 1.30.0, staying below MCP 2.
+- Refreshed transitive runtime dependencies in the HTTP and server stack, including certifi, PyJWT, anyio, cryptography, Starlette, python-multipart, idna, and pydantic-settings.
+- Updated the optional semantic stack, including sentence-transformers 5.7.0, transformers 5.10.4, and fsspec 2026.6.0.
+- The optional semantic resolution now selects torch 2.13.0 and setuptools 84.2.1.
+- Python 3.10 remains supported. Its optional semantic dependency graph is currently limited to `filelock` 4.1.0 because patched `filelock` releases require Python 3.11. The base installation and published artifacts do not bundle `filelock`; follow-up is tracked in issue #66.
+
 ## [1.4.1] — 2026-11-02
 
 ### Extension
