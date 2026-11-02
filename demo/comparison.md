@@ -10,7 +10,7 @@ Native agent search remains the right fallback. The Agent Skill tells the agent 
 | AST symbol extraction | Tree-sitter in `src/visor/parser/treesitter.py` for nine languages |
 | Dependency graph | Import edges queried by `trace`, `impact_analysis`, and context scoring |
 | Deterministic terminal interface | `visor doctor`, `index`, `status`, `context`, `trace`, `drift` |
-| MCP integration | `uvx visor-mcp` over stdio, 17 tools |
+| MCP integration | `uvx visor-mcp` over stdio, 21 tools |
 | Agent Skill | `skills/visor-context/SKILL.md` |
 | Drift detection | `visor drift` and `get_drift_report` |
 | Optional visual HUD | `src/visor/extension`; the server runs without it |

@@ -2,6 +2,14 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
+## [1.4.0] — 2026-11-02
+
+### Explicit retrieval feedback
+
+- Added workspace-scoped feedback for useful, irrelevant, and missing files. The same workspace, normalized query, and file updates one record.
+- Similar later queries can apply one bounded ranking adjustment. The similarity threshold is 0.6, the cap is ±0.35, and the weight halves every 30 days. Reasons name the feedback contribution.
+- Added `visor feedback` and the MCP tools `record_context_feedback`, `list_context_feedback`, `delete_context_feedback`, and `clear_context_feedback`. Feedback does not change import or call edges and is separate from agent memory.
+
 ## [1.3.0] — 2026-11-01
 
 ### C# support

@@ -227,13 +227,17 @@ visor fix "login crash on null user"
 visor explain "database client"
 visor trace src/visor/server.py src/visor/workspace.py
 visor drift
+visor feedback useful src/app.py --query "how is auth handled"
+visor feedback list --json
 ```
+
+`visor feedback` stores an explicit useful, irrelevant, or missing verdict for a file and query. V.I.S.O.R. can apply that feedback to similar future queries in the same workspace. It is not automatic learning, it does not change import or call edges, and `visor feedback delete` or `visor feedback clear --yes` removes it.
 
 `fix` and `explain` call `build_context` with `bug-fixer` and `architecture-explainer`. Terminal details: [`docs/TERMINAL.md`](./docs/TERMINAL.md).
 
 ## MCP tools
 
-The server registers 17 tools in `src/visor/tools/core.py` and `src/visor/server.py`. `get_visor_skill` is an MCP prompt, not one of those tools. Clients do not have to call any of them automatically.
+The server registers 21 tools in `src/visor/tools/core.py` and `src/visor/server.py`. `get_visor_skill` is an MCP prompt, not one of those tools. Clients do not have to call any of them automatically.
 
 | Category | Tools |
 | --- | --- |
@@ -242,6 +246,7 @@ The server registers 17 tools in `src/visor/tools/core.py` and `src/visor/server
 | Graph | `get_dependency_chain`, `impact_analysis`, `trace_route`, `dead_code_detection` |
 | Drift | `get_drift_report` |
 | Memory and skills | `store_memory`, `list_custom_skills`, `add_custom_skill`, `delete_custom_skill` |
+| Feedback | `record_context_feedback`, `list_context_feedback`, `delete_context_feedback`, `clear_context_feedback` |
 | HUD | `get_architecture_map`, `get_telemetry`, `set_hud_focus` |
 | Server | `health_check` |
 

@@ -17,6 +17,12 @@ Common issues and their solutions.
    ```
 2. Or use the IDE extension — it auto-starts the server and indexes on workspace open.
 
+### Feedback is changing a later result
+
+**Cause:** A previous `useful`, `irrelevant`, or `missing` verdict still matches the query. Feedback applies only in the same workspace, only when token overlap is at least 0.6, and only when the intent matches. Its effect halves every 30 days.
+
+**Fix:** Inspect it with `visor feedback list --json`. Remove one record with `visor feedback delete <id>`, or remove every record for this workspace with `visor feedback clear --yes`. This does not delete the code index.
+
 ### Database location
 
 V.I.S.O.R. uses a hub-and-spoke architecture with databases stored in `~/.visor/`:
