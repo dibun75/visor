@@ -137,16 +137,22 @@ python benchmarks/analyze.py /tmp/visor-adversarial/results/*.json \
 ```
 
 The committed contexts under `benchmarks/contexts/adversarial` are sanitized
-reference artifacts. Regenerate and compare them before a live run. Preserve
+reference artifacts. Regenerate and compare them before a live run. The
+published 48-cell run used seed `20261102`, Codex `gpt-5.6-sol` with CLI
+`0.152.0`, and Claude Code `claude-sonnet-5-5` with CLI `2.1.316` (`--model
+sonnet`). Its sanitized scored records are in
+`benchmarks/results/v1.4.2-adversarial-retrieval-summary.json`. Preserve
 the raw result records privately until stdout, stderr, session identifiers, and
 absolute paths have been reviewed; publish a sanitized summary plus the exact
 configuration and exclusions.
 
 The earlier 36-cell patch pilot remains a reliability gate: because all patches
 passed, correctness could not distinguish native from V.I.S.O.R. It cannot
-estimate retrieval-miss risk or confident wrong-location edits. This adversarial
-suite is designed to expose those cases. No live result is claimed here; do not
-interpret the fixture or harness alone as an improvement or regression.
+estimate retrieval-miss risk or confident wrong-location edits. In the
+adversarial run, Claude passed all 24 cells; Codex passed 9/12 native and 8/12
+V.I.S.O.R. cells, with five discordant pairs split three native-only to two
+V.I.S.O.R.-only. This small synthetic result demonstrates the failure mode but
+does not establish that focused context improves or reduces correctness.
 
 ## Scoring
 
