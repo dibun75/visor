@@ -14,6 +14,8 @@ Lexical retrieval is the default. It searches symbol names and docstrings with S
 
 The context scorer can combine the retrieval hit with symbol-name overlap, same-file proximity, dependency distance, and file recency. Semantic similarity is used when retrieval mode is `semantic`. That mode is optional and requires the `semantic` extra.
 
+Explicit feedback is separate. `visor feedback` or `record_context_feedback` stores a useful, irrelevant, or missing verdict. V.I.S.O.R. can apply that local record to a later query when the token overlap is at least 0.6 and the intent matches. The ranking change is capped at ±0.35 before decay, halves every 30 days, and is shown in the retrieval reason. It does not change the dependency graph or agent memory.
+
 ---
 
 ### Does V.I.S.O.R. replace my AI agent?
@@ -71,7 +73,7 @@ V.I.S.O.R. ships with 4 built-in skills: `bug-fixer`, `architecture-explainer`, 
 
 ### Do I need the VS Code extension, or just the MCP server?
 
-The MCP server is the core. It registers 17 tools, including `health_check`. `get_visor_skill` is an MCP prompt. The VS Code extension is optional and adds:
+The MCP server is the core. It registers 21 tools, including `health_check`. `get_visor_skill` is an MCP prompt. The VS Code extension is optional and adds:
 
 - a WebGPU view of the indexed graph
 - telemetry from `get_telemetry` (node count, local payload-byte counter, drift)

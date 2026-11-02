@@ -22,6 +22,10 @@ This document is the authoritative API reference for all tools exposed by the V.
 | [`get_architecture_map`](#get_architecture_map) | 📊 HUD | Full codebase topology for the 3D visualiser |
 | [`get_telemetry`](#get_telemetry) | 📊 HUD | Live telemetry: node count, context burn, drift alert |
 | [`set_hud_focus`](#set_hud_focus) | 📊 HUD | Highlight files on the 3D graph to show agent attention |
+| [`record_context_feedback`](#record_context_feedback) | 📝 Feedback | Store a useful, irrelevant, or missing verdict for a query and file |
+| [`list_context_feedback`](#list_context_feedback) | 📝 Feedback | List workspace feedback, optionally filtered by a similar query |
+| [`delete_context_feedback`](#delete_context_feedback) | 📝 Feedback | Delete one feedback record by id |
+| [`clear_context_feedback`](#clear_context_feedback) | 📝 Feedback | Delete all feedback for the current workspace |
 | [`store_memory`](#store_memory) | 🧩 Memory | Persist a conversation turn with semantic embedding |
 | [`get_visor_skill`](#get_visor_skill) | 🧩 Prompt | MCP prompt, not a tool: fetch a skill instruction pack by name |
 | [`list_custom_skills`](#list_custom_skills) | 🧩 Skills | List all available custom skills with strategies |
@@ -309,6 +313,45 @@ Controls the V.I.S.O.R. Developer HUD to visually highlight files the AI agent i
 **Returns**: JSON confirmation with highlighted file count.
 
 ---
+
+## 📝 Feedback
+
+Explicit retrieval feedback is local to the workspace. It can change ranking for a similar later query. It is not agent memory and it does not create graph edges.
+
+### `record_context_feedback`
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `query` | string | yes | Query the verdict refers to |
+| `file_path` | string | yes | Workspace file. Paths outside the workspace are rejected |
+| `verdict` | string | yes | `useful`, `irrelevant`, or `missing` |
+| `reason` | string | no | Optional note |
+
+Returns `{"ok": true, "feedback": {...}}`. The same workspace, normalized query, and file updates the existing record. Validation failures return `{"ok": false, "error": "..."}`.
+
+### `list_context_feedback`
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `query` | string | no | Keep records whose token overlap is at least 0.6 and whose stored intent matches |
+
+Returned paths are project-relative.
+
+### `delete_context_feedback`
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `feedback_id` | string | yes | Id from `record_context_feedback` or `list_context_feedback` |
+
+Only a record in the current workspace is deleted.
+
+### `clear_context_feedback`
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `confirm` | boolean | yes | Must be `true` |
+
+Deletes feedback rows for the current workspace only.
 
 ### `store_memory`
 
