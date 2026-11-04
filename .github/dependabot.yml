@@ -8,6 +8,12 @@ updates:
     labels:
       - "dependencies"
 
+    ignore:
+      - dependency-name: "mcp"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sentence-transformers"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -26,6 +32,10 @@ updates:
       - "dependencies"
       - "frontend"
 
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: "npm"
     directory: "/src/visor/extension"
     schedule:
@@ -34,3 +44,7 @@ updates:
     labels:
       - "dependencies"
       - "extension"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/vscode"

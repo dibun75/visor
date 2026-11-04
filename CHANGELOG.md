@@ -4,6 +4,8 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ## Unreleased
 
+- Validated sentence-transformers 6.2.0 with the optional semantic stack and 130 tests; retained MCP 1.x and runtime-aligned Node/VS Code type definitions after incompatible major-update testing.
+
 - Added a reproducible adversarial retrieval benchmark with four hidden-cause tasks, audited gold-file omission, decoy coverage, required causal-file edits, and recovery versus wrong-location outcome reporting. Published the sanitized 48-cell result with a deliberately inconclusive correctness interpretation.
 
 ## [1.4.2] — 2026-11-02
