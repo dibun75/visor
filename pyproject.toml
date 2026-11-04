@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "gitpython>=3.2.1",
-    "mcp>=1.30.0,<2",
+    "mcp>=1.30.0,<3",
     "networkx>=3.4.2",
     "numpy>=2.2.6",
     "pydantic>=2.12.5",
