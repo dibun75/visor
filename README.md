@@ -42,9 +42,16 @@ uvx --from visor-mcp visor context \
   "where is workspace detection handled?"
 ```
 
-`visor init` prints an MCP configuration entry for review. It does not edit IDE files.
+Wire V.I.S.O.R. into every coding client on this machine with one command:
 
-Register the stdio server with Codex or Claude Code:
+```bash
+uvx --from visor-mcp visor install --dry-run   # preview, writes nothing
+uvx --from visor-mcp visor install             # add --hook for a Claude Code SessionStart check
+```
+
+`visor install` detects Claude Code, Codex CLI, Cursor, and Gemini CLI, registers the `visor` MCP server in each client's user config, and copies the `visor-context` Agent Skill into each client's skills directory. It prints every file it changes, keeps a `.visor-backup` copy of each edited config, leaves other servers and settings alone, and skips an existing `visor` entry or edited Skill unless you pass `--force`. Use `--client <name>` to target one client and `visor uninstall` to remove what it added. `visor init` still prints an MCP entry for manual review.
+
+Or register the stdio server yourself with Codex or Claude Code:
 
 ```bash
 codex mcp add visor -- uvx visor-mcp
@@ -106,9 +113,10 @@ The Skill tells an agent to request V.I.S.O.R. context, treat the files, symbols
 
 | Client | How it connects |
 | --- | --- |
-| Codex CLI | `codex mcp add visor -- uvx visor-mcp` |
-| Claude Code | `claude mcp add visor -- uvx visor-mcp` |
-| Cursor | `~/.cursor/mcp.json` |
+| Codex CLI | `visor install`, or `codex mcp add visor -- uvx visor-mcp` |
+| Claude Code | `visor install`, or `claude mcp add visor -- uvx visor-mcp` |
+| Cursor | `visor install`, or `~/.cursor/mcp.json` |
+| Gemini CLI | `visor install`, or `~/.gemini/settings.json` |
 | Claude Desktop | `claude_desktop_config.json` |
 | VS Code | `.vscode/mcp.json`, plus the optional [HUD](https://open-vsx.org/extension/dibun75/visor-hud) |
 | Antigravity | The VS Code MCP file above, plus the optional HUD |
@@ -237,6 +245,8 @@ visor doctor
 visor index
 visor status
 visor init
+visor install --dry-run
+visor uninstall
 visor context "how is auth handled"
 visor fix "login crash on null user"
 visor explain "database client"

@@ -8,6 +8,7 @@ Usage:
     visor trace src/auth.py src/db/client.py
     visor drift
     visor map --open
+    visor install --dry-run
 """
 
 import argparse
@@ -391,10 +392,60 @@ def cmd_init(args):
     if visor_bin:
         mcp_entry = {"command": "visor-mcp", "args": [], "env": {}}
 
-    print("V.I.S.O.R. does not modify IDE configuration automatically.\n")
+    print("`visor init` only prints configuration; it does not edit files.\n")
     print("Review and add this entry to your MCP configuration:\n")
     print(json.dumps({"visor": mcp_entry}, indent=2))
     print("\nThen restart the client and run `visor index` in the project.")
+    print("Or run `visor install --dry-run` to preview automatic setup.")
+
+
+def _client_report(args, verb: str) -> None:
+    from visor import installer
+
+    kwargs = {"dry_run": args.dry_run, "force": args.force}
+    if verb == "install":
+        kwargs.update(skill=not args.no_skill, hook=args.hook)
+    try:
+        report = getattr(installer, verb)(clients=args.client, **kwargs)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(2)
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print(installer.format_report(report, verb))
+    if report.has_errors:
+        sys.exit(1)
+
+
+def cmd_install(args):
+    """Register the MCP server and Agent Skill with detected clients."""
+    _client_report(args, "install")
+
+
+def cmd_uninstall(args):
+    """Remove what `visor install` added."""
+    _client_report(args, "uninstall")
+
+
+def _add_client_arguments(parser) -> None:
+    from visor.installer import CLIENTS
+
+    parser.add_argument(
+        "--client",
+        action="append",
+        choices=list(CLIENTS),
+        help="Only this client (repeatable). Default: every detected client",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show the plan; write nothing"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace a different existing visor entry or edited Skill",
+    )
+    parser.add_argument("--json", action="store_true", help="Print JSON")
 
 
 def main():
@@ -424,6 +475,25 @@ def main():
     # visor init
     p_init = sub.add_parser("init", help="Print a V.I.S.O.R. MCP configuration entry")
     p_init.set_defaults(func=cmd_init)
+
+    # visor install / uninstall
+    p_install = sub.add_parser(
+        "install",
+        help="Register the MCP server and Skill with Claude Code, Codex, Cursor, Gemini CLI",
+    )
+    _add_client_arguments(p_install)
+    p_install.add_argument(
+        "--no-skill", action="store_true", help="Skip the visor-context Agent Skill"
+    )
+    p_install.add_argument(
+        "--hook",
+        action="store_true",
+        help="Also add a Claude Code SessionStart hook that runs `visor doctor`",
+    )
+    p_install.set_defaults(func=cmd_install)
+    p_uninstall = sub.add_parser("uninstall", help="Remove what `visor install` added")
+    _add_client_arguments(p_uninstall)
+    p_uninstall.set_defaults(func=cmd_uninstall)
 
     # visor context
     p_ctx = sub.add_parser("context", help="Build ranked context for a query")

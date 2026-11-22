@@ -16,6 +16,20 @@ visor map --open
 whether optional semantic dependencies are available. `index` is explicit: no
 terminal command starts a watcher or installs software.
 
+## Client setup
+
+`visor install` is the only command that writes client configuration, and only
+when you run it. It registers the MCP server and Agent Skill for each detected
+client (Claude Code, Codex CLI, Cursor, Gemini CLI) and lists every file it
+changed. Preview first, and undo with `visor uninstall`:
+
+```bash
+visor install --dry-run
+visor install --client codex --json
+visor install --hook        # Claude Code SessionStart hook running `visor doctor`
+visor uninstall --dry-run
+```
+
 ## Shareable map
 
 ```bash
