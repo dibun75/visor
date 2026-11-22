@@ -14,3 +14,5 @@ webpack.config.prod.js
 vsc-extension-quickstart.md
 **/*.map
 **/*.ts
+out-test/**
+tsconfig.test.json
