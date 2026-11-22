@@ -4,6 +4,10 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ## Unreleased
 
+- **Breaking:** dropped Python 3.10 support; V.I.S.O.R. now requires Python 3.11 or newer. Python 3.10 reached end of life in October 2026, and every patched `filelock` release (4.2.1 and later) requires Python 3.11, so the optional semantic extra can now resolve a patched `filelock` everywhere (#66).
+
+- Added tests for JSX/TSX parsing, `visor doctor`/`visor status`, relative links in the public docs, and the HUD extension's server launch choices; the extension now finds `uv` in the usual Windows install locations (#69–#73).
+
 - Validated sentence-transformers 6.2.0 with the optional semantic stack and 130 tests; retained MCP 1.x and runtime-aligned Node/VS Code type definitions after incompatible major-update testing.
 
 - Added a reproducible adversarial retrieval benchmark with four hidden-cause tasks, audited gold-file omission, decoy coverage, required causal-file edits, and recovery versus wrong-location outcome reporting. Published the sanitized 48-cell result with a deliberately inconclusive correctness interpretation.
