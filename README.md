@@ -186,9 +186,12 @@ visor fix "login crash on null user"
 visor explain "database client"
 visor trace src/visor/server.py src/visor/workspace.py
 visor drift
+visor map --open
 visor feedback useful src/app.py --query "how is auth handled"
 visor feedback list --json
 ```
+
+`visor map` writes a self-contained, shareable HTML dependency map (`visor-map.html`) and `VISOR_REPORT.md` with hub files, entry points, most-depended-on symbols, and import cycles. See [docs/TERMINAL.md](docs/TERMINAL.md#shareable-map).
 
 `visor feedback` stores an explicit useful, irrelevant, or missing verdict for a file and query. V.I.S.O.R. can apply that feedback to similar future queries in the same workspace. It is not automatic learning, it does not change import or call edges, and `visor feedback delete` or `visor feedback clear --yes` removes it.
 
