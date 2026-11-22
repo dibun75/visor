@@ -32,6 +32,7 @@ That is the whole setup. Your agent can now call `build_context` and the other V
 2. **Index once.** `visor index` parses the repository and stores the graph under `~/.visor/`. A file watcher keeps it current while the MCP server runs.
 3. **Ask a question.** `visor context "<question>"` prints the ranked files and symbols with reasons. Add `--json` for machine-readable output, or `--skill bug-fixer` to rank for a bug hunt.
 4. **Connect your agent.** `visor install` detects Claude Code, Codex CLI, Cursor, and Gemini CLI, registers the `visor` MCP server in each client's user config, and copies the [`visor-context` Agent Skill](./skills/visor-context/SKILL.md) so the agent knows when to ask V.I.S.O.R. first. It prints every file it changes, keeps a `.visor-backup` copy of each edited config, leaves other servers and settings alone, and skips an existing `visor` entry or edited Skill unless you pass `--force`. Use `--client <name>` for one client, `--hook` for an opt-in Claude Code SessionStart check, and `visor uninstall` to remove what it added. Prefer to do it by hand? `claude mcp add visor -- uvx visor-mcp` or `codex mcp add visor -- uvx visor-mcp`, or `visor init` to print an MCP entry for review.
+5. **See the whole map.** `visor map --open` writes a self-contained `visor-map.html` you can share, plus `VISOR_REPORT.md` with hub files, entry points, and import cycles.
 
 ![Terminal demo: doctor, index, and context on this repository](./docs/assets/terminal-demo.gif)
 
