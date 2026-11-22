@@ -120,6 +120,9 @@ jobs:
       - name: Compile extension
         working-directory: ./src/visor/extension
         run: npm run compile
+      - name: Test extension launch helpers
+        working-directory: ./src/visor/extension
+        run: npm test
       - name: Audit extension package
         working-directory: ./src/visor/extension
         run: npx --yes @vscode/vsce package --no-dependencies --out /tmp/visor-hud.vsix
