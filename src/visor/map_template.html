@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="V.I.S.O.R. visor map">
+<title>__VISOR_MAP_TITLE__</title>
+<style>
+:root {
+  --bg: #070b14;
+  --bg-2: #0d1424;
+  --panel: rgba(13, 20, 36, 0.86);
+  --panel-solid: #0d1424;
+  --line: rgba(148, 163, 184, 0.16);
+  --text: #e6edf7;
+  --muted: #8b9ab3;
+  --faint: #5b6a84;
+  --accent: #00f2fe;
+  --accent-2: #4facfe;
+  --in: #06d6a0;
+  --out: #f77f00;
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: radial-gradient(1200px 800px at 70% 20%, #0f1d3a 0%, var(--bg) 60%) fixed, var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--sans);
+  overflow: hidden;
+}
+#stage { position: fixed; inset: 0; }
+canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+canvas.dragging { cursor: grabbing; }
+canvas.pointing { cursor: pointer; }
+
+header {
+  position: fixed; top: 16px; left: 16px; right: 392px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  pointer-events: none;
+}
+header > * { pointer-events: auto; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand h1 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .sub { color: var(--muted); font-size: 12px; }
+.brand .sub b { color: var(--accent); font-weight: 600; }
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  min-width: 220px; flex: 0 1 320px;
+}
+.search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--text); font: inherit; }
+.search kbd { font: 11px var(--mono); color: var(--faint); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+.search:focus-within { border-color: rgba(0, 242, 254, 0.5); box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.12); }
+
+.tools {
+  position: fixed; left: 16px; bottom: 16px; display: flex; gap: 6px; flex-wrap: wrap;
+}
+.btn {
+  background: var(--panel); color: var(--text); border: 1px solid var(--line);
+  border-radius: 10px; padding: 7px 11px; font: 12px var(--sans); cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.btn:hover { border-color: rgba(0, 242, 254, 0.45); }
+.btn[aria-pressed="true"] { background: rgba(0, 242, 254, 0.14); border-color: rgba(0, 242, 254, 0.55); color: #bdfcff; }
+
+aside {
+  position: fixed; top: 16px; right: 16px; bottom: 16px; width: 360px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+aside .scroll { overflow-y: auto; padding: 18px 18px 8px; flex: 1; }
+aside footer { border-top: 1px solid var(--line); padding: 10px 18px; color: var(--faint); font-size: 11.5px; }
+aside footer a { color: var(--muted); }
+aside footer code { font: 11px var(--mono); color: var(--accent); }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+.stat { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.stat .v { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.stat .k { color: var(--muted); font-size: 11.5px; }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+h2:first-child { margin-top: 0; }
+ul.list { list-style: none; margin: 0; padding: 0; }
+ul.list li {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin: 0 -8px;
+  border-radius: 8px; cursor: pointer; min-width: 0;
+}
+ul.list li:hover { background: rgba(255, 255, 255, 0.05); }
+ul.list .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+ul.list .p { font: 12px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; direction: rtl; text-align: left; }
+ul.list .n { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; flex: none; }
+ul.legend li.off { opacity: 0.35; }
+.detail-path { font: 12.5px var(--mono); word-break: break-all; color: var(--text); margin: 4px 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.chip { font-size: 11.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--muted); }
+.chip b { color: var(--text); font-weight: 600; }
+.sym { font: 12px var(--mono); color: var(--text); padding: 3px 0; display: flex; gap: 8px; }
+.sym .t { color: var(--faint); width: 14px; flex: none; }
+.back { background: none; border: 0; color: var(--accent); font: 12px var(--sans); cursor: pointer; padding: 0; margin-bottom: 10px; }
+.muted { color: var(--muted); font-size: 12.5px; }
+.in-c { color: var(--in); } .out-c { color: var(--out); }
+
+#tip {
+  position: fixed; pointer-events: none; z-index: 5; display: none;
+  background: var(--panel-solid); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 10px; font-size: 12px; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+#tip .p { font: 12px var(--mono); word-break: break-all; }
+#tip .m { color: var(--muted); margin-top: 2px; }
+
+@media (max-width: 820px) {
+  body { overflow: auto; }
+  #stage { position: relative; height: 62vh; }
+  header { position: absolute; right: 16px; }
+  .tools { position: absolute; top: calc(62vh - 52px); bottom: auto; }
+  aside { position: relative; inset: auto; width: auto; margin: 12px 16px 16px; max-height: none; }
+  aside .scroll { overflow: visible; }
+}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" aria-label="Dependency graph"></canvas></div>
+
+<header>
+  <div class="brand">
+    <h1 id="title"></h1>
+    <div class="sub" id="subtitle"></div>
+  </div>
+  <label class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Find a file or symbol" autocomplete="off" spellcheck="false">
+    <kbd>/</kbd>
+  </label>
+</header>
+
+<div class="tools">
+  <button class="btn" id="fit" title="Fit graph to screen">Fit</button>
+  <button class="btn" id="zin" title="Zoom in">+</button>
+  <button class="btn" id="zout" title="Zoom out">−</button>
+  <button class="btn" id="calls" aria-pressed="false" title="Show cross-file call links">Calls</button>
+  <button class="btn" id="labels" aria-pressed="true" title="Show labels">Labels</button>
+  <button class="btn" id="png" title="Download a PNG of the current view">Save PNG</button>
+</div>
+
+<aside>
+  <div class="scroll" id="panel"></div>
+  <footer>
+    Made with <a href="https://github.com/dibun75/visor" target="_blank" rel="noopener">V.I.S.O.R.</a>
+    <span id="ver"></span> · map your repo: <code>pip install visor-mcp &amp;&amp; visor map</code>
+  </footer>
+</aside>
+
+<div id="tip"></div>
+
+<script id="visor-data" type="application/json">/*__VISOR_MAP_DATA__*/</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("visor-data").textContent);
+  var PALETTE = ["#00f2fe", "#ff0a54", "#4facfe", "#f77f00", "#a06cff", "#06d6a0",
+                 "#e63946", "#fca311", "#3a86ff", "#ff6bd6", "#80ed99", "#fb5607",
+                 "#48cae4", "#ffd166"];
+
+  // ── Model ───────────────────────────────────────────────
+  var nodes = DATA.nodes.map(function (n) { return Object.assign({}, n, { x: 0, y: 0, vx: 0, vy: 0 }); });
+  var byId = new Map(nodes.map(function (n) { return [n.id, n]; }));
+  var clusters = Array.from(new Set(nodes.map(function (n) { return n.cluster; })))
+    .sort(function (a, b) { return count(b) - count(a) || (a < b ? -1 : 1); });
+  function count(c) { var k = 0; nodes.forEach(function (n) { if (n.cluster === c) k++; }); return k; }
+  var color = new Map(clusters.map(function (c, i) { return [c, PALETTE[i % PALETTE.length]]; }));
+  var hidden = new Set();
+  var edges = DATA.edges.map(function (e) { return { s: byId.get(e.source), t: byId.get(e.target), type: e.type, w: e.weight }; })
+    .filter(function (e) { return e.s && e.t; });
+  nodes.forEach(function (n) { n.out = []; n.inc = []; n.r = 3.5 + Math.sqrt(n.imported_by) * 2.2 + Math.min(4, Math.sqrt(n.symbols) * 0.5); });
+  edges.forEach(function (e) { if (e.type === "IMPORTS") { e.s.out.push(e.t); e.t.inc.push(e.s); } });
+  var hubIds = new Set(nodes.slice().sort(function (a, b) { return b.imported_by - a.imported_by; })
+    .slice(0, 14).filter(function (n) { return n.imported_by > 0; }).map(function (n) { return n.id; }));
+
+  // ── Layout: cluster seeding + force simulation ─────────
+  var centers = new Map();
+  var R = 120 + Math.sqrt(nodes.length) * 22;
+  clusters.forEach(function (c, i) {
+    var a = (i / Math.max(clusters.length, 1)) * Math.PI * 2 - Math.PI / 2;
+    var rr = clusters.length === 1 ? 0 : R;
+    centers.set(c, { x: Math.cos(a) * rr, y: Math.sin(a) * rr });
+  });
+  var seed = 7;
+  function rand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var perCluster = new Map();
+  nodes.forEach(function (n) {
+    var c = centers.get(n.cluster), k = perCluster.get(n.cluster) || 0;
+    perCluster.set(n.cluster, k + 1);
+    var a = k * 2.399963, d = 10 + Math.sqrt(k) * 14;
+    n.x = c.x + Math.cos(a) * d + rand() - 0.5;
+    n.y = c.y + Math.sin(a) * d + rand() - 0.5;
+  });
+
+  var alpha = 1;
+  var simEdges = edges.filter(function (e) { return e.type === "IMPORTS"; });
+  function tick() {
+    var n = nodes.length, i, j, a, b, dx, dy, d2, d, f;
+    var cell = 90, grid = new Map();
+    for (i = 0; i < n; i++) {
+      a = nodes[i];
+      var key = Math.floor(a.x / cell) + "," + Math.floor(a.y / cell);
+      (grid.get(key) || grid.set(key, []).get(key)).push(a);
+    }
+    for (i = 0; i < n; i++) {
+      a = nodes[i];
+      var gx = Math.floor(a.x / cell), gy = Math.floor(a.y / cell);
+      for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++) {
+        var bucket = grid.get((gx + ox) + "," + (gy + oy));
+        if (!bucket) continue;
+        for (j = 0; j < bucket.length; j++) {
+          b = bucket[j]; if (b.id <= a.id) continue;
+          dx = a.x - b.x; dy = a.y - b.y; d2 = dx * dx + dy * dy + 0.01;
+          if (d2 > cell * cell) continue;
+          d = Math.sqrt(d2);
+          var min = a.r + b.r + 6;
+          f = (900 / d2 + (d < min ? (min - d) * 0.5 : 0)) * alpha;
+          dx /= d; dy /= d;
+          a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+        }
+      }
+    }
+    for (i = 0; i < simEdges.length; i++) {
+      var e = simEdges[i]; a = e.s; b = e.t;
+      dx = b.x - a.x; dy = b.y - a.y; d = Math.sqrt(dx * dx + dy * dy) || 1;
+      var rest = a.cluster === b.cluster ? 46 : 120;
+      f = (d - rest) * 0.012 * alpha;
+      dx /= d; dy /= d;
+      a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+    }
+    for (i = 0; i < n; i++) {
+      a = nodes[i]; var c = centers.get(a.cluster);
+      a.vx += (c.x - a.x) * 0.006 * alpha - a.x * 0.0008 * alpha;
+      a.vy += (c.y - a.y) * 0.006 * alpha - a.y * 0.0008 * alpha;
+      if (a.fixed) { a.vx = a.vy = 0; continue; }
+      a.vx *= 0.82; a.vy *= 0.82;
+      a.x += Math.max(-30, Math.min(30, a.vx));
+      a.y += Math.max(-30, Math.min(30, a.vy));
+    }
+    alpha = Math.max(0, alpha * 0.985 - 0.0005);
+  }
+  for (var w = 0; w < 120; w++) tick();
+
+  // ── View ────────────────────────────────────────────────
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var view = { x: 0, y: 0, k: 1 }, dpr = 1, W = 0, H = 0;
+  var hover = null, selected = null, matches = null, showCalls = false, showLabels = true;
+  var dirty = true;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    dirty = true;
+  }
+  function panelWidth() { return window.innerWidth > 820 ? 392 : 0; }
+  function fit() {
+    var vis = nodes.filter(visible);
+    if (!vis.length) return;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    vis.forEach(function (n) { x0 = Math.min(x0, n.x - n.r); y0 = Math.min(y0, n.y - n.r); x1 = Math.max(x1, n.x + n.r); y1 = Math.max(y1, n.y + n.r); });
+    var top = document.querySelector("header").getBoundingClientRect().bottom - canvas.getBoundingClientRect().top + 16;
+    var aw = W - panelWidth() - 40, ah = Math.max(80, H - top - 64);
+    view.k = Math.min(2.5, Math.max(0.08, Math.min(aw / (x1 - x0 || 1), ah / (y1 - y0 || 1))));
+    view.x = 20 + aw / 2 - ((x0 + x1) / 2) * view.k;
+    view.y = top + ah / 2 - ((y0 + y1) / 2) * view.k;
+    dirty = true;
+  }
+  function toScreen(n) { return { x: n.x * view.k + view.x, y: n.y * view.k + view.y }; }
+  function toWorld(px, py) { return { x: (px - view.x) / view.k, y: (py - view.y) / view.k }; }
+  function visible(n) { return !hidden.has(n.cluster); }
+
+  function focusSet() {
+    var f = selected || hover;
+    if (!f) return null;
+    var s = new Set([f.id]);
+    f.out.forEach(function (m) { s.add(m.id); });
+    f.inc.forEach(function (m) { s.add(m.id); });
+    return s;
+  }
+
+  function hexA(hex, a) {
+    var v = parseInt(hex.slice(1), 16);
+    return "rgba(" + (v >> 16 & 255) + "," + (v >> 8 & 255) + "," + (v & 255) + "," + a + ")";
+  }
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var focus = focusSet(), f = selected || hover;
+    ctx.save();
+    ctx.translate(view.x, view.y); ctx.scale(view.k, view.k);
+
+    // edges
+    ctx.lineCap = "round";
+    for (var i = 0; i < edges.length; i++) {
+      var e = edges[i];
+      if (e.type === "CALLS" && !showCalls) continue;
+      if (!visible(e.s) || !visible(e.t)) continue;
+      var on = f && (e.s === f || e.t === f);
+      var col, a, lw;
+      if (f) {
+        if (!on) { col = "#8b9ab3"; a = 0.035; lw = 0.8; }
+        else { col = e.s === f ? "#f77f00" : "#06d6a0"; a = 0.9; lw = 1.8; }
+      } else if (matches) { col = "#8b9ab3"; a = 0.05; lw = 0.8; }
+      else { col = color.get(e.s.cluster); a = e.type === "CALLS" ? 0.16 : 0.28; lw = 1; }
+      ctx.strokeStyle = hexA(col, a);
+      ctx.lineWidth = lw / Math.sqrt(view.k);
+      if (e.type === "CALLS") ctx.setLineDash([3 / view.k, 4 / view.k]); else ctx.setLineDash([]);
+      var mx = (e.s.x + e.t.x) / 2, my = (e.s.y + e.t.y) / 2;
+      var cx = mx + (e.t.y - e.s.y) * 0.12, cy = my - (e.t.x - e.s.x) * 0.12;
+      ctx.beginPath(); ctx.moveTo(e.s.x, e.s.y); ctx.quadraticCurveTo(cx, cy, e.t.x, e.t.y); ctx.stroke();
+      if (on && e.type === "IMPORTS") arrow(cx, cy, e.t, col);
+    }
+    ctx.setLineDash([]);
+
+    // nodes
+    for (var j = 0; j < nodes.length; j++) {
+      var n = nodes[j];
+      if (!visible(n)) continue;
+      var c = color.get(n.cluster);
+      var dim = (focus && !focus.has(n.id)) || (matches && !matches.has(n.id));
+      var lit = (focus && focus.has(n.id)) || (matches && matches.has(n.id));
+      if (lit || (!focus && !matches && hubIds.has(n.id))) {
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.4, 0, Math.PI * 2);
+        var g = ctx.createRadialGradient(n.x, n.y, n.r * 0.6, n.x, n.y, n.r * 2.4);
+        g.addColorStop(0, hexA(c, lit ? 0.45 : 0.28)); g.addColorStop(1, hexA(c, 0));
+        ctx.fillStyle = g; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = hexA(c, dim ? 0.14 : 0.95); ctx.fill();
+      if (n === f) { ctx.lineWidth = 2 / view.k; ctx.strokeStyle = "#ffffff"; ctx.stroke(); }
+    }
+    ctx.restore();
+
+    // labels (screen space so text stays crisp)
+    if (showLabels) {
+      ctx.textBaseline = "middle";
+      var placed = [];
+      var order = nodes.filter(visible).sort(function (a, b) { return labelRank(b, focus) - labelRank(a, focus); });
+      for (var k = 0; k < order.length; k++) {
+        var m = order[k], rank = labelRank(m, focus);
+        if (rank <= 0) break;
+        var p = toScreen(m), rad = m.r * view.k;
+        var big = rank >= 3;
+        ctx.font = (big ? "600 12px " : "11px ") + getComputedStyle(document.body).fontFamily;
+        var text = m.name, tw = ctx.measureText(text).width;
+        var box = { x: p.x + rad + 5, y: p.y - 8, w: tw + 6, h: 16 };
+        if (box.x > W || box.y > H || box.x + box.w < 0 || box.y + box.h < 0) continue;
+        if (placed.some(function (q) { return box.x < q.x + q.w && q.x < box.x + box.w && box.y < q.y + q.h && q.y < box.y + box.h; })) continue;
+        placed.push(box);
+        ctx.fillStyle = "rgba(7,11,20,0.72)";
+        ctx.fillRect(box.x - 2, box.y, box.w, box.h);
+        ctx.fillStyle = big ? "#ffffff" : "rgba(230,237,247,0.85)";
+        ctx.fillText(text, box.x + 1, p.y);
+      }
+    }
+  }
+  function labelRank(n, focus) {
+    if (selected === n || hover === n) return 5;
+    if (focus) return focus.has(n.id) ? 3 : 0;
+    if (matches) return matches.has(n.id) ? 3 : 0;
+    if (hubIds.has(n.id)) return 2 + n.imported_by / 1000;
+    if (view.k > 1.4) return 1 + n.imported_by / 1000;
+    return 0;
+  }
+  function arrow(cx, cy, t, col) {
+    var ang = Math.atan2(t.y - cy, t.x - cx), s = 6 / Math.sqrt(view.k);
+    var tx = t.x - Math.cos(ang) * (t.r + 1), ty = t.y - Math.sin(ang) * (t.r + 1);
+    ctx.beginPath(); ctx.moveTo(tx, ty);
+    ctx.lineTo(tx - Math.cos(ang - 0.45) * s, ty - Math.sin(ang - 0.45) * s);
+    ctx.lineTo(tx - Math.cos(ang + 0.45) * s, ty - Math.sin(ang + 0.45) * s);
+    ctx.closePath(); ctx.fillStyle = hexA(col, 0.95); ctx.fill();
+  }
+
+  var fitted = false;
+  function loop() {
+    if (alpha > 0.002) { tick(); tick(); dirty = true; if (!fitted || alpha > 0.2) { fit(); } }
+    if (dirty) { draw(); dirty = false; }
+    requestAnimationFrame(loop);
+  }
+
+  // ── Interaction ─────────────────────────────────────────
+  function pick(px, py) {
+    var w = toWorld(px, py), best = null, bd = Infinity;
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i]; if (!visible(n)) continue;
+      var dx = n.x - w.x, dy = n.y - w.y, d = dx * dx + dy * dy, rr = Math.max(n.r, 6 / view.k);
+      if (d < rr * rr && d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+  var drag = null, moved = false, pointers = new Map(), pinch = null;
+  canvas.addEventListener("pointerdown", function (ev) {
+    canvas.setPointerCapture(ev.pointerId);
+    pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+    if (pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      pinch = { d: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), k: view.k };
+      drag = null; return;
+    }
+    var n = pick(ev.offsetX, ev.offsetY);
+    drag = { node: n, x: ev.offsetX, y: ev.offsetY, vx: view.x, vy: view.y };
+    if (n) n.fixed = true;
+    moved = false; canvas.classList.add("dragging");
+  });
+  canvas.addEventListener("pointermove", function (ev) {
+    if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+    if (pinch && pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      var d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      zoomAt((pts[0].x + pts[1].x) / 2, (pts[0].y + pts[1].y) / 2, (pinch.k * d / pinch.d) / view.k);
+      return;
+    }
+    if (drag) {
+      var dx = ev.offsetX - drag.x, dy = ev.offsetY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+      if (drag.node) { var w = toWorld(ev.offsetX, ev.offsetY); drag.node.x = w.x; drag.node.y = w.y; alpha = Math.max(alpha, 0.08); }
+      else { view.x = drag.vx + dx; view.y = drag.vy + dy; fitted = true; }
+      dirty = true; return;
+    }
+    var n = pick(ev.offsetX, ev.offsetY);
+    if (n !== hover) { hover = n; dirty = true; }
+    canvas.classList.toggle("pointing", !!n);
+    showTip(n, ev.clientX, ev.clientY);
+  });
+  function endPointer(ev) {
+    pointers.delete(ev.pointerId);
+    if (pointers.size < 2) pinch = null;
+    if (!drag) return;
+    canvas.classList.remove("dragging");
+    if (drag.node) drag.node.fixed = false;
+    if (!moved) select(drag.node);
+    drag = null;
+  }
+  canvas.addEventListener("pointerup", endPointer);
+  canvas.addEventListener("pointercancel", endPointer);
+  canvas.addEventListener("pointerleave", function () { if (!drag) { hover = null; dirty = true; showTip(null); } });
+  canvas.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    zoomAt(ev.offsetX, ev.offsetY, Math.exp(-ev.deltaY * 0.0015));
+  }, { passive: false });
+  function zoomAt(px, py, factor) {
+    var k = Math.min(8, Math.max(0.05, view.k * factor));
+    view.x = px - (px - view.x) * (k / view.k);
+    view.y = py - (py - view.y) * (k / view.k);
+    view.k = k; fitted = true; dirty = true;
+  }
+
+  var tip = document.getElementById("tip");
+  function showTip(n, x, y) {
+    if (!n) { tip.style.display = "none"; return; }
+    tip.innerHTML = '<div class="p"></div><div class="m"></div>';
+    tip.firstChild.textContent = n.path;
+    tip.lastChild.textContent = "imported by " + n.imported_by + " · imports " + n.imports + " · " + n.symbols + " symbols";
+    tip.style.display = "block";
+    var tw = tip.offsetWidth;
+    tip.style.left = Math.min(x + 14, window.innerWidth - tw - 8) + "px";
+    tip.style.top = (y + 14) + "px";
+  }
+
+  function select(n, center) {
+    selected = n || null; dirty = true;
+    if (n && center) {
+      var k = Math.max(view.k, 1.2);
+      view.k = k; fitted = true;
+      view.x = (W - panelWidth()) / 2 - n.x * k;
+      view.y = H / 2 - n.y * k;
+    }
+    try { history.replaceState(null, "", n ? "#file=" + encodeURIComponent(n.path) : location.pathname + location.search); } catch (e) { /* file:// in some browsers */ }
+    renderPanel();
+  }
+
+  // ── Side panel ──────────────────────────────────────────
+  var panel = document.getElementById("panel");
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fileItem(path, num, title) {
+    var n = nodes.find(function (m) { return m.path === path; });
+    var li = el("li"); li.title = title || path;
+    var dot = el("span", "dot"); dot.style.background = n ? color.get(n.cluster) : "#5b6a84";
+    var p = el("span", "p"); p.appendChild(el("bdi", null, path));
+    li.appendChild(dot); li.appendChild(p);
+    if (num != null) li.appendChild(el("span", "n", String(num)));
+    if (n) li.addEventListener("click", function () { select(n, true); });
+    else li.style.cursor = "default";
+    return li;
+  }
+  function stat(v, k) { var d = el("div", "stat"); d.appendChild(el("div", "v", Number(v).toLocaleString())); d.appendChild(el("div", "k", k)); return d; }
+
+  function renderPanel() {
+    panel.textContent = "";
+    var A = DATA.analysis, S = DATA.stats;
+    if (!selected) {
+      var st = el("div", "stats");
+      st.appendChild(stat(S.files, "source files"));
+      st.appendChild(stat(S.symbols, "classes + functions"));
+      st.appendChild(stat(S.import_links, "import links"));
+      st.appendChild(stat(A.cycle_count, A.cycle_count === 1 ? "import cycle" : "import cycles"));
+      panel.appendChild(st);
+      if (S.files_shown < S.files) panel.appendChild(el("p", "muted", "Showing the " + S.files_shown + " most connected of " + S.files + " files."));
+
+      panel.appendChild(el("h2", null, "Hub files · imported by"));
+      var ul = el("ul", "list");
+      A.hubs.forEach(function (h) { ul.appendChild(fileItem(h.path, h.imported_by)); });
+      if (!A.hubs.length) ul.appendChild(el("li", "muted", "No internal imports resolved."));
+      panel.appendChild(ul);
+
+      if (A.entry_points.length) {
+        panel.appendChild(el("h2", null, "Likely entry points"));
+        var ue = el("ul", "list");
+        A.entry_points.slice(0, 6).forEach(function (e) { ue.appendChild(fileItem(e.path, null, e.path + " — " + e.reasons.join(", "))); });
+        panel.appendChild(ue);
+      }
+
+      if (A.symbols.length) {
+        panel.appendChild(el("h2", null, "Most-depended-on symbols · caller files"));
+        var us = el("ul", "list");
+        A.symbols.slice(0, 8).forEach(function (s) {
+          var li = fileItem(s.path, s.caller_files, s.name + " in " + s.path);
+          li.querySelector(".p").textContent = "";
+          li.querySelector(".p").appendChild(el("bdi", null, s.name + "  ·  " + s.path.split("/").pop()));
+          us.appendChild(li);
+        });
+        panel.appendChild(us);
+      }
+
+      panel.appendChild(el("h2", null, "Clusters · click to toggle"));
+      var ul2 = el("ul", "list legend");
+      clusters.forEach(function (c) {
+        var li = el("li"); if (hidden.has(c)) li.classList.add("off");
+        var dot = el("span", "dot"); dot.style.background = color.get(c);
+        var p = el("span", "p"); p.appendChild(el("bdi", null, c));
+        li.appendChild(dot); li.appendChild(p); li.appendChild(el("span", "n", String(count(c))));
+        li.addEventListener("click", function () { if (hidden.has(c)) hidden.delete(c); else hidden.add(c); dirty = true; renderPanel(); });
+        ul2.appendChild(li);
+      });
+      panel.appendChild(ul2);
+      return;
+    }
+
+    var n = selected;
+    var back = el("button", "back", "← Overview"); back.addEventListener("click", function () { select(null); });
+    panel.appendChild(back);
+    var h = el("h2", null, n.cluster); h.style.marginTop = "0"; h.style.color = color.get(n.cluster);
+    panel.appendChild(h);
+    panel.appendChild(el("div", "detail-path", n.path));
+    var chips = el("div", "chips");
+    [[n.language, ""], [n.imported_by, " imported by"], [n.imports, " imports"], [n.classes, " classes"], [n.functions, " functions"]]
+      .forEach(function (c) { var s = el("span", "chip"); s.appendChild(el("b", null, String(c[0]))); s.appendChild(document.createTextNode(c[1])); chips.appendChild(s); });
+    panel.appendChild(chips);
+
+    if (n.top_symbols.length) {
+      panel.appendChild(el("h2", null, "Symbols"));
+      n.top_symbols.forEach(function (s) {
+        var d = el("div", "sym"); d.appendChild(el("span", "t", s.type === "class" ? "C" : "ƒ")); d.appendChild(el("span", null, s.name)); panel.appendChild(d);
+      });
+    }
+    var h1 = el("h2", null, ""); h1.appendChild(el("span", "in-c", "● ")); h1.appendChild(document.createTextNode("Imported by (" + n.inc.length + ")"));
+    panel.appendChild(h1);
+    var u1 = el("ul", "list"); n.inc.slice().sort(byPath).forEach(function (m) { u1.appendChild(fileItem(m.path)); });
+    if (!n.inc.length) u1.appendChild(el("li", "muted", "Nothing in the map imports this file."));
+    panel.appendChild(u1);
+    var h2 = el("h2", null, ""); h2.appendChild(el("span", "out-c", "● ")); h2.appendChild(document.createTextNode("Imports (" + n.out.length + ")"));
+    panel.appendChild(h2);
+    var u2 = el("ul", "list"); n.out.slice().sort(byPath).forEach(function (m) { u2.appendChild(fileItem(m.path)); });
+    if (!n.out.length) u2.appendChild(el("li", "muted", "No internal imports."));
+    panel.appendChild(u2);
+  }
+  function byPath(a, b) { return a.path < b.path ? -1 : 1; }
+
+  // ── Search ──────────────────────────────────────────────
+  var q = document.getElementById("q");
+  q.addEventListener("input", function () {
+    var s = q.value.trim().toLowerCase();
+    if (!s) { matches = null; dirty = true; return; }
+    matches = new Set(nodes.filter(function (n) {
+      return n.path.toLowerCase().indexOf(s) >= 0 || n.top_symbols.some(function (t) { return t.name.toLowerCase().indexOf(s) >= 0; });
+    }).map(function (n) { return n.id; }));
+    dirty = true;
+  });
+  q.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && matches && matches.size) {
+      var first = nodes.filter(function (n) { return matches.has(n.id); }).sort(function (a, b) { return b.imported_by - a.imported_by; })[0];
+      select(first, true);
+    }
+    if (ev.key === "Escape") { q.value = ""; matches = null; q.blur(); dirty = true; }
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target === q) return;
+    if (ev.key === "/") { ev.preventDefault(); q.focus(); }
+    if (ev.key === "Escape") select(null);
+  });
+
+  // ── Toolbar ─────────────────────────────────────────────
+  function toggle(id, get, set) {
+    var b = document.getElementById(id);
+    b.addEventListener("click", function () { set(!get()); b.setAttribute("aria-pressed", String(get())); dirty = true; });
+  }
+  toggle("calls", function () { return showCalls; }, function (v) { showCalls = v; });
+  toggle("labels", function () { return showLabels; }, function (v) { showLabels = v; });
+  if (!edges.some(function (e) { return e.type === "CALLS"; })) document.getElementById("calls").style.display = "none";
+  document.getElementById("fit").addEventListener("click", function () { fit(); });
+  document.getElementById("zin").addEventListener("click", function () { zoomAt((W - panelWidth()) / 2, H / 2, 1.3); });
+  document.getElementById("zout").addEventListener("click", function () { zoomAt((W - panelWidth()) / 2, H / 2, 1 / 1.3); });
+  document.getElementById("png").addEventListener("click", function () {
+    var out = document.createElement("canvas"); out.width = canvas.width; out.height = canvas.height;
+    var o = out.getContext("2d");
+    o.fillStyle = "#070b14"; o.fillRect(0, 0, out.width, out.height);
+    o.drawImage(canvas, 0, 0);
+    o.font = (13 * dpr) + "px " + getComputedStyle(document.body).fontFamily;
+    o.fillStyle = "rgba(230,237,247,0.7)";
+    o.fillText(DATA.project + " · mapped with V.I.S.O.R.", 16 * dpr, out.height - 16 * dpr);
+    var a = document.createElement("a");
+    a.download = DATA.project.replace(/[^\w.-]+/g, "_") + "-visor-map.png";
+    a.href = out.toDataURL("image/png"); a.click();
+  });
+
+  // ── Boot ────────────────────────────────────────────────
+  document.getElementById("title").textContent = DATA.project;
+  var sub = document.getElementById("subtitle");
+  sub.appendChild(el("b", null, DATA.stats.files.toLocaleString() + " files"));
+  sub.appendChild(document.createTextNode(" · " + DATA.stats.import_links.toLocaleString() + " import links · " +
+    Object.keys(DATA.stats.languages).join(", ") + " · " + DATA.generated_at));
+  document.getElementById("ver").textContent = DATA.visor_version;
+  window.addEventListener("resize", function () { resize(); fit(); });
+  resize(); fit(); renderPanel();
+  var m = /#file=([^&]+)/.exec(location.hash);
+  if (m) {
+    var target = nodes.find(function (n) { return n.path === decodeURIComponent(m[1]); });
+    if (target) { while (alpha > 0.002) tick(); fitted = true; select(target, true); }
+  }
+  window.__visorMap = { nodes: nodes.length, edges: edges.length, ready: true };
+  requestAnimationFrame(loop);
+  setTimeout(function () { fitted = true; }, 4000);
+})();
+</script>
+</body>
+</html>
