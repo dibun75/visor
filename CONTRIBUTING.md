@@ -55,6 +55,7 @@ cd src/visor/extension
 npm ci
 npm run check-types
 npm run compile
+npm test
 npx --yes @vscode/vsce package --no-dependencies --out /tmp/visor-hud-audit.vsix
 ```
 
