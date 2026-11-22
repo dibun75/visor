@@ -19,19 +19,19 @@ V.I.S.O.R. indexes your repository with Tree-sitter into a local symbol index an
 You need [`uv`](https://docs.astral.sh/uv/getting-started/installation/). Then, in your repository:
 
 ```bash
-uvx --from visor-mcp visor index                         # build the local map
-uvx --from visor-mcp visor context "how is auth handled?" # ask it something
-claude mcp add visor -- uvx visor-mcp                     # or: codex mcp add visor -- uvx visor-mcp
+uvx --from visor-mcp visor install                         # wire up Claude Code, Codex, Cursor, Gemini CLI
+uvx --from visor-mcp visor index                           # build the local map
+uvx --from visor-mcp visor context "how is auth handled?"  # ask it something
 ```
 
-That is the whole setup. Your agent can now call `build_context` and the other V.I.S.O.R. tools.
+That is the whole setup. Your agent can now call `build_context` and the other V.I.S.O.R. tools. Add `--dry-run` to `visor install` to preview the changes first.
 
 ## Quickstart
 
 1. **Check your setup.** `uvx --from visor-mcp visor doctor` reports what works on this machine.
 2. **Index once.** `visor index` parses the repository and stores the graph under `~/.visor/`. A file watcher keeps it current while the MCP server runs.
 3. **Ask a question.** `visor context "<question>"` prints the ranked files and symbols with reasons. Add `--json` for machine-readable output, or `--skill bug-fixer` to rank for a bug hunt.
-4. **Connect your agent.** Register the MCP server (above), and optionally install the [Agent Skill](./skills/visor-context/SKILL.md) so the agent knows when to ask V.I.S.O.R. first.
+4. **Connect your agent.** `visor install` detects Claude Code, Codex CLI, Cursor, and Gemini CLI, registers the `visor` MCP server in each client's user config, and copies the [`visor-context` Agent Skill](./skills/visor-context/SKILL.md) so the agent knows when to ask V.I.S.O.R. first. It prints every file it changes, keeps a `.visor-backup` copy of each edited config, leaves other servers and settings alone, and skips an existing `visor` entry or edited Skill unless you pass `--force`. Use `--client <name>` for one client, `--hook` for an opt-in Claude Code SessionStart check, and `visor uninstall` to remove what it added. Prefer to do it by hand? `claude mcp add visor -- uvx visor-mcp` or `codex mcp add visor -- uvx visor-mcp`, or `visor init` to print an MCP entry for review.
 
 ![Terminal demo: doctor, index, and context on this repository](./docs/assets/terminal-demo.gif)
 
@@ -82,9 +82,10 @@ More detail: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 | Client | How it connects |
 | --- | --- |
-| Codex CLI | `codex mcp add visor -- uvx visor-mcp` |
-| Claude Code | `claude mcp add visor -- uvx visor-mcp` |
-| Cursor | `~/.cursor/mcp.json` |
+| Codex CLI | `visor install`, or `codex mcp add visor -- uvx visor-mcp` |
+| Claude Code | `visor install`, or `claude mcp add visor -- uvx visor-mcp` |
+| Cursor | `visor install`, or `~/.cursor/mcp.json` |
+| Gemini CLI | `visor install`, or `~/.gemini/settings.json` |
 | Claude Desktop | `claude_desktop_config.json` |
 | VS Code | `.vscode/mcp.json`, plus the optional [HUD](https://open-vsx.org/extension/dibun75/visor-hud) |
 | Antigravity | The VS Code MCP file above, plus the optional HUD |
@@ -178,6 +179,8 @@ visor doctor
 visor index
 visor status
 visor init
+visor install --dry-run
+visor uninstall
 visor context "how is auth handled"
 visor fix "login crash on null user"
 visor explain "database client"
