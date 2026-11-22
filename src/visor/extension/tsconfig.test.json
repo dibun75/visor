@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "out-test",
+    "sourceMap": false
+  },
+  "include": ["src/launch.ts", "src/test/**/*.ts"]
+}

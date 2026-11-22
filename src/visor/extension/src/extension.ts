@@ -4,6 +4,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import {
+    HostInfo,
+    augmentedPath,
+    chooseServerLaunch,
+    resolveUvPath as resolveUvPathFor,
+} from './launch';
 
 let currentPanel: vscode.WebviewPanel | undefined = undefined;
 let mcpClient: Client | undefined = undefined;
@@ -11,42 +17,22 @@ let activeTransport: StdioClientTransport | undefined = undefined;
 
 const outputChannel = vscode.window.createOutputChannel("V.I.S.O.R.");
 
+const host: HostInfo = { platform: process.platform, env: process.env };
+
 /**
  * Resolve the absolute path to `uv` across all environments:
- *   - Local VS Code / Antigravity
+ *   - Local VS Code / Antigravity on Linux, macOS and Windows
  *   - SSH Remote (minimal PATH in extension host)
  */
 function resolveUvPath(): string {
-    const home = process.env.HOME || '';
-    const candidates = [
-        `${home}/.local/bin/uv`,
-        `${home}/.cargo/bin/uv`,
-        '/usr/local/bin/uv',
-        '/usr/bin/uv',
-    ];
-
-    // Try `which uv` with an augmented PATH that includes common locations
-    const augmentedPath = [
-        `${home}/.local/bin`,
-        `${home}/.cargo/bin`,
-        '/usr/local/bin',
-        process.env.PATH || ''
-    ].join(':');
-
-    try {
-        const found = cp.execSync('which uv', { 
-            env: { ...process.env, PATH: augmentedPath },
-            timeout: 5000 
-        }).toString().trim();
-        if (found && fs.existsSync(found)) return found;
-    } catch {}
-
-    // Fallback: check candidate paths directly
-    for (const p of candidates) {
-        if (fs.existsSync(p)) return p;
-    }
-
-    return 'uv'; // last resort — hope it's on PATH
+    return resolveUvPathFor(host, {
+        exists: (file) => fs.existsSync(file),
+        lookup: (command, args, env) => cp.execFileSync(command, args, {
+            env,
+            timeout: 5000,
+            windowsHide: true,
+        }).toString(),
+    });
 }
 
 /**
@@ -55,21 +41,18 @@ function resolveUvPath(): string {
  * the extension host has a minimal environment.
  */
 function buildServerEnv(workspaceFolder: string): Record<string, string> {
-    const home = process.env.HOME || '';
-    const extraPaths = [
-        `${home}/.local/bin`,
-        `${home}/.cargo/bin`,
-        '/usr/local/bin',
-    ];
-    const currentPath = process.env.PATH || '/usr/bin:/bin';
-    const fullPath = [...extraPaths, currentPath].join(':');
-
-    return {
+    const env: Record<string, string> = {
         ...process.env as Record<string, string>,
-        PATH: fullPath,
         WORKSPACE_ROOT: workspaceFolder,
         PYTHONPATH: workspaceFolder,
     };
+    // Windows env keys are case-insensitive; drop any `Path` spelling so the
+    // augmented value below is the one the child sees.
+    for (const key of Object.keys(env)) {
+        if (key !== 'PATH' && key.toUpperCase() === 'PATH') delete env[key];
+    }
+    env.PATH = augmentedPath(host);
+    return env;
 }
 
 async function ensureMCPConnected(workspaceFolder: string, context: vscode.ExtensionContext) {
@@ -88,31 +71,30 @@ async function ensureMCPConnected(workspaceFolder: string, context: vscode.Exten
     const localServerPath = path.join(workspaceFolder, 'src', 'visor', 'server.py');
     const serverEnv = buildServerEnv(workspaceFolder);
     
-    let cmd = uvPath;
-    let args: string[] = [];
-
     outputChannel.appendLine(`[VISOR] === Connection attempt at ${new Date().toISOString()} ===`);
     outputChannel.appendLine(`[VISOR] uv path: ${uvPath}`);
 
-    if (customServerPath) {
+    const plan = chooseServerLaunch({
+        uvPath,
+        workspaceFolder,
+        customServerPath,
+        localServerExists: !customServerPath && fs.existsSync(localServerPath),
+        localServerPath,
+    });
+    const cmd = plan.command;
+    const args = plan.args;
+
+    if (plan.reason === 'configured-python' || plan.reason === 'configured-executable') {
         outputChannel.appendLine(`[VISOR] Using configured serverPath: ${customServerPath}`);
-        if (customServerPath.endsWith('.py')) {
-            args = ['--directory', workspaceFolder, 'run', '-q', customServerPath];
-        } else {
-            cmd = customServerPath;
-            args = [];
-        }
-    } else if (fs.existsSync(localServerPath)) {
+    } else if (plan.reason === 'local-checkout') {
         outputChannel.appendLine(`[VISOR] Found local server.py in workspace: ${localServerPath}`);
-        args = ['--directory', workspaceFolder, 'run', '-q', localServerPath];
     } else {
         outputChannel.appendLine('[VISOR] No source checkout found; launching visor-mcp with uv tool run.');
-        args = ['tool', 'run', 'visor-mcp'];
     }
 
     // Pre-flight uv only when it is the selected launcher. A configured
     // visor-mcp executable must remain usable on systems without uv.
-    if (cmd === uvPath) {
+    if (plan.usesUv) {
         try {
             const uvVersion = cp.execFileSync(uvPath, ['--version'], {
                 env: serverEnv, timeout: 10000
