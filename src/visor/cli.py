@@ -7,6 +7,8 @@ Usage:
     visor explain "database client module"
     visor trace src/auth.py src/db/client.py
     visor drift
+    visor map --open
+    visor install --dry-run
 """
 
 import argparse
@@ -215,6 +217,53 @@ def cmd_drift(args):
     print(f"{'=' * 60}\n")
 
 
+def cmd_map(args):
+    """Write a self-contained HTML dependency map and VISOR_REPORT.md."""
+    db_client = _init_workspace(args)
+    from visor.map import DEFAULT_MAX_FILES, build_map, render_html, render_report
+
+    if not db_client.get_index_status()["ready"]:
+        print("Index not ready; indexing the workspace first...", file=sys.stderr)
+        from visor.parser.watcher import index_workspace
+
+        index_workspace(db_client.workspace_root)
+
+    db_client.conn.commit()
+    max_files = DEFAULT_MAX_FILES if args.max_files is None else args.max_files
+    data = build_map(db_client.conn, db_client.workspace_root, max_files=max_files)
+
+    if args.json:
+        print(json.dumps(data, indent=2))
+        return
+
+    out = os.path.abspath(args.out)
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w", encoding="utf-8") as handle:
+        handle.write(render_html(data))
+    written = [out]
+
+    if not args.no_report:
+        report = os.path.abspath(args.report)
+        os.makedirs(os.path.dirname(report) or ".", exist_ok=True)
+        html_link = os.path.relpath(out, os.path.dirname(report)).replace(os.sep, "/")
+        with open(report, "w", encoding="utf-8") as handle:
+            handle.write(render_report(data, html_name=html_link))
+        written.append(report)
+
+    stats = data["stats"]
+    print(
+        f"Mapped {stats['files']} files, {stats['import_links']} import links, "
+        f"{data['analysis']['cycle_count']} import cycle(s)."
+    )
+    for path in written:
+        print(f"  wrote {path}")
+    if args.open:
+        import webbrowser
+        from pathlib import Path
+
+        webbrowser.open(Path(out).as_uri())
+
+
 def _print_feedback(payload: dict, human: bool) -> None:
     if not human:
         print(json.dumps(payload, indent=2))
@@ -343,10 +392,60 @@ def cmd_init(args):
     if visor_bin:
         mcp_entry = {"command": "visor-mcp", "args": [], "env": {}}
 
-    print("V.I.S.O.R. does not modify IDE configuration automatically.\n")
+    print("`visor init` only prints configuration; it does not edit files.\n")
     print("Review and add this entry to your MCP configuration:\n")
     print(json.dumps({"visor": mcp_entry}, indent=2))
     print("\nThen restart the client and run `visor index` in the project.")
+    print("Or run `visor install --dry-run` to preview automatic setup.")
+
+
+def _client_report(args, verb: str) -> None:
+    from visor import installer
+
+    kwargs = {"dry_run": args.dry_run, "force": args.force}
+    if verb == "install":
+        kwargs.update(skill=not args.no_skill, hook=args.hook)
+    try:
+        report = getattr(installer, verb)(clients=args.client, **kwargs)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(2)
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print(installer.format_report(report, verb))
+    if report.has_errors:
+        sys.exit(1)
+
+
+def cmd_install(args):
+    """Register the MCP server and Agent Skill with detected clients."""
+    _client_report(args, "install")
+
+
+def cmd_uninstall(args):
+    """Remove what `visor install` added."""
+    _client_report(args, "uninstall")
+
+
+def _add_client_arguments(parser) -> None:
+    from visor.installer import CLIENTS
+
+    parser.add_argument(
+        "--client",
+        action="append",
+        choices=list(CLIENTS),
+        help="Only this client (repeatable). Default: every detected client",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show the plan; write nothing"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace a different existing visor entry or edited Skill",
+    )
+    parser.add_argument("--json", action="store_true", help="Print JSON")
 
 
 def main():
@@ -376,6 +475,25 @@ def main():
     # visor init
     p_init = sub.add_parser("init", help="Print a V.I.S.O.R. MCP configuration entry")
     p_init.set_defaults(func=cmd_init)
+
+    # visor install / uninstall
+    p_install = sub.add_parser(
+        "install",
+        help="Register the MCP server and Skill with Claude Code, Codex, Cursor, Gemini CLI",
+    )
+    _add_client_arguments(p_install)
+    p_install.add_argument(
+        "--no-skill", action="store_true", help="Skip the visor-context Agent Skill"
+    )
+    p_install.add_argument(
+        "--hook",
+        action="store_true",
+        help="Also add a Claude Code SessionStart hook that runs `visor doctor`",
+    )
+    p_install.set_defaults(func=cmd_install)
+    p_uninstall = sub.add_parser("uninstall", help="Remove what `visor install` added")
+    _add_client_arguments(p_uninstall)
+    p_uninstall.set_defaults(func=cmd_uninstall)
 
     # visor context
     p_ctx = sub.add_parser("context", help="Build ranked context for a query")
@@ -407,6 +525,27 @@ def main():
     # visor drift
     p_drift = sub.add_parser("drift", help="Show recent file changes (drift detection)")
     p_drift.set_defaults(func=cmd_drift)
+
+    # visor map
+    p_map = sub.add_parser(
+        "map", help="Export a shareable HTML dependency map and VISOR_REPORT.md"
+    )
+    p_map.add_argument("--out", "-o", default="visor-map.html", help="HTML output path")
+    p_map.add_argument(
+        "--report", default="VISOR_REPORT.md", help="Markdown report path"
+    )
+    p_map.add_argument(
+        "--no-report", action="store_true", help="Skip writing the Markdown report"
+    )
+    p_map.add_argument(
+        "--max-files",
+        type=int,
+        default=None,
+        help="Most-connected files to draw (default 600; 0 for all)",
+    )
+    p_map.add_argument("--open", action="store_true", help="Open the map in a browser")
+    p_map.add_argument("--json", "-j", action="store_true", help="Print data as JSON")
+    p_map.set_defaults(func=cmd_map)
 
     p_feedback = sub.add_parser(
         "feedback", help="Record or inspect explicit retrieval feedback"
