@@ -74,7 +74,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "rm -rf hud-dist && cp -r ../hud/dist ./hud-dist && npm run check-types && node esbuild.js",
     "check-types": "tsc --noEmit -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "rm -rf out-test && tsc -p tsconfig.test.json && node --test \"out-test/test/**/*.test.js\""
   },
   "devDependencies": {
     "@types/node": "18.x",

@@ -218,6 +218,42 @@ class TestExistingLanguagesUnchanged:
             assert function_name in functions
             assert class_name in classes
 
+    def test_jsx_and_tsx_symbols(self, tmp_path):
+        samples = {
+            "Widget.jsx": (
+                "import React from 'react';\n"
+                "export function Greeting({ name }) {\n"
+                '  return <h1 className="title">Hello {name}</h1>;\n'
+                "}\n"
+                "export class Panel extends React.Component {\n"
+                "  render() { return <div>{this.props.children}</div>; }\n"
+                "}\n",
+                "Greeting",
+                "Panel",
+            ),
+            "Widget.tsx": (
+                "import React from 'react';\n"
+                "interface Props { name: string }\n"
+                "export function Greeting({ name }: Props): JSX.Element {\n"
+                '  return <h1 className="title">Hello {name}</h1>;\n'
+                "}\n"
+                "export class Panel extends React.Component<Props> {\n"
+                "  render() { return <div>{this.props.name}</div>; }\n"
+                "}\n",
+                "Greeting",
+                "Panel",
+            ),
+        }
+        for filename, (source, function_name, class_name) in samples.items():
+            path = tmp_path / filename
+            path.write_text(source, encoding="utf-8")
+            result = ast_parser.parse_file(str(path))
+            assert result.error is None, filename
+            functions = {n.name for n in result.nodes if n.node_type == "function"}
+            classes = {n.name for n in result.nodes if n.node_type == "class"}
+            assert function_name in functions, (filename, functions)
+            assert class_name in classes, (filename, classes)
+
 
 class TestFileHashing:
     """Verify that file hashing works for deduplication."""
