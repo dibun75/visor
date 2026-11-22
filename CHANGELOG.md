@@ -4,6 +4,8 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ## Unreleased
 
+- Added `visor install` and `visor uninstall`. They detect Claude Code, Codex CLI, Cursor, and Gemini CLI, register the `visor` MCP server and the `visor-context` Agent Skill in each, and optionally add a Claude Code SessionStart hook (`--hook`). Both support `--dry-run`, `--client`, `--json`, and `--force`; they print every changed file, back up edited configs, and never replace a different existing entry or edited Skill without `--force`. The Skill now ships inside the wheel.
+
 - Validated sentence-transformers 6.2.0 with the optional semantic stack and 130 tests; retained MCP 1.x and runtime-aligned Node/VS Code type definitions after incompatible major-update testing.
 
 - Added a reproducible adversarial retrieval benchmark with four hidden-cause tasks, audited gold-file omission, decoy coverage, required causal-file edits, and recovery versus wrong-location outcome reporting. Published the sanitized 48-cell result with a deliberately inconclusive correctness interpretation.

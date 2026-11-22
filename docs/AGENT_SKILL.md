@@ -4,6 +4,14 @@ The portable Skill source is [`skills/visor-context/SKILL.md`](../skills/visor-c
 It is intentionally small: it directs coding agents to verify a compact
 V.I.S.O.R. context result and fall back to normal repository inspection.
 
+## Automatic install
+
+`visor install` copies this Skill to `~/.claude/skills/`, `~/.codex/skills/`,
+`~/.cursor/skills/`, and `~/.gemini/skills/` for each detected client, next to
+the MCP registration. Use `--no-skill` to register only the MCP server,
+`--dry-run` to preview, and `visor uninstall` to remove an unedited copy. An
+edited copy is never overwritten or deleted without `--force`.
+
 ## Codex
 
 Copy or symlink `skills/visor-context` into a discoverable Codex skills
