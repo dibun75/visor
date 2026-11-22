@@ -5,7 +5,7 @@
   <p>A local-first context engine for Claude Code, Codex, Cursor, and any MCP client.</p>
 </div>
 
-[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![Open VSX downloads](https://img.shields.io/open-vsx/dt/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.10+-blue)](pyproject.toml)
+[![CI](https://github.com/dibun75/visor/actions/workflows/ci.yml/badge.svg)](https://github.com/dibun75/visor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/visor-mcp)](https://pypi.org/project/visor-mcp/) [![Open VSX](https://img.shields.io/open-vsx/v/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![Open VSX downloads](https://img.shields.io/open-vsx/dt/dibun75/visor-hud)](https://open-vsx.org/extension/dibun75/visor-hud) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Python](https://img.shields.io/badge/python-3.11+-blue)](pyproject.toml)
 
 V.I.S.O.R. indexes your repository with Tree-sitter into a local symbol index and dependency graph. Ask it a question in plain language and it returns the files and symbols that matter, with a reason for each pick. Your agent gets a focused starting point instead of grepping its way in. Everything runs on your machine, and the default mode works offline.
 

@@ -4,6 +4,10 @@ All notable changes to V.I.S.O.R. will be documented in this file.
 
 ## Unreleased
 
+- **Breaking:** dropped Python 3.10 support; V.I.S.O.R. now requires Python 3.11 or newer. Python 3.10 reached end of life in October 2026, and every patched `filelock` release (4.2.1 and later) requires Python 3.11, so the optional semantic extra can now resolve a patched `filelock` everywhere (#66).
+
+- Added tests for JSX/TSX parsing, `visor doctor`/`visor status`, relative links in the public docs, and the HUD extension's server launch choices; the extension now finds `uv` in the usual Windows install locations (#69–#73).
+
 - Added `visor map`, which exports the indexed import graph as a single self-contained interactive HTML file (no IDE, no network) plus `VISOR_REPORT.md` with hub files, likely entry points, most-depended-on symbols, and import cycles. Only relative paths, symbol names, and counts are exported.
 
 - Added `visor install` and `visor uninstall`. They detect Claude Code, Codex CLI, Cursor, and Gemini CLI, register the `visor` MCP server and the `visor-context` Agent Skill in each, and optionally add a Claude Code SessionStart hook (`--hook`). Both support `--dry-run`, `--client`, `--json`, and `--force`; they print every changed file, back up edited configs, and never replace a different existing entry or edited Skill without `--force`. The Skill now ships inside the wheel.

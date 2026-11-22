@@ -5,7 +5,7 @@ Thanks for your interest in contributing to V.I.S.O.R.! This guide will help you
 ## Prerequisites
 
 - Git
-- Python 3.10 or newer
+- Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/)
 - Node.js and npm only when changing the HUD or the extension
 
