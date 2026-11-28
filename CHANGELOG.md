@@ -2,7 +2,9 @@
 
 All notable changes to V.I.S.O.R. will be documented in this file.
 
-## Unreleased
+## [1.5.0] — 2026-11-28
+
+V.I.S.O.R. 1.5.0 adds one-command client setup (`visor install` / `visor uninstall`) and a shareable dependency map (`visor map`), and drops Python 3.10. Upgrade with `uv tool upgrade visor-mcp` or `pip install -U visor-mcp`.
 
 - **Breaking:** dropped Python 3.10 support; V.I.S.O.R. now requires Python 3.11 or newer. Python 3.10 reached end of life in October 2026, and every patched `filelock` release (4.2.1 and later) requires Python 3.11, so the optional semantic extra can now resolve a patched `filelock` everywhere (#66).
 
